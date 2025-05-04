@@ -164,7 +164,7 @@ class Lexer:
                 else: 
                     break 
             if last_accepting is None: 
-                raise Exception(f"Lexical error at position {pos}") 
+                raise Exception(f"Lexical error at position {pos}, unrecognized character: '{input_string[pos]}'") 
             token_text = input_string[pos:last_accepting_pos] 
             token_type = self.token_map[last_accepting] 
             tokens.append((token_type, token_text)) 
@@ -224,10 +224,31 @@ def build_master_nfa():
     int_accept.token_type = "INT_LITERAL"
     add_epsilon_transition(master_start, int_start)
 
+    # String literal: "..."
+    string_start = NFAState()
+    string_body = NFAState()
+    string_end = NFAState()
+    
+    # Opening quote
+    string_start.transitions.setdefault('"', []).append(string_body)
+    
+    # String content (any char except quote or newline)
+    for ch in range(128):
+        if ch != ord('"') and ch != ord('\n'):
+            string_body.transitions.setdefault(chr(ch), []).append(string_body)
+    
+    # Closing quote
+    string_body.transitions.setdefault('"', []).append(string_end)
+    
+    string_end.is_accepting = True
+    string_end.token_type = "STRING_LITERAL"
+    add_epsilon_transition(master_start, string_start)
+
     # Punctuation
     punctuations = {
         '(': "LPAREN", ')': "RPAREN",
         '{': "LBRACE", '}': "RBRACE",
+        '[': "LBRACKET", ']': "RBRACKET",
         ';': "SEMICOLON", ',': "COMMA"
     }
     for p, token_name in punctuations.items():
@@ -235,17 +256,93 @@ def build_master_nfa():
         end.is_accepting = True
         end.token_type = token_name
         add_epsilon_transition(master_start, start)
-
-    # Operators
-    operators = {
-        '+': "PLUS", '-': "MINUS", '*': "MUL", '/': "DIV",
-        '=': "ASSIGN", '==': "EQ", '&&': "AND", '||': "OR"
+    
+    # Operators (Simple)
+    simple_operators = {
+        '+': "PLUS", '-': "MINUS", '*': "MUL", '/': "DIV", 
+        '%': "MOD", '.': "DOT", '>': "GT", '<': "LT"
     }
-    for op, token_name in operators.items():
+    for op, token_name in simple_operators.items():
         start, end = build_literal_nfa(op)
         end.is_accepting = True
         end.token_type = token_name
         add_epsilon_transition(master_start, start)
+
+    # Operators (Complex - multi-character)
+    complex_operators = {
+        '==': "EQ", '!=': "NEQ", '>=': "GEQ", '<=': "LEQ",
+        '&&': "AND", '||': "OR", '=': "ASSIGN"
+    }
+    for op, token_name in complex_operators.items():
+        start, end = build_literal_nfa(op)
+        end.is_accepting = True
+        end.token_type = token_name
+        add_epsilon_transition(master_start, start)
+
+    # System functions
+    system_functions = {
+        "input": "SYSTEM_INPUT",
+        "output": "SYSTEM_OUTPUT"
+    }
+    for func, token_name in system_functions.items():
+        nfa_start, nfa_end = build_literal_nfa(func)
+        nfa_end.is_accepting = True
+        nfa_end.token_type = token_name
+        add_epsilon_transition(master_start, nfa_start)
+
+    # Single-line comments (// style)
+    single_comment_start = NFAState()
+    single_comment_middle = NFAState()
+    single_comment_end = NFAState()
+    
+    # First slash
+    single_comment_start.transitions.setdefault('/', []).append(single_comment_middle)
+    
+    # Second slash
+    single_comment_middle.transitions.setdefault('/', []).append(single_comment_end)
+    
+    # Any character until newline
+    for ch in range(128):  # ASCII characters
+        if ch != ord('\n'):
+            single_comment_end.transitions.setdefault(chr(ch), []).append(single_comment_end)
+    
+    single_comment_end.is_accepting = True
+    single_comment_end.token_type = "COMMENT"
+    add_epsilon_transition(master_start, single_comment_start)
+    
+    # Multi-line comments (/* ... */ style)
+    multi_comment_start = NFAState()
+    multi_comment_middle = NFAState()
+    multi_comment_body = NFAState()
+    multi_comment_star = NFAState()
+    multi_comment_end = NFAState()
+    
+    # First slash
+    multi_comment_start.transitions.setdefault('/', []).append(multi_comment_middle)
+    
+    # Star
+    multi_comment_middle.transitions.setdefault('*', []).append(multi_comment_body)
+    
+    # Any character within comment
+    for ch in range(128):
+        if ch != ord('*'):
+            multi_comment_body.transitions.setdefault(chr(ch), []).append(multi_comment_body)
+        else:
+            multi_comment_body.transitions.setdefault('*', []).append(multi_comment_star)
+    
+    # After star, if not slash, go back to body
+    for ch in range(128):
+        if ch != ord('/'):
+            multi_comment_star.transitions.setdefault(chr(ch), []).append(multi_comment_body)
+        else:
+            multi_comment_star.transitions.setdefault('/', []).append(multi_comment_end)
+    
+    multi_comment_end.is_accepting = True
+    multi_comment_end.token_type = "COMMENT"
+    add_epsilon_transition(master_start, multi_comment_start)
+    
+    # DO NOT include a catch-all for unrecognized characters
+    # Instead, the lexer will throw an error when it encounters unrecognized input
 
     return master_start
  
@@ -260,12 +357,28 @@ def main():
     start_set = frozenset(epsilon_closure({nfa_start})) 
     # Create the Lexer instance. 
     lexer = Lexer(dfa_transitions, dfa_token, start_set) 
-    # Tokenize an example input. 
-    input_program = "if(x){ x = 10; " 
+    
+    # Test with a sample program
+    test_program = """int x=5;
+if(x>5){
+    output("It is greater than 5",string)
+}"""
+    
+    # try:
+    #     tokens = lexer.tokenize(test_program)
+    #     print("Tokens:")
+    #     for token_type, token_text in tokens:
+    #         print(f"{token_type:20} : '{token_text}'")
+    # except Exception as e:
+    #     print(f"Error: {e}")
+    
+    # Uncomment to test with file input
+    with open("test.pie", "r") as file: 
+        input_program = file.read()
     tokens = lexer.tokenize(input_program) 
     print("Tokens:") 
-    for token in tokens: 
-        print(token) 
+    for token_type, token_text in tokens:
+       print(f"{token_type:20} : '{token_text}'")
  
 if __name__ == "__main__": 
-    main() 
+    main()
