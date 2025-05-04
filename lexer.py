@@ -94,45 +94,46 @@ def get_alphabet(state_set):
         symbols.update(state.transitions.keys()) 
     return symbols 
  
-def nfa_to_dfa(nfa_start): 
-    """ 
-    Converts an NFA into a DFA using the subset construction method. 
-    Returns: 
-      - dfa_transitions: dict mapping DFA states (frozensets) to 
-transitions { symbol: next DFA state } 
-      - dfa_token: dict mapping DFA state to token type (if accepting) 
-    """ 
-    dfa_transitions = {} 
-    dfa_token = {} 
-     
-    start_set = epsilon_closure({nfa_start}) 
-    start_dfa = frozenset(start_set) 
-    unmarked_states = [start_dfa] 
-    dfa_transitions[start_dfa] = {} 
-     
-    for state in start_set: 
-        if state.is_accepting: 
-            dfa_token[start_dfa] = state.token_type 
-            break 
- 
-    while unmarked_states: 
-        current = unmarked_states.pop() 
-        dfa_transitions[current] = {} 
-        symbols = get_alphabet(current) 
-        for symbol in symbols: 
-            next_states = epsilon_closure(move(current, symbol)) 
-            if not next_states: 
-                continue 
-            next_dfa = frozenset(next_states) 
-            dfa_transitions[current][symbol] = next_dfa 
-            if next_dfa not in dfa_transitions: 
-                unmarked_states.append(next_dfa) 
-                for state in next_dfa: 
-                    if state.is_accepting: 
-                        dfa_token[next_dfa] = state.token_type 
-                        break 
-    return dfa_transitions, dfa_token 
- 
+def nfa_to_dfa(nfa_start):
+    """
+    Converts an NFA into a DFA using the subset construction method.
+    Returns:
+      - dfa_transitions: dict mapping DFA states (frozensets) to
+        transitions { symbol: next DFA state }
+      - dfa_token: dict mapping DFA state to token type (if accepting)
+    """
+    dfa_transitions = {}
+    dfa_token = {}
+
+    start_set = epsilon_closure({nfa_start})
+    start_dfa = frozenset(start_set)
+    unmarked_states = [start_dfa]
+    dfa_transitions[start_dfa] = {}
+
+    for state in start_set:
+        if state.is_accepting:
+            # Prioritize keywords over identifiers
+            if start_dfa not in dfa_token or state.token_type.startswith("KEYWORD"):
+                dfa_token[start_dfa] = state.token_type
+
+    while unmarked_states:
+        current = unmarked_states.pop()
+        dfa_transitions[current] = {}
+        symbols = get_alphabet(current)
+        for symbol in symbols:
+            next_states = epsilon_closure(move(current, symbol))
+            if not next_states:
+                continue
+            next_dfa = frozenset(next_states)
+            dfa_transitions[current][symbol] = next_dfa
+            if next_dfa not in dfa_transitions:
+                unmarked_states.append(next_dfa)
+                for state in next_dfa:
+                    if state.is_accepting:
+                        # Prioritize keywords over identifiers
+                        if next_dfa not in dfa_token or state.token_type.startswith("KEYWORD"):
+                            dfa_token[next_dfa] = state.token_type
+    return dfa_transitions, dfa_token
 # ---------------------------- 
 # Lexer Class Using the DFA 
 # ---------------------------- 
@@ -177,7 +178,18 @@ class Lexer:
 def build_master_nfa():
     master_start = NFAState()
 
-    # Keywords
+    # Identifiers: [A-Za-z_][A-Za-z0-9_]* (Add this first)
+    id_start = NFAState()
+    id_accept = NFAState()
+    for ch in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_":
+        id_start.transitions.setdefault(ch, []).append(id_accept)
+    for ch in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_":
+        id_accept.transitions.setdefault(ch, []).append(id_accept)
+    id_accept.is_accepting = True
+    id_accept.token_type = "IDENTIFIER"
+    add_epsilon_transition(master_start, id_start)
+
+    # Keywords (Add this after identifiers)
     keywords = {
         "if": "KEYWORD_IF",
         "else": "KEYWORD_ELSE",
@@ -191,28 +203,17 @@ def build_master_nfa():
         "float": "KEYWORD_FLOAT",
         "char": "KEYWORD_CHAR",
         "void": "KEYWORD_VOID",
+        "null": "KEYWORD_NULL",
         "string": "KEYWORD_STRING",
         "bool": "KEYWORD_BOOL",
         "true": "KEYWORD_TRUE",
-        "false": "KEYWORD_FALSE",
-        "null": "KEYWORD_NULL",
+        "false": "KEYWORD_FALSE"
     }
     for word, token_name in keywords.items():
         nfa_start, nfa_end = build_literal_nfa(word)
         nfa_end.is_accepting = True
         nfa_end.token_type = token_name
         add_epsilon_transition(master_start, nfa_start)
-
-    # Identifiers: [A-Za-z_][A-Za-z0-9_]*
-    id_start = NFAState()
-    id_accept = NFAState()
-    for ch in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_":
-        id_start.transitions.setdefault(ch, []).append(id_accept)
-    for ch in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_":
-        id_accept.transitions.setdefault(ch, []).append(id_accept)
-    id_accept.is_accepting = True
-    id_accept.token_type = "IDENTIFIER"
-    add_epsilon_transition(master_start, id_start)
 
     # Integer literal: [0-9]+
     int_start = NFAState()
@@ -243,6 +244,61 @@ def build_master_nfa():
     string_end.is_accepting = True
     string_end.token_type = "STRING_LITERAL"
     add_epsilon_transition(master_start, string_start)
+
+    # Floating-point literal: [0-9]+.[0-9]+
+    float_start = NFAState()
+    float_int_part = NFAState()
+    float_dot = NFAState()
+    float_frac_part = NFAState()
+    float_accept = NFAState()
+
+    for d in "0123456789":
+        float_start.transitions.setdefault(d, []).append(float_int_part)
+        float_int_part.transitions.setdefault(d, []).append(float_int_part)
+    float_int_part.transitions.setdefault('.', []).append(float_dot)
+    for d in "0123456789":
+        float_dot.transitions.setdefault(d, []).append(float_frac_part)
+        float_frac_part.transitions.setdefault(d, []).append(float_frac_part)
+    float_frac_part.is_accepting = True
+    float_frac_part.token_type = "FLOAT_LITERAL"
+
+    add_epsilon_transition(master_start, float_start)
+    add_epsilon_transition(float_start, float_int_part)
+    add_epsilon_transition(float_int_part, float_dot)
+    add_epsilon_transition(float_dot, float_frac_part)
+    add_epsilon_transition(float_frac_part, float_accept)
+    float_accept.is_accepting = True
+    float_accept.token_type = "FLOAT_LITERAL"
+    add_epsilon_transition(master_start, float_start)
+
+    #char literal: 'a' or '\n' or '\t' or '\\' or any other char
+    char_start = NFAState()
+    char_body = NFAState()
+    char_end = NFAState()
+
+    # Opening quote
+    char_start.transitions.setdefault("'", []).append(char_body)
+
+
+    # String content (any char except quote or newline)
+    for ch in range(128):
+        if ch != ord("'") and ch != ord('\n') and ch != ord('\\'):
+            char_body.transitions.setdefault(chr(ch), []).append(char_body)
+        elif ch == ord("\\"):
+            char_body.transitions.setdefault("\\", []).append(char_body)
+
+
+    # Closing quote
+    char_body.transitions.setdefault("'", []).append(char_end)
+
+
+    char_end.is_accepting = True
+    char_end.token_type = "CHAR_LITERAL"
+    add_epsilon_transition(master_start, char_start)
+
+
+   
+
 
     # Punctuation
     punctuations = {

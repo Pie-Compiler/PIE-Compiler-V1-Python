@@ -7,4 +7,14 @@ is just as verstaile
 int x=5;
 if(x>5){
     output("It is greater than 5",string)
+}else{
+    output("It is not greater",string)
+    false
+    null
 }
+85.68
+true 
+false
+false
+'a234'
+NULL
