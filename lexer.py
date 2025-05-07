@@ -146,7 +146,15 @@ class Lexer:
     def tokenize(self, input_string): 
         pos = 0 
         tokens = [] 
+        current_line = 1  # Track line number
+        
         while pos < len(input_string): 
+            # Track newlines
+            if input_string[pos] == '\n':
+                current_line += 1
+                pos += 1
+                continue
+                
             if input_string[pos].isspace(): 
                 pos += 1 
                 continue 
@@ -168,13 +176,47 @@ class Lexer:
                 raise Exception(f"Lexical error at position {pos}, unrecognized character: '{input_string[pos]}'") 
             token_text = input_string[pos:last_accepting_pos] 
             token_type = self.token_map[last_accepting] 
-            tokens.append((token_type, token_text)) 
+            tokens.append((token_type, token_text, current_line)) 
             pos = last_accepting_pos 
         return tokens 
  
 # ---------------------------- 
 # Building the Master NFA 
 # ---------------------------- 
+def create_int_literal_nfa():
+    int_start = NFAState()
+    int_accept = NFAState()
+    for d in "0123456789":
+        int_start.transitions.setdefault(d, []).append(int_accept)
+        int_accept.transitions.setdefault(d, []).append(int_accept)
+    int_accept.is_accepting = True
+    return int_start, int_accept
+
+def create_float_literal_nfa():
+    float_start = NFAState()
+    float_digits = NFAState()
+    float_point = NFAState()
+    float_fraction = NFAState()
+
+    # First part: digits
+    for d in "0123456789":
+        float_start.transitions.setdefault(d, []).append(float_digits)
+        float_digits.transitions.setdefault(d, []).append(float_digits)
+
+    # Decimal point
+    float_digits.transitions.setdefault('.', []).append(float_point)
+
+    # Fractional part (optional)
+    for d in "0123456789":
+        float_point.transitions.setdefault(d, []).append(float_fraction)
+        float_fraction.transitions.setdefault(d, []).append(float_fraction)
+
+    # Both decimal point and fractional part are accepting
+    float_point.is_accepting = True
+    float_fraction.is_accepting = True
+
+    return float_start, float_fraction
+
 def build_master_nfa():
     master_start = NFAState()
 
@@ -206,6 +248,7 @@ def build_master_nfa():
         "null": "KEYWORD_NULL",
         "string": "KEYWORD_STRING",
         "bool": "KEYWORD_BOOL",
+        "boolean": "KEYWORD_BOOL",  # Add this line
         "true": "KEYWORD_TRUE",
         "false": "KEYWORD_FALSE"
     }
@@ -215,15 +258,15 @@ def build_master_nfa():
         nfa_end.token_type = token_name
         add_epsilon_transition(master_start, nfa_start)
 
-    # Integer literal: [0-9]+
-    int_start = NFAState()
-    int_accept = NFAState()
-    for d in "0123456789":
-        int_start.transitions.setdefault(d, []).append(int_accept)
-        int_accept.transitions.setdefault(d, []).append(int_accept)
-    int_accept.is_accepting = True
-    int_accept.token_type = "INT_LITERAL"
-    add_epsilon_transition(master_start, int_start)
+    # Integer literal pattern
+    int_nfa = create_int_literal_nfa()
+    int_nfa[1].token_type = "INT_LITERAL"
+    add_epsilon_transition(master_start, int_nfa[0])
+
+    # Float literal pattern
+    float_nfa = create_float_literal_nfa()
+    float_nfa[1].token_type = "FLOAT_LITERAL"
+    add_epsilon_transition(master_start, float_nfa[0])
 
     # String literal: "..."
     string_start = NFAState()
@@ -244,32 +287,6 @@ def build_master_nfa():
     string_end.is_accepting = True
     string_end.token_type = "STRING_LITERAL"
     add_epsilon_transition(master_start, string_start)
-
-    # Floating-point literal: [0-9]+.[0-9]+
-    float_start = NFAState()
-    float_int_part = NFAState()
-    float_dot = NFAState()
-    float_frac_part = NFAState()
-    float_accept = NFAState()
-
-    for d in "0123456789":
-        float_start.transitions.setdefault(d, []).append(float_int_part)
-        float_int_part.transitions.setdefault(d, []).append(float_int_part)
-    float_int_part.transitions.setdefault('.', []).append(float_dot)
-    for d in "0123456789":
-        float_dot.transitions.setdefault(d, []).append(float_frac_part)
-        float_frac_part.transitions.setdefault(d, []).append(float_frac_part)
-    float_frac_part.is_accepting = True
-    float_frac_part.token_type = "FLOAT_LITERAL"
-
-    add_epsilon_transition(master_start, float_start)
-    add_epsilon_transition(float_start, float_int_part)
-    add_epsilon_transition(float_int_part, float_dot)
-    add_epsilon_transition(float_dot, float_frac_part)
-    add_epsilon_transition(float_frac_part, float_accept)
-    float_accept.is_accepting = True
-    float_accept.token_type = "FLOAT_LITERAL"
-    add_epsilon_transition(master_start, float_start)
 
     #char literal: 'a' or '\n' or '\t' or '\\' or any other char
     char_start = NFAState()
@@ -338,7 +355,8 @@ def build_master_nfa():
     # System functions
     system_functions = {
         "input": "SYSTEM_INPUT",
-        "output": "SYSTEM_OUTPUT"
+        "output": "SYSTEM_OUTPUT",
+        "exit": "SYSTEM_EXIT",
     }
     for func, token_name in system_functions.items():
         nfa_start, nfa_end = build_literal_nfa(func)
@@ -433,8 +451,8 @@ if(x>5){
         input_program = file.read()
     tokens = lexer.tokenize(input_program) 
     print("Tokens:") 
-    for token_type, token_text in tokens:
-       print(f"{token_type:20} : '{token_text}'")
+    for token_type, token_text, line_number in tokens:
+       print(f"{token_type:20} : '{token_text}' (Line {line_number})")
  
 if __name__ == "__main__": 
     main()

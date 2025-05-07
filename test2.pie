@@ -1,4 +1,4 @@
-   int n;// number of test scores 
+    int n;// number of test scores 
     int total;      // sum of scores 
     int i;          // loop counter 
     float avg;      // average score (4 decimal places) 
