@@ -429,7 +429,7 @@ if(x>5){
     #     print(f"Error: {e}")
     
     # Uncomment to test with file input
-    with open("test.pie", "r") as file: 
+    with open("test2.pie", "r") as file: 
         input_program = file.read()
     tokens = lexer.tokenize(input_program) 
     print("Tokens:") 
