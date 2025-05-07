@@ -396,7 +396,7 @@ def main():
     parser = Parser()
     
     # Example program
-    with open("test2.pie", "r") as file: 
+    with open("test3.pie", "r") as file: 
         input_program = file.read()
 
     try:

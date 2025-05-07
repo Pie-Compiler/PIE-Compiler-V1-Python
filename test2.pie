@@ -9,8 +9,7 @@
     // Prompt for number of scores 
     prompt = "Enter the number of test scores:"; 
     output(prompt, string); 
-    input(n, int); 
- 
+    input(t, int); 
     total = 0; 
     // Loop to read each test score and accumulate the total 
     for (i = 0; i < n; i = i + 1) { 

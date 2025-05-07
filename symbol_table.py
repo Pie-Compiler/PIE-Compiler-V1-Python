@@ -119,7 +119,7 @@ class TypeChecker:
         self.symbol_table = symbol_table
         self.function_table = function_table
         
-        # Define type compatibility rules
+        # This specific compatible_types map might be less needed if is_compatible is robust
         self.compatible_types = {
             'KEYWORD_INT': ['KEYWORD_INT', 'KEYWORD_FLOAT'],
             'KEYWORD_FLOAT': ['KEYWORD_FLOAT', 'KEYWORD_INT'],
@@ -127,42 +127,95 @@ class TypeChecker:
             'KEYWORD_STRING': ['KEYWORD_STRING'],
             'KEYWORD_CHAR': ['KEYWORD_CHAR']
         }
-    
-    def is_compatible(self, type1, type2):
-        """Check if type2 can be assigned to type1."""
-        if type1 in self.compatible_types and type2 in self.compatible_types[type1]:
+        
+    def _normalize_type(self, type_name):
+        """Convert literal types and language types to standardized keyword types."""
+        if not isinstance(type_name, str):
+            return None # Or a specific "UNKNOWN_TYPE"
+
+        mapping = {
+            'INT_LITERAL': 'KEYWORD_INT',
+            'FLOAT_LITERAL': 'KEYWORD_FLOAT',
+            'STRING_LITERAL': 'KEYWORD_STRING',
+            'CHAR_LITERAL': 'KEYWORD_CHAR',
+            'KEYWORD_TRUE': 'KEYWORD_BOOL',
+            'KEYWORD_FALSE': 'KEYWORD_BOOL',
+            'int': 'KEYWORD_INT',
+            'float': 'KEYWORD_FLOAT',
+            'string': 'KEYWORD_STRING',
+            'char': 'KEYWORD_CHAR',
+            'boolean': 'KEYWORD_BOOL', # From test2.pie
+            'bool': 'KEYWORD_BOOL',
+            'void': 'KEYWORD_VOID',
+            # Idempotent entries for already normalized types
+            'KEYWORD_INT': 'KEYWORD_INT',
+            'KEYWORD_FLOAT': 'KEYWORD_FLOAT',
+            'KEYWORD_BOOL': 'KEYWORD_BOOL',
+            'KEYWORD_STRING': 'KEYWORD_STRING',
+            'KEYWORD_CHAR': 'KEYWORD_CHAR',
+            'KEYWORD_VOID': 'KEYWORD_VOID',
+        }
+        return mapping.get(type_name, type_name) # Return original if not in map, though ideally all types should be mappable or already KEYWORD_
+
+    def is_compatible(self, target_type, source_type):
+        """Check if source_type can be assigned to target_type."""
+        norm_target_type = self._normalize_type(target_type)
+        norm_source_type = self._normalize_type(source_type)
+
+        if norm_target_type is None or norm_source_type is None:
+            return False
+
+        if norm_target_type == norm_source_type:
             return True
+        
+        if norm_target_type == 'KEYWORD_FLOAT' and norm_source_type == 'KEYWORD_INT':
+            return True
+        
+        # Add other compatibilities if needed, e.g., char to string
         return False
     
     def check_binary_op(self, op, left_type, right_type):
-        """Check if a binary operation is valid for the given types."""
-        # Arithmetic operations
+        """Check if a binary operation is valid for the given types and return result type."""
+        norm_left = self._normalize_type(left_type)
+        norm_right = self._normalize_type(right_type)
+
+        if norm_left is None or norm_right is None:
+            return None
+
+        # Arithmetic operators: +, -, *, /
         if op in ['PLUS', 'MINUS', 'MUL', 'DIV', 'MOD']:
-            if left_type in ['KEYWORD_INT', 'KEYWORD_FLOAT'] and right_type in ['KEYWORD_INT', 'KEYWORD_FLOAT']:
-                # Return the "wider" type
-                if 'FLOAT' in left_type or 'FLOAT' in right_type:
+            if norm_left in ['KEYWORD_INT', 'KEYWORD_FLOAT'] and norm_right in ['KEYWORD_INT', 'KEYWORD_FLOAT']:
+                # Result is float if either is float, else int
+                if 'KEYWORD_FLOAT' in [norm_left, norm_right]:
                     return 'KEYWORD_FLOAT'
-                return 'KEYWORD_INT'
-            return None
-        
-        # String concatenation
-        if op == 'PLUS' and left_type == 'KEYWORD_STRING' and right_type == 'KEYWORD_STRING':
-            return 'KEYWORD_STRING'
-        
-        # Comparison operations
-        if op in ['EQ', 'NEQ', 'GT', 'LT', 'GEQ', 'LEQ']:
-            if left_type in ['KEYWORD_INT', 'KEYWORD_FLOAT'] and right_type in ['KEYWORD_INT', 'KEYWORD_FLOAT']:
+                else:
+                    return 'KEYWORD_INT'
+            else:
+                return None
+
+        # Comparison operators: <, >, <=, >=
+        if op in ['LT', 'GT', 'LEQ', 'GEQ']:
+            if norm_left in ['KEYWORD_INT', 'KEYWORD_FLOAT'] and norm_right in ['KEYWORD_INT', 'KEYWORD_FLOAT']:
                 return 'KEYWORD_BOOL'
-            if left_type == right_type:  # Same types can be compared for equality
+            else:
+                return None
+
+        # Equality operators: ==, !=
+        if op in ['EQ', 'NEQ']:
+            if norm_left == norm_right:
+                return 'KEYWORD_BOOL'
+            # Allow int/float comparison
+            if {norm_left, norm_right} <= {'KEYWORD_INT', 'KEYWORD_FLOAT'}:
                 return 'KEYWORD_BOOL'
             return None
-        
-        # Logical operations
+
+        # Logical operators: &&, ||
         if op in ['AND', 'OR']:
-            if left_type == 'KEYWORD_BOOL' and right_type == 'KEYWORD_BOOL':
+            if norm_left == 'KEYWORD_BOOL' and norm_right == 'KEYWORD_BOOL':
                 return 'KEYWORD_BOOL'
-            return None
-        
+            else:
+                return None
+
         return None
 
 # Usage Example
