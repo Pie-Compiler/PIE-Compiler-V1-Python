@@ -227,12 +227,13 @@ class Parser:
         '''function_call_statement : function_call SEMICOLON'''
         p[0] = p[1]
     
+    # Add KEYWORD_EXIT to function call rule
     def p_function_call(self, p):
         '''function_call : IDENTIFIER LPAREN argument_list RPAREN
                         | IDENTIFIER LPAREN RPAREN
                         | SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
-                        | SYSTEM_EXIT LPAREN RPAREN
+                        | KEYWORD_EXIT LPAREN RPAREN
                         | IDENTIFIER LPAREN expression COMMA type_specifier RPAREN'''
         if p[1] == 'input' or p.slice[1].type == 'SYSTEM_INPUT':
             # input(variable, type)
@@ -240,7 +241,7 @@ class Parser:
         elif p[1] == 'output' or p.slice[1].type == 'SYSTEM_OUTPUT':
             # output(expression, type)
             p[0] = ('system_output', p[3], p[5])
-        elif p[1] == 'exit' or p.slice[1].type == 'SYSTEM_EXIT':
+        elif p[1] == 'exit' or p.slice[1].type == 'KEYWORD_EXIT':
             # exit()
             p[0] = ('system_exit',)
         elif len(p) == 6:
@@ -389,32 +390,3 @@ def print_ast(node, indent=0):
             print_ast(item, indent)
     else:
         print(f"{indent_str}{node}")
-
-# Usage example
-def main():
-    # Create an instance of our parser
-    parser = Parser()
-    
-    # Example program
-    with open("test3.pie", "r") as file: 
-        input_program = file.read()
-
-    try:
-        # Parse the program
-        ast = parser.parse(input_program)
-        print("Parsing successful!")
-        print("AST:")
-        print_ast(ast)  # Use prettier printing
-        
-        # Print symbol table for demonstration
-        print("\nSymbol Table:")
-        for scope, symbols in parser.symbol_table.table.items():
-            print(f"Scope {scope}:")
-            for name, info in symbols.items():
-                print(f"  {name}: {info}")
-                
-    except Exception as e:
-        print(f"Parsing error: {e}")
-
-if __name__ == "__main__":
-    main()

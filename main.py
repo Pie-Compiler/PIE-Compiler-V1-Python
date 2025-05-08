@@ -1,14 +1,13 @@
-from parser import Parser,print_ast
-# Add import for semantic analyzer
+from parser import Parser, print_ast
 from semanticAnalysis import SemanticAnalyzer
-
-# Update the main function
+from ir_generator import IRGenerator
+from llvmConverter import IRToLLVMConverter
 def main():
     # Create an instance of our parser
     parser = Parser()
     
     # Example program
-    with open("test4.pie", "r") as file: 
+    with open("test2.pie", "r") as file: 
         input_program = file.read()
 
     try:
@@ -35,6 +34,32 @@ def main():
         
         if is_valid:
             print("\nProgram is semantically valid!")
+            
+            # Generate intermediate representation
+            ir_gen = IRGenerator()
+            ir_code = ir_gen.generate(ast, parser.symbol_table)
+            
+            print("\nIntermediate Representation (3-Address Code):")
+
+            #save the IR code to a file
+            with open("output.ir", "w") as ir_file:
+                for instruction in ir_code:
+                    ir_file.write(f"{instruction}\n")
+            for instruction in ir_code:
+                print(f"  {instruction}")
+            #Translate the IR code to LLVM
+            llvm_converter = IRToLLVMConverter()
+            llvm_converter.convert_ir(ir_code)
+            LLVMCODE= llvm_converter.finalize()
+            # print("\nLLVM Code:")
+            # print(llvm_code)
+            # #save the LLVM code to a file
+            # with open("output.ll", "w") as llvm_file:
+            #     for instruction in llvm_code:
+            #         llvm_file.write(f"{instruction}\n")
+            # for instruction in llvm_code:
+            #     print(f"  {instruction}")
+
         else:
             print("\nProgram contains semantic errors!")
         
