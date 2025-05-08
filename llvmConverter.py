@@ -266,110 +266,125 @@ class IRToLLVMConverter:
             if lhs_val.type != rhs_val.type:
                 if isinstance(lhs_val.type, ir.IntType) and isinstance(rhs_val.type, ir.FloatType):
                     lhs_val = self.builder.sitofp(lhs_val, ir.FloatType())
-                    if self.debug:
-                        print(f"Converted LHS {lhs} from int to float")
                 elif isinstance(lhs_val.type, ir.FloatType) and isinstance(rhs_val.type, ir.IntType):
                     rhs_val = self.builder.sitofp(rhs_val, ir.FloatType())
-                    if self.debug:
-                        print(f"Converted RHS {rhs} from int to float")
 
-            # Handle logical AND (&&) and OR (||)
-            if op == '&&':
+            # Handle logical OR (||)
+            if op == '||':
                 # Create blocks for short-circuiting
+                or_true_block = self.function.append_basic_block(name="or_true")
+                or_end_block = self.function.append_basic_block(name="or_end")
+
+                # Save the current block before branching
+                current_block = self.builder.block
+
+                # Check LHS
+                if not self.builder.block.is_terminated:
+                    self.builder.cbranch(lhs_val, or_true_block, or_end_block)
+
+                # In the true block, set the result to true and branch to the end
+                self.builder.position_at_end(or_true_block)
+                self.builder.branch(or_end_block)
+
+                # In the end block, create the PHI node
+                self.builder.position_at_end(or_end_block)
+                result = self.builder.phi(ir.IntType(1))
+                result.add_incoming(ir.Constant(ir.IntType(1), 1), or_true_block)  # True if LHS is true
+                result.add_incoming(rhs_val, current_block)  # RHS value if LHS is false
+
+                # Store the result in the destination variable
+                if dest not in self.var_table:
+                    result_ptr = self.builder.alloca(result.type, name=dest)
+                    self.var_table[dest] = result_ptr
+                else:
+                    result_ptr = self.var_table[dest]
+
+                self.builder.store(result, result_ptr)
+
+            elif op == '&&':
+                # Handle logical AND (similar to your existing implementation)
                 and_true_block = self.function.append_basic_block(name="and_true")
                 and_end_block = self.function.append_basic_block(name="and_end")
 
-                # Check LHS
+                current_block = self.builder.block
+
                 if not self.builder.block.is_terminated:
                     self.builder.cbranch(lhs_val, and_true_block, and_end_block)
 
-                # In the true block, check RHS
                 self.builder.position_at_end(and_true_block)
-                if not self.builder.block.is_terminated:
-                    self.builder.cbranch(rhs_val, and_end_block, and_end_block)
+                and_true_block_rhs_val = self._load_val(rhs)
+                self.builder.branch(and_end_block)
 
-                # In the end block, create the result
                 self.builder.position_at_end(and_end_block)
                 result = self.builder.phi(ir.IntType(1))
-                result.add_incoming(ir.Constant(ir.IntType(1), 0), self.builder.block)  # False
-                result.add_incoming(ir.Constant(ir.IntType(1), 1), and_true_block)  # True
+                result.add_incoming(ir.Constant(ir.IntType(1), 0), current_block)
+                result.add_incoming(and_true_block_rhs_val, and_true_block)
 
-            elif op == '||':
-                # Create blocks for short-circuiting
-                or_false_block = self.function.append_basic_block(name="or_false")
-                or_end_block = self.function.append_basic_block(name="or_end")
-
-                # Check LHS
-                self.builder.cbranch(lhs_val, or_end_block, or_false_block)
-
-                # In the false block, check RHS
-                self.builder.position_at_end(or_false_block)
-                self.builder.cbranch(rhs_val, or_end_block, or_end_block)
-
-                # In the end block, create the result
-                self.builder.position_at_end(or_end_block)
-                result = self.builder.phi(ir.IntType(1))
-                result.add_incoming(ir.Constant(ir.IntType(1), 1), self.builder.block)  # True
-                result.add_incoming(ir.Constant(ir.IntType(1), 0), or_false_block)  # False
-
-            else:
-                # Handle other binary operations
-                if op == '+':
-                    result = self.builder.fadd(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.add(lhs_val, rhs_val)
-                elif op == '-':
-                    result = self.builder.fsub(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.sub(lhs_val, rhs_val)
-                elif op == '*':
-                    result = self.builder.fmul(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.mul(lhs_val, rhs_val)
-                elif op == '/':
-                    result = self.builder.fdiv(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.sdiv(lhs_val, rhs_val)
-                elif op == '>':
-                    result = self.builder.fcmp_ordered('>', lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.icmp_signed('>', lhs_val, rhs_val)
-                elif op == '==':
-                    result = self.builder.fcmp_ordered('==', lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.icmp_signed('==', lhs_val, rhs_val)
-                elif op == '>=':
-                    result = self.builder.fcmp_ordered('>=', lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.icmp_signed('>=', lhs_val, rhs_val)
-                elif op == '<':
-                    result = self.builder.fcmp_ordered('<', lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.icmp_signed('<', lhs_val, rhs_val)
-                elif op == '<=':
-                    result = self.builder.fcmp_ordered('<=', lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.icmp_signed('<=', lhs_val, rhs_val)
-                elif op == '!=':
-                    result = self.builder.fcmp_ordered('!=', lhs_val, rhs_val) if isinstance(lhs_val.type, ir.FloatType) else self.builder.icmp_signed('!=', lhs_val, rhs_val)
-                else:
-                    raise ValueError(f"Unsupported binary op: {op}")
-
-            # Store the result in the destination variable if needed
-            if dest not in self.var_table:
-                # Create a temporary variable for the result
-                if isinstance(result.type, ir.IntType) and result.type.width == 1:
-                    # Boolean result from comparison
-                    result_ptr = self.builder.alloca(ir.IntType(1), name=dest)
-                elif isinstance(result.type, ir.IntType):
-                    result_ptr = self.builder.alloca(ir.IntType(32), name=dest)
-                elif isinstance(result.type, ir.FloatType):
-                    result_ptr = self.builder.alloca(ir.FloatType(), name=dest)
-                else:
+                # Store the result in the destination variable
+                if dest not in self.var_table:
                     result_ptr = self.builder.alloca(result.type, name=dest)
-                
-                self.var_table[dest] = result_ptr
+                    self.var_table[dest] = result_ptr
+                else:
+                    result_ptr = self.var_table[dest]
+
                 self.builder.store(result, result_ptr)
+
             else:
-                # Store directly in existing variable
-                result_ptr = self.var_table[dest]
-                if isinstance(result.type, ir.IntType) and result.type.width == 1 and isinstance(result_ptr.type.pointee, ir.IntType) and result_ptr.type.pointee.width > 1:
-                    # Convert boolean to int if needed
-                    result = self.builder.zext(result, result_ptr.type.pointee)
-                elif isinstance(result.type, ir.IntType) and isinstance(result_ptr.type.pointee, ir.FloatType):
-                    # Convert int to float if needed
-                    result = self.builder.sitofp(result, ir.FloatType())
-                
+                if op in ['>', '<', '>=', '<=', '==', '!=']:
+                    if isinstance(lhs_val.type, ir.FloatType):  # Float comparisons
+                        if op == '>':
+                            result = self.builder.fcmp_ordered('>', lhs_val, rhs_val)
+                        elif op == '<':
+                            result = self.builder.fcmp_ordered('<', lhs_val, rhs_val)
+                        elif op == '>=':
+                            result = self.builder.fcmp_ordered('>=', lhs_val, rhs_val)
+                        elif op == '<=':
+                            result = self.builder.fcmp_ordered('<=', lhs_val, rhs_val)
+                        elif op == '==':
+                            result = self.builder.fcmp_ordered('==', lhs_val, rhs_val)
+                        elif op == '!=':
+                            result = self.builder.fcmp_ordered('!=', lhs_val, rhs_val)
+                    elif isinstance(lhs_val.type, ir.IntType):  # Integer comparisons
+                        if op == '>':
+                            result = self.builder.icmp_signed('>', lhs_val, rhs_val)
+                        elif op == '<':
+                            result = self.builder.icmp_signed('<', lhs_val, rhs_val)
+                        elif op == '>=':
+                            result = self.builder.icmp_signed('>=', lhs_val, rhs_val)
+                        elif op == '<=':
+                            result = self.builder.icmp_signed('<=', lhs_val, rhs_val)
+                        elif op == '==':
+                            result = self.builder.icmp_signed('==', lhs_val, rhs_val)
+                        elif op == '!=':
+                            result = self.builder.icmp_signed('!=', lhs_val, rhs_val)
+                    else:
+                        raise ValueError(f"Unsupported comparison types: {lhs_val.type} and {rhs_val.type}")
+                else:
+                    # Handle other binary operations (e.g., +, -, *, /, etc.)
+                    if op == '+':
+                        result = self.builder.add(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fadd(lhs_val, rhs_val)
+                    elif op == '-':
+                        result = self.builder.sub(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fsub(lhs_val, rhs_val)
+                    elif op == '*':
+                        result = self.builder.mul(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fmul(lhs_val, rhs_val)
+                    elif op == '/':
+                        result = self.builder.sdiv(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fdiv(lhs_val, rhs_val)
+                    else:
+                        raise ValueError(f"Unsupported binary operator: {op}")
+                 # Store the result in the destination variable
+                if dest not in self.var_table:
+                    result_ptr = self.builder.alloca(result.type, name=dest)
+                    self.var_table[dest] = result_ptr
+                else:
+                    result_ptr = self.var_table[dest]
+
                 self.builder.store(result, result_ptr)
-                
-            if self.debug:
-                print(f"Performed binary op: {lhs} {op} {rhs} -> {dest}")
+
         except Exception as e:
-            print(f"Error in binary op {lhs} {op} {rhs} -> {dest}: {e}")
+            print(f"Error in binary_op {lhs} {op} {rhs} -> {dest}: {e}")
             traceback.print_exc()
             raise
+
 
     def system_input(self, var_name, data_type):
         """Generate LLVM IR for the input system function."""
@@ -440,37 +455,32 @@ class IRToLLVMConverter:
     def system_exit(self):
         """Generate LLVM IR for the exit system function."""
         try:
-            self.builder.call(self.exit_func, [])
-            if self.debug:
-                print("Generated exit call")
+            if not self.builder.block.is_terminated:
+                self.builder.call(self.exit_func, [])
+                self.builder.ret(ir.Constant(ir.IntType(32), 0))
+                if self.debug:
+                    print("Generated exit call")
         except Exception as e:
             print(f"Error in system_exit: {e}")
             traceback.print_exc()
             raise
 
-    def handle_label(self, label_name):
-        """Handle a label in the IR."""
+    def handle_label(self, label_name, branch=False):
         try:
-            # If the label already exists, just branch to it
-            if label_name in self.labels:
-                if not self.builder.block.is_terminated:
-                    self.builder.branch(self.labels[label_name])
-                    if self.debug:
-                        print(f"Branched to existing label: {label_name}")
-            else:
-                # Create a new basic block for this label
+            # Create the label block if not already created
+            if label_name not in self.labels:
                 self.labels[label_name] = self.function.append_basic_block(name=label_name)
-                if not self.builder.block.is_terminated:
-                    self.builder.branch(self.labels[label_name])
-                    if self.debug:
-                        print(f"Created and branched to new label: {label_name}")
-            
-            # Position the builder at the end of the label's block
+
+            if branch and not self.builder.block.is_terminated:
+                self.builder.branch(self.labels[label_name])
+                if self.debug:
+                    print(f"Branching to label: {label_name}")
+
+            # Only position to label block — don't insert a branch unless requested
             self.builder.position_at_end(self.labels[label_name])
 
-            # Ensure the block is not empty by adding a placeholder instruction
-            if not self.builder.block.is_terminated:
-                self.builder.unreachable()  # Add an unreachable instruction as a placeholder
+            if self.debug:
+                print(f"Positioned at label: {label_name}")
         except Exception as e:
             print(f"Error handling label {label_name}: {e}")
             traceback.print_exc()
@@ -482,22 +492,26 @@ class IRToLLVMConverter:
             # Load the condition value
             cond_val = self._load_val(condition)
             
-            # Get or create the false block
+            # Get or create the false block (label)
             if label_name not in self.labels:
                 self.labels[label_name] = self.function.append_basic_block(name=label_name)
             false_block = self.labels[label_name]
             
             # Create the next block for the true branch
-            next_block = self.function.append_basic_block(name="next")
-            
-            # Add the conditional branch if the current block is not terminated
+            next_block = self.function.append_basic_block(name="if_true")
+            # Add the conditional branch
             if not self.builder.block.is_terminated:
+                # Note: since we're doing IF_FALSE, the condition is negated
+                # If condition is true, we go to next_block, otherwise to false_block
                 self.builder.cbranch(cond_val, next_block, false_block)
                 if self.debug:
                     print(f"Added conditional branch for condition {condition} to label {label_name}")
             
-            # Position the builder at the end of the next block
+            # Position the builder at the start of the next block
             self.builder.position_at_end(next_block)
+            
+            # We don't add unreachable here - leave the block open for following instructions
+            
         except Exception as e:
             print(f"Error in if_false for condition {condition} to label {label_name}: {e}")
             traceback.print_exc()
@@ -511,7 +525,7 @@ class IRToLLVMConverter:
                 return self.builder.load(self.var_table[name], name=name)
             
             # Handle integer literals
-            if name.isdigit():
+            if name.isdigit() or (name[0] == '-' and name[1:].isdigit()):
                 return ir.Constant(ir.IntType(32), int(name))
             
             # Handle float literals
@@ -605,11 +619,12 @@ class IRToLLVMConverter:
                         print("START_PROGRAM - no action needed")
                     continue  # No action needed for START_PROGRAM
                 elif op == 'END_PROGRAM':
-                    if len(instr) != 1:
-                        raise ValueError(f"Invalid END_PROGRAM instruction at index {i}: {instr}")
-                    self.system_exit()
+                    # Only add exit/ret if this block hasn't already terminated
+                    if not self.builder.block.is_terminated:
+                        self.system_exit()
                     if self.debug:
                         print("Generated end program")
+
                 elif op == 'DECLARE':
                     if len(instr) != 3:
                         raise ValueError(f"Invalid DECLARE instruction at index {i}: {instr}")
@@ -692,7 +707,7 @@ class IRToLLVMConverter:
                     if len(instr) != 2:
                         raise ValueError(f"Invalid LABEL instruction at index {i}: {instr}")
                     _, label_name = instr
-                    self.handle_label(label_name)
+                    self.handle_label(label_name, branch=False)
                 elif op == 'IF_FALSE':
                     if len(instr) != 3:
                         raise ValueError(f"Invalid IF_FALSE instruction at index {i}: {instr}")
@@ -702,7 +717,7 @@ class IRToLLVMConverter:
                     if len(instr) != 2:
                         raise ValueError(f"Invalid GOTO instruction at index {i}: {instr}")
                     _, label_name = instr
-                    self.handle_label(label_name)
+                    self.handle_label(label_name, branch=True)
                 else:
                     raise ValueError(f"Unsupported instruction: {op} at index {i}")
                     

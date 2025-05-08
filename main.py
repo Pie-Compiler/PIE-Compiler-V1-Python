@@ -2,6 +2,21 @@ from parser import Parser, print_ast
 from semanticAnalysis import SemanticAnalyzer
 from ir_generator import IRGenerator
 from llvmConverter import IRToLLVMConverter
+import subprocess
+def build_and_link():
+    try:
+        # Compile the runtime functions to an object file
+        subprocess.run(["clang", "-c", "runtime.c", "-o", "runtime.o"], check=True)
+        # Convert LLVM IR to bitcode
+        subprocess.run(["llvm-as", "output.ll", "-o", "output.bc"], check=True)
+        # Generate native object file from bitcode
+        subprocess.run(["llc", "-filetype=obj", "output.bc", "-o", "output.o"], check=True)
+        # Link everything together to create the executable
+        subprocess.run(["clang", "output.o", "runtime.o", "-o", "program"], check=True)
+        print("Build and linking successful! Executable: ./program")
+    except subprocess:
+        print("Error during build and linking process.")
+        raise
 def main():
     # Create an instance of our parser
     parser = Parser()
@@ -54,11 +69,12 @@ def main():
             # print("\nLLVM Code:")
             # print(llvm_code)
             # #save the LLVM code to a file
-            # with open("output.ll", "w") as llvm_file:
-            #     for instruction in llvm_code:
-            #         llvm_file.write(f"{instruction}\n")
+            with open("output.ll", "w") as llvm_file:
+                llvm_file.write(LLVMCODE)
             # for instruction in llvm_code:
             #     print(f"  {instruction}")
+            # Build and link the program
+            build_and_link()
 
         else:
             print("\nProgram contains semantic errors!")

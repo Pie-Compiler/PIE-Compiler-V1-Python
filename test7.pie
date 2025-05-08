@@ -1,0 +1,7 @@
+//A program to enter two numbers
+int num1;
+int num2;
+input(num1,int);
+input(num2,int);
+int sum=num1+num2;
+output(sum,int);
