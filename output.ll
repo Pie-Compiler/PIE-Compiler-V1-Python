@@ -7,8 +7,8 @@ define i32 @"main"()
 entry:
   %"n_0" = alloca i32
   store i32 0, i32* %"n_0"
-  %"total_0" = alloca i32
-  store i32 0, i32* %"total_0"
+  %"total_0" = alloca float
+  store float              0x0, float* %"total_0"
   %"i_0" = alloca i32
   store i32 0, i32* %"i_0"
   %"avg_0" = alloca float
@@ -599,7 +599,7 @@ entry:
   %".586" = bitcast [256 x i8]* %"prompt_0" to i8*
   call void @"output_string"(i8* %".586")
   call void @"input_int"(i32* %"n_0")
-  store i32 0, i32* %"total_0"
+  store float              0x0, float* %"total_0"
   store i32 0, i32* %"i_0"
   br label %"L0"
 L0:
@@ -612,9 +612,9 @@ L0:
   br i1 %"t0.1", label %"if_true", label %"L2"
 L2:
   %"n_0.2" = load i32, i32* %"n_0"
-  %".645" = icmp eq i32 %"n_0.2", 0
+  %".646" = icmp eq i32 %"n_0.2", 0
   %"t3" = alloca i1
-  store i1 %".645", i1* %"t3"
+  store i1 %".646", i1* %"t3"
   %"t3.1" = load i1, i1* %"t3"
   br i1 %"t3.1", label %"if_true.1", label %"L3"
 if_true:
@@ -659,21 +659,22 @@ if_true:
   %".632" = bitcast [256 x i8]* %"prompt_0" to i8*
   call void @"output_string"(i8* %".632")
   call void @"input_int"(i32* %"score_1")
-  %"total_0.1" = load i32, i32* %"total_0"
+  %"total_0.1" = load float, float* %"total_0"
   %"score_1.1" = load i32, i32* %"score_1"
-  %".635" = add i32 %"total_0.1", %"score_1.1"
-  %"t1" = alloca i32
-  store i32 %".635", i32* %"t1"
-  %".637" = load i32, i32* %"t1"
-  store i32 %".637", i32* %"total_0"
+  %".635" = sitofp i32 %"score_1.1" to float
+  %".636" = fadd float %"total_0.1", %".635"
+  %"t1" = alloca float
+  store float %".636", float* %"t1"
+  %".638" = load float, float* %"t1"
+  store float %".638", float* %"total_0"
   br label %"L1"
 L1:
   %"i_0.2" = load i32, i32* %"i_0"
-  %".640" = add i32 %"i_0.2", 1
+  %".641" = add i32 %"i_0.2", 1
   %"t2" = alloca i32
-  store i32 %".640", i32* %"t2"
-  %".642" = load i32, i32* %"t2"
-  store i32 %".642", i32* %"i_0"
+  store i32 %".641", i32* %"t2"
+  %".643" = load i32, i32* %"t2"
+  store i32 %".643", i32* %"i_0"
   br label %"L0"
 L3:
   store i1 1, i1* %"valid_0"
@@ -683,92 +684,92 @@ if_true.1:
   br label %"L4"
 L4:
   %"valid_0.1" = load i1, i1* %"valid_0"
-  %".652" = icmp eq i1 %"valid_0.1", 1
+  %".653" = icmp eq i1 %"valid_0.1", 1
   %"t4" = alloca i1
-  store i1 %".652", i1* %"t4"
+  store i1 %".653", i1* %"t4"
   %"t4.1" = load i1, i1* %"t4"
   br i1 %"t4.1", label %"if_true.2", label %"L5"
 L5:
   store float              0x0, float* %"avg_0"
   br label %"L6"
 if_true.2:
-  %"total_0.2" = load i32, i32* %"total_0"
+  %"total_0.2" = load float, float* %"total_0"
   %"n_0.3" = load i32, i32* %"n_0"
-  %".655" = sdiv i32 %"total_0.2", %"n_0.3"
-  %"t5" = alloca i32
-  store i32 %".655", i32* %"t5"
-  %".657" = load i32, i32* %"t5"
-  %".658" = sitofp i32 %".657" to float
-  store float %".658", float* %"avg_0"
+  %".656" = sitofp i32 %"n_0.3" to float
+  %".657" = fdiv float %"total_0.2", %".656"
+  %"t5" = alloca float
+  store float %".657", float* %"t5"
+  %".659" = load float, float* %"t5"
+  store float %".659", float* %"avg_0"
   br label %"L6"
 L6:
   %"avg_0.1" = load float, float* %"avg_0"
-  %".663" = fcmp oge float %"avg_0.1", 0x4056800000000000
+  %".664" = fcmp oge float %"avg_0.1", 0x4056800000000000
   %"t6" = alloca i1
-  store i1 %".663", i1* %"t6"
+  store i1 %".664", i1* %"t6"
   %"t6.1" = load i1, i1* %"t6"
   br i1 %"t6.1", label %"if_true.3", label %"L7"
 L7:
   %"avg_0.2" = load float, float* %"avg_0"
-  %".668" = fcmp oge float %"avg_0.2", 0x4054000000000000
+  %".669" = fcmp oge float %"avg_0.2", 0x4054000000000000
   %"t7" = alloca i1
-  store i1 %".668", i1* %"t7"
+  store i1 %".669", i1* %"t7"
   %"t7.1" = load i1, i1* %"t7"
   br i1 %"t7.1", label %"if_true.4", label %"L9"
 if_true.3:
   store i8 65, i8* %"grade_0"
   br label %"L8"
 L8:
-  %".688" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 0
-  store i8 65, i8* %".688"
-  %".690" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 1
-  store i8 118, i8* %".690"
-  %".692" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 2
-  store i8 101, i8* %".692"
-  %".694" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 3
-  store i8 114, i8* %".694"
-  %".696" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 4
-  store i8 97, i8* %".696"
-  %".698" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 5
-  store i8 103, i8* %".698"
-  %".700" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 6
-  store i8 101, i8* %".700"
-  %".702" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 7
-  store i8 32, i8* %".702"
-  %".704" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 8
-  store i8 83, i8* %".704"
-  %".706" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 9
-  store i8 99, i8* %".706"
-  %".708" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 10
-  store i8 111, i8* %".708"
-  %".710" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 11
-  store i8 114, i8* %".710"
-  %".712" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 12
-  store i8 101, i8* %".712"
-  %".714" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 13
-  store i8 58, i8* %".714"
-  %".716" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 14
-  store i8 0, i8* %".716"
-  %".718" = bitcast [256 x i8]* %"prompt_0" to i8*
-  call void @"output_string"(i8* %".718")
+  %".689" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 0
+  store i8 65, i8* %".689"
+  %".691" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 1
+  store i8 118, i8* %".691"
+  %".693" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 2
+  store i8 101, i8* %".693"
+  %".695" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 3
+  store i8 114, i8* %".695"
+  %".697" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 4
+  store i8 97, i8* %".697"
+  %".699" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 5
+  store i8 103, i8* %".699"
+  %".701" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 6
+  store i8 101, i8* %".701"
+  %".703" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 7
+  store i8 32, i8* %".703"
+  %".705" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 8
+  store i8 83, i8* %".705"
+  %".707" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 9
+  store i8 99, i8* %".707"
+  %".709" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 10
+  store i8 111, i8* %".709"
+  %".711" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 11
+  store i8 114, i8* %".711"
+  %".713" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 12
+  store i8 101, i8* %".713"
+  %".715" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 13
+  store i8 58, i8* %".715"
+  %".717" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 14
+  store i8 0, i8* %".717"
+  %".719" = bitcast [256 x i8]* %"prompt_0" to i8*
+  call void @"output_string"(i8* %".719")
   %"avg_0.5" = load float, float* %"avg_0"
   call void @"output_float"(float %"avg_0.5")
-  %".721" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 0
-  store i8 71, i8* %".721"
-  %".723" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 1
-  store i8 114, i8* %".723"
-  %".725" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 2
-  store i8 97, i8* %".725"
-  %".727" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 3
-  store i8 100, i8* %".727"
-  %".729" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 4
-  store i8 101, i8* %".729"
-  %".731" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 5
-  store i8 58, i8* %".731"
-  %".733" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 6
-  store i8 0, i8* %".733"
-  %".735" = bitcast [256 x i8]* %"prompt_0" to i8*
-  call void @"output_string"(i8* %".735")
+  %".722" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 0
+  store i8 71, i8* %".722"
+  %".724" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 1
+  store i8 114, i8* %".724"
+  %".726" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 2
+  store i8 97, i8* %".726"
+  %".728" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 3
+  store i8 100, i8* %".728"
+  %".730" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 4
+  store i8 101, i8* %".730"
+  %".732" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 5
+  store i8 58, i8* %".732"
+  %".734" = getelementptr [256 x i8], [256 x i8]* %"prompt_0", i32 0, i32 6
+  store i8 0, i8* %".734"
+  %".736" = bitcast [256 x i8]* %"prompt_0" to i8*
+  call void @"output_string"(i8* %".736")
   %"grade_0.1" = load i8, i8* %"grade_0"
   call void @"output_char"(i8 %"grade_0.1")
   %"d_0" = alloca i32
@@ -778,21 +779,21 @@ L8:
   store i32 0, i32* %"f_0"
   store i32 10, i32* %"f_0"
   %"d_0.1" = load i32, i32* %"d_0"
-  %".742" = icmp sgt i32 %"d_0.1", 3
+  %".743" = icmp sgt i32 %"d_0.1", 3
   %"t10" = alloca i1
-  store i1 %".742", i1* %"t10"
+  store i1 %".743", i1* %"t10"
   %"f_0.1" = load i32, i32* %"f_0"
-  %".744" = icmp sgt i32 %"f_0.1", 3
+  %".745" = icmp sgt i32 %"f_0.1", 3
   %"t11" = alloca i1
-  store i1 %".744", i1* %"t11"
+  store i1 %".745", i1* %"t11"
   %"t10.1" = load i1, i1* %"t10"
   %"t11.1" = load i1, i1* %"t11"
   br i1 %"t10.1", label %"and_true", label %"and_end"
 L9:
   %"avg_0.3" = load float, float* %"avg_0"
-  %".673" = fcmp oge float %"avg_0.3", 0x4051800000000000
+  %".674" = fcmp oge float %"avg_0.3", 0x4051800000000000
   %"t8" = alloca i1
-  store i1 %".673", i1* %"t8"
+  store i1 %".674", i1* %"t8"
   %"t8.1" = load i1, i1* %"t8"
   br i1 %"t8.1", label %"if_true.5", label %"L11"
 if_true.4:
@@ -802,9 +803,9 @@ L10:
   br label %"L8"
 L11:
   %"avg_0.4" = load float, float* %"avg_0"
-  %".678" = fcmp oge float %"avg_0.4", 0x404e000000000000
+  %".679" = fcmp oge float %"avg_0.4", 0x404e000000000000
   %"t9" = alloca i1
-  store i1 %".678", i1* %"t9"
+  store i1 %".679", i1* %"t9"
   %"t9.1" = load i1, i1* %"t9"
   br i1 %"t9.1", label %"if_true.6", label %"L13"
 if_true.5:
@@ -824,9 +825,9 @@ and_true:
   %"t11.2" = load i1, i1* %"t11"
   br label %"and_end"
 and_end:
-  %".748" = phi  i1 [0, %"L8"], [%"t11.2", %"and_true"]
+  %".749" = phi  i1 [0, %"L8"], [%"t11.2", %"and_true"]
   %"t12" = alloca i1
-  store i1 %".748", i1* %"t12"
+  store i1 %".749", i1* %"t12"
   %"t12.1" = load i1, i1* %"t12"
   br i1 %"t12.1", label %"if_true.7", label %"L16"
 L16:

@@ -265,7 +265,7 @@ class Parser:
             p[0] = [p[1]]
         else:
             p[0] = p[1] + [p[3]]
-    
+
     def p_block_statement(self, p):
         '''block_statement : LBRACE RBRACE
                           | LBRACE statement_list RBRACE'''

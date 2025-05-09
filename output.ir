@@ -1,6 +1,6 @@
 ('START_PROGRAM',)
 ('DECLARE', 'int', 'n_0')
-('DECLARE', 'int', 'total_0')
+('DECLARE', 'float', 'total_0')
 ('DECLARE', 'int', 'i_0')
 ('DECLARE', 'float', 'avg_0')
 ('DECLARE', 'string', 'prompt_0')

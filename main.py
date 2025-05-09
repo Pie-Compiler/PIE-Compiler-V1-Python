@@ -22,6 +22,8 @@ def main():
     parser = Parser()
     
     # Example program
+    # test_program_file="test2.pie"
+    #make sure that it is a .pie file
     with open("test2.pie", "r") as file: 
         input_program = file.read()
 
@@ -31,7 +33,6 @@ def main():
         print("Parsing successful!")
         print("AST:")
         print_ast(ast)  # Use prettier printing
-        
         # Perform semantic analysis
         analyzer = SemanticAnalyzer(parser.symbol_table)
         is_valid = analyzer.analyze(ast)
