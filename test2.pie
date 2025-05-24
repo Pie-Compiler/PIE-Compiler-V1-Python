@@ -1,5 +1,5 @@
     int n;// number of test scores 
-    int total;      // sum of scores 
+    float total;      // sum of scores 
     int i;          // loop counter 
     float avg;      // average score (4 decimal places) 
     string prompt;  // message to display 
@@ -9,7 +9,7 @@
     // Prompt for number of scores 
     prompt = "Enter the number of test scores:"; 
     output(prompt, string); 
-    input(t, int); 
+    input(n, int); 
     total = 0; 
     // Loop to read each test score and accumulate the total 
     for (i = 0; i < n; i = i + 1) { 
@@ -35,7 +35,7 @@
     } 
  
     // Determine grade based on average using nested if-else 
-    if (avg >= 90.0) { 
+    if ((avg >= 90.0)) { 
         grade = 'A'; 
     } else { 
         if (avg >= 80.0) { 
@@ -60,5 +60,9 @@ output(avg, float);
 prompt = "Grade:"; 
 output(prompt, string); 
 output(grade, char); 
-// End of program 
-return 0; 
+
+int d=5;
+int f=10;
+if(d>3 && f>3){
+    d=10;
+}

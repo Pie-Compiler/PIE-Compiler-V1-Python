@@ -1,14 +1,30 @@
-from parser import Parser,print_ast
-# Add import for semantic analyzer
+from parser import Parser, print_ast
 from semanticAnalysis import SemanticAnalyzer
-
-# Update the main function
+from ir_generator import IRGenerator
+from llvmConverter import IRToLLVMConverter
+import subprocess
+def build_and_link():
+    try:
+        # Compile the runtime functions to an object file
+        subprocess.run(["clang", "-c", "runtime.c", "-o", "runtime.o"], check=True)
+        # Convert LLVM IR to bitcode
+        subprocess.run(["llvm-as", "output.ll", "-o", "output.bc"], check=True)
+        # Generate native object file from bitcode
+        subprocess.run(["llc", "-filetype=obj", "output.bc", "-o", "output.o"], check=True)
+        # Link everything together to create the executable
+        subprocess.run(["clang", "output.o", "runtime.o", "-o", "program"], check=True)
+        print("Build and linking successful! Executable: ./program")
+    except subprocess:
+        print("Error during build and linking process.")
+        raise
 def main():
     # Create an instance of our parser
     parser = Parser()
     
     # Example program
-    with open("test4.pie", "r") as file: 
+    # test_program_file="test2.pie"
+    #make sure that it is a .pie file
+    with open("test2.pie", "r") as file: 
         input_program = file.read()
 
     try:
@@ -17,7 +33,6 @@ def main():
         print("Parsing successful!")
         print("AST:")
         print_ast(ast)  # Use prettier printing
-        
         # Perform semantic analysis
         analyzer = SemanticAnalyzer(parser.symbol_table)
         is_valid = analyzer.analyze(ast)
@@ -35,6 +50,33 @@ def main():
         
         if is_valid:
             print("\nProgram is semantically valid!")
+            
+            # Generate intermediate representation
+            ir_gen = IRGenerator()
+            ir_code = ir_gen.generate(ast, parser.symbol_table)
+            
+            print("\nIntermediate Representation (3-Address Code):")
+
+            #save the IR code to a file
+            with open("output.ir", "w") as ir_file:
+                for instruction in ir_code:
+                    ir_file.write(f"{instruction}\n")
+            for instruction in ir_code:
+                print(f"  {instruction}")
+            #Translate the IR code to LLVM
+            llvm_converter = IRToLLVMConverter()
+            llvm_converter.convert_ir(ir_code)
+            LLVMCODE= llvm_converter.finalize()
+            # print("\nLLVM Code:")
+            # print(llvm_code)
+            # #save the LLVM code to a file
+            with open("output.ll", "w") as llvm_file:
+                llvm_file.write(LLVMCODE)
+            # for instruction in llvm_code:
+            #     print(f"  {instruction}")
+            # Build and link the program
+            build_and_link()
+
         else:
             print("\nProgram contains semantic errors!")
         

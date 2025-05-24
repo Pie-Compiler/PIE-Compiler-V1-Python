@@ -1,0 +1,10 @@
+int x;
+int y;
+int z;
+int a;
+float result;
+x=5; y=20; z=15; a=3;
+
+result=x * y + z / a;
+
+output(result,float);

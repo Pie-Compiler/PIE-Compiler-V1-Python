@@ -433,13 +433,16 @@ def main():
     lexer = Lexer(dfa_transitions, dfa_token, start_set) 
     
     # Test with a sample program
-    test_program = """int x=5;
-if(x>5){
-    output("It is greater than 5",string)
-}"""
+#     test_program = """int x=5;
+# if(x>5){
+#     output("It is greater than 5",string)
+# }"""
     
     # try:
-    #     tokens = lexer.tokenize(test_program)
+    #     with open("test11.pie", "r") as file: 
+    #         input_program = file.read()
+
+    #     tokens = lexer.tokenize(input_program)
     #     print("Tokens:")
     #     for token_type, token_text in tokens:
     #         print(f"{token_type:20} : '{token_text}'")
@@ -447,7 +450,7 @@ if(x>5){
     #     print(f"Error: {e}")
     
     # Uncomment to test with file input
-    with open("test2.pie", "r") as file: 
+    with open("test11.pie", "r") as file: 
         input_program = file.read()
     tokens = lexer.tokenize(input_program) 
     print("Tokens:") 
