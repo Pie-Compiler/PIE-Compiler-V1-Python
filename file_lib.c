@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include "d_array.h"
 
 intptr_t file_open(const char* filename, const char* mode) {
