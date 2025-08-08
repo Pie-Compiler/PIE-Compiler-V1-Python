@@ -9,99 +9,134 @@ A compiler for the PIE programming language, supporting parsing, semantic analys
 ├── main.py              # Entry point for the compiler
 ├── parser.py            # Parser for PIE language
 ├── lexer.py             # Custom lexer implementation
-├── lex.py, yacc.py      # PLY-based lexer and parser adapters
 ├── semanticAnalysis.py  # Semantic analysis phase
 ├── ir_generator.py      # Intermediate representation (3-address code) generator
 ├── llvmConverter.py     # Converts IR to LLVM IR
 ├── runtime.c            # Runtime support functions (I/O, etc.)
-├── system.c             # System-level I/O functions (alternative runtime)
+├── math_lib.c           # Math standard library
+├── file_lib.c           # File access standard library
+├── net_lib.c            # Network standard library
 ├── test*.pie            # Sample PIE programs
 ├── output.ir            # Generated IR code
 ├── output.ll            # Generated LLVM IR code
-├── output.bc            # LLVM bitcode
-├── output.o             # Native object file
 ├── program              # Final executable
 └── ...
 ```
 
-## PIE Language Structure
+## Features
 
-PIE is a C-like language with support for:
-- Variable declarations: `int`, `float`, `string`, `char`, `boolean`
-- Assignments and expressions
-- Control flow: `if`, `else`, `while`, `for`
-- System I/O: `input`, `output`, `exit`
-- Comments
+### 1. Basic Language Structure
 
-### Example Program
+PIE is a C-like language. All executable statements must be inside a function. The program execution starts from the `main` function.
 
+- **Data Types**: `int`, `float`, `string`, `char`, `boolean`, `file`, `socket`.
+- **Control Flow**: `if/else`, `for`, `while`, `do...while`.
+- **Comments**: `// single line` and `/* multi-line */`.
+
+### 2. User-Defined Functions
+
+Functions can be defined with type-safe arguments and return types.
+
+**Syntax:**
 ```pie
-int n;
-float total;
-int i;
-float avg;
-string prompt;
-char grade;
-boolean valid;
-
-prompt = "Enter the number of test scores:";
-output(prompt, string);
-input(n, int);
-
-total = 0;
-for (i = 0; i < n; i = i + 1) {
-    output("Enter score:", string);
-    float score;
-    input(score, float);
-    total = total + score;
+<return_type> <function_name>(<parameter_list>) {
+    <function_body>
 }
-
-avg = total / n;
-output("Grade:", string);
-if (avg >= 90) {
-    grade = 'A';
-} else if (avg >= 80) {
-    grade = 'B';
-} else {
-    grade = 'C';
-}
-output(grade, char);
 ```
 
-See the `test*.pie` files for more examples.
+**Example:**
+```pie
+int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    int result;
+    result = add(5, 3);
+    output(result, int); // Outputs: 8
+    return 0;
+}
+```
+
+### 3. Arrays
+
+One-dimensional arrays are supported.
+
+**Syntax:**
+```pie
+// Declaration with size
+<type> <array_name>[<size>];
+
+// Declaration with initializer list (size is inferred)
+<type> <array_name>[] = {<value1>, <value2>, ...};
+```
+
+**Example:**
+```pie
+int main() {
+    int numbers[3];
+    numbers[0] = 10;
+
+    string names[] = {"Alice", "Bob", "Charlie"};
+    output(names[1], string); // Outputs: Bob
+    return 0;
+}
+```
+
+### 4. String Concatenation
+
+Strings can be concatenated using the `+` operator.
+
+**Example:**
+```pie
+int main() {
+    string s1 = "hello";
+    string s2 = " world";
+    string s3 = s1 + s2;
+    output(s3, string); // Outputs: hello world
+    return 0;
+}
+```
+
+### 5. Standard Library
+
+PIE includes a standard library for common operations.
+
+#### System I/O
+- `input(variable, type)`: Reads input from the user.
+- `output(value, type)`: Prints a value to the console.
+- `exit()`: Exits the program.
+
+#### Math Library (`#include <math.h>`)
+- `float sqrt(float x)`
+- `float pow(float base, float exp)`
+- `float sin(float x)`
+- `float cos(float x)`
+
+#### File Access Library (`#include <stdio.h>`)
+- `file file_open(string filename, string mode)`
+- `void file_close(file file_handle)`
+- `void file_write(file file_handle, string content)`
+- `void file_read(file file_handle, string buffer, int size)`
+
+#### Network Library (`#include <sys/socket.h>`)
+- `socket tcp_socket()`
+- `int tcp_connect(socket sockfd, string host, int port)`
+- `int tcp_send(socket sockfd, string data)`
+- `int tcp_recv(socket sockfd, string buffer, int size)`
+- `void tcp_close(socket sockfd)`
+
 
 ## How to Run the Compiler
 
 ### Prerequisites
 
 - Python 3.x
-- [llvmlite](https://github.com/numba/llvmlite) (for LLVM IR generation)
+- [llvmlite](https://github.com/numba/llvmlite)
 - Clang and LLVM tools (`llvm-as`, `llc`)
-- A C compiler (for building the runtime, e.g., `clang`)
 
 ### Steps
 
-1. **Write your PIE program** (e.g., `test13.pie`).
-
-2. **Run the compiler:**
-   ```sh
-   python3 main.py
-   ```
-   By default, it compiles `test13.pie`. You can modify `main.py` to change the input file.
-
-3. **Build and link:**
-   The compiler will:
-   - Parse and analyze your program
-   - Generate IR and LLVM IR (`output.ir`, `output.ll`)
-   - Assemble and link with the runtime to produce the executable `program`
-
-4. **Run your program:**
-   ```sh
-   ./program
-   ```
-
-### Notes
-
-- The runtime is implemented in [`runtime.c`](runtime.c) and must be compiled to `runtime.o`.
-- The build process is automated in [`main.py`](main.py) via the `build_and_link()` function.
-- You can add or modify PIE programs in the `test*.pie` files.
+1. **Write your PIE program** (e.g., `test.pie`).
+2. **Run the compiler:** `python3 main.py`
+3. **Run your program:** `./program`
