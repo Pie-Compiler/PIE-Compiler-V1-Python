@@ -113,7 +113,7 @@ def nfa_to_dfa(nfa_start):
     for state in start_set:
         if state.is_accepting:
             # Prioritize keywords over identifiers
-            if start_dfa not in dfa_token or state.token_type.startswith("KEYWORD"):
+            if start_dfa not in dfa_token or state.token_type.startswith("KEYWORD") or state.token_type.startswith("SYSTEM"):
                 dfa_token[start_dfa] = state.token_type
 
     while unmarked_states:
@@ -131,7 +131,7 @@ def nfa_to_dfa(nfa_start):
                 for state in next_dfa:
                     if state.is_accepting:
                         # Prioritize keywords over identifiers
-                        if next_dfa not in dfa_token or state.token_type.startswith("KEYWORD"):
+                        if next_dfa not in dfa_token or state.token_type.startswith("KEYWORD") or state.token_type.startswith("SYSTEM"):
                             dfa_token[next_dfa] = state.token_type
     return dfa_transitions, dfa_token
 # ---------------------------- 
@@ -233,6 +233,7 @@ def build_master_nfa():
 
     # Keywords (Add this after identifiers)
     keywords = {
+        "do": "KEYWORD_DO",
         "if": "KEYWORD_IF",
         "else": "KEYWORD_ELSE",
         "for": "KEYWORD_FOR",
@@ -243,6 +244,8 @@ def build_master_nfa():
         "exit": "KEYWORD_EXIT",
         "int": "KEYWORD_INT",
         "float": "KEYWORD_FLOAT",
+        "file": "KEYWORD_FILE",
+        "socket": "KEYWORD_SOCKET",
         "char": "KEYWORD_CHAR",
         "void": "KEYWORD_VOID",
         "null": "KEYWORD_NULL",

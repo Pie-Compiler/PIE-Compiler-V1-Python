@@ -9,9 +9,9 @@ class Parser:
     def __init__(self):
         self.tokens = [
             'IDENTIFIER', 'INT_LITERAL', 'FLOAT_LITERAL', 'STRING_LITERAL', 'CHAR_LITERAL',  # Added CHAR_LITERAL
-            'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE',
+            'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE', 'KEYWORD_DO',
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE',
-            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID',
+            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET',
             'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 
             'KEYWORD_NULL', 'KEYWORD_EXIT',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
@@ -34,9 +34,60 @@ class Parser:
         )
         
         self.symbol_table = SymbolTable()
+        self.prepopulate_symbol_table()
         self.lexer_instance = None
         self.parser = yacc.yacc(module=self)
         
+    def prepopulate_symbol_table(self):
+        math_functions = {
+            "sqrt": {"return_type": "float", "params": [("float", "x")]},
+            "pow": {"return_type": "float", "params": [("float", "base"), ("float", "exp")]},
+            "sin": {"return_type": "float", "params": [("float", "x")]},
+            "cos": {"return_type": "float", "params": [("float", "x")]},
+        }
+        for name, info in math_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
+        net_functions = {
+            "tcp_socket": {"return_type": "socket", "params": []},
+            "tcp_connect": {"return_type": "int", "params": [("socket", "sockfd"), ("string", "host"), ("int", "port")]},
+            "tcp_send": {"return_type": "int", "params": [("socket", "sockfd"), ("string", "data")]},
+            "tcp_recv": {"return_type": "int", "params": [("socket", "sockfd"), ("string", "buffer"), ("int", "size")]},
+            "tcp_close": {"return_type": "void", "params": [("socket", "sockfd")]},
+        }
+        for name, info in net_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
+        file_functions = {
+            "file_open": {"return_type": "file", "params": [("string", "filename"), ("string", "mode")]},
+            "file_close": {"return_type": "void", "params": [("file", "file_handle")]},
+            "file_write": {"return_type": "void", "params": [("file", "file_handle"), ("string", "content")]},
+            "file_read": {"return_type": "void", "params": [("file", "file_handle"), ("string", "buffer"), ("int", "size")]},
+        }
+        for name, info in file_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
     def setup_lexer(self):
         """Create and configure the lexer instance."""
         nfa_start = build_master_nfa()
@@ -107,8 +158,49 @@ class Parser:
     # Grammar rules defined below
     
     def p_program(self, p):
-        '''program : statement_list'''
+        '''program : external_declaration_list'''
         p[0] = ('program', p[1])
+
+    def p_external_declaration_list(self, p):
+        '''external_declaration_list : external_declaration
+                                     | external_declaration_list external_declaration'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[2]]
+
+    def p_external_declaration(self, p):
+        '''external_declaration : declaration_statement
+                                | function_definition'''
+        p[0] = p[1]
+
+    def p_function_definition(self, p):
+        '''function_definition : type_specifier IDENTIFIER LPAREN params RPAREN block_statement'''
+        function_name = p[2]
+        return_type = p[1]
+        params = p[4]
+        body = p[6]
+        p[0] = ('function_definition', return_type, function_name, params, body)
+
+    def p_params(self, p):
+        '''params : param_list
+                  | empty'''
+        if p[1] is None:
+            p[0] = []
+        else:
+            p[0] = p[1]
+
+    def p_param_list(self, p):
+        '''param_list : param
+                      | param_list COMMA param'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[3]]
+
+    def p_param(self, p):
+        '''param : type_specifier IDENTIFIER'''
+        p[0] = (p[1], p[2])
     
     def p_statement_list(self, p):
         '''statement_list : statement
@@ -123,23 +215,30 @@ class Parser:
                     | assignment_statement
                     | if_statement
                     | while_statement
+                    | do_while_statement
                     | for_statement
                     | return_statement
                     | function_call_statement
                     | block_statement'''
         p[0] = p[1]
+
+    def p_do_while_statement(self, p):
+        '''do_while_statement : KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON'''
+        p[0] = ('do_while', p[2], p[5])
     
     def p_declaration_statement(self, p):
         '''declaration_statement : type_specifier IDENTIFIER SEMICOLON
-                                | type_specifier IDENTIFIER ASSIGN expression SEMICOLON'''
-        if len(p) == 4:
-            # Add to symbol table - uninitialized
-            self.symbol_table.add_symbol(p[2], p[1], is_initialized=False)
+                                | type_specifier IDENTIFIER ASSIGN expression SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON'''
+        if len(p) == 4: # type ID ;
             p[0] = ('declaration', p[1], p[2], None)
-        else:
-            # Add to symbol table - initialized
-            self.symbol_table.add_symbol(p[2], p[1], is_initialized=True)
+        elif len(p) == 6 and p[3] == '=': # type ID = expr ;
             p[0] = ('declaration', p[1], p[2], p[4])
+        elif len(p) == 7: # type ID [ expr ] ;
+            p[0] = ('array_declaration', p[1], p[2], p[4], None)
+        elif len(p) == 8: # type ID [ ] = init_list ;
+            p[0] = ('array_declaration', p[1], p[2], None, p[6])
     
     def p_type_specifier(self, p):
         '''type_specifier : KEYWORD_INT
@@ -147,27 +246,22 @@ class Parser:
                          | KEYWORD_CHAR
                          | KEYWORD_VOID
                          | KEYWORD_STRING
-                         | KEYWORD_BOOL'''
+                         | KEYWORD_BOOL
+                         | KEYWORD_FILE
+                         | KEYWORD_SOCKET'''
         p[0] = p[1]
     
     def p_assignment_statement(self, p):
-        '''assignment_statement : IDENTIFIER ASSIGN expression SEMICOLON'''
-        # Check if identifier exists in symbol table
-        symbol = self.symbol_table.lookup_symbol(p[1])
-        if not symbol:
-            print(f"Error: Variable '{p[1]}' used before declaration")
-        else:
-            self.symbol_table.update_symbol(p[1], initialized=True)
+        '''assignment_statement : left_hand_side ASSIGN expression SEMICOLON'''
         p[0] = ('assignment', p[1], p[3])
     
+    def p_left_hand_side(self, p):
+        '''left_hand_side : IDENTIFIER
+                         | array_access'''
+        p[0] = p[1]
+
     def p_assignment_statement_no_semi(self, p):
-        '''assignment_statement_no_semi : IDENTIFIER ASSIGN expression'''
-        # Check if identifier exists in symbol table
-        symbol = self.symbol_table.lookup_symbol(p[1])
-        if not symbol:
-            print(f"Error: Variable '{p[1]}' used before declaration")
-        else:
-            self.symbol_table.update_symbol(p[1], initialized=True)
+        '''assignment_statement_no_semi : left_hand_side ASSIGN expression'''
         p[0] = ('assignment', p[1], p[3])
     
     def p_if_statement(self, p):
@@ -233,30 +327,21 @@ class Parser:
                         | IDENTIFIER LPAREN RPAREN
                         | SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
-                        | KEYWORD_EXIT LPAREN RPAREN
-                        | IDENTIFIER LPAREN expression COMMA type_specifier RPAREN'''
-        if p[1] == 'input' or p.slice[1].type == 'SYSTEM_INPUT':
-            # input(variable, type)
+                        | KEYWORD_EXIT LPAREN RPAREN'''
+
+        slice_type = p.slice[1].type
+
+        if slice_type == 'SYSTEM_INPUT':
             p[0] = ('system_input', p[3], p[5])
-        elif p[1] == 'output' or p.slice[1].type == 'SYSTEM_OUTPUT':
-            # output(expression, type)
+        elif slice_type == 'SYSTEM_OUTPUT':
             p[0] = ('system_output', p[3], p[5])
-        elif p[1] == 'exit' or p.slice[1].type == 'KEYWORD_EXIT':
-            # exit()
+        elif slice_type == 'KEYWORD_EXIT':
             p[0] = ('system_exit',)
-        elif len(p) == 6:
-            # This handles both system function patterns
-            if p[1] in ['input', 'output']:
-                p[0] = ('system_' + p[1], p[3], p[5])
-            else:
-                # Other functions with expression, type syntax
-                p[0] = ('function_call', p[1], [p[3], p[5]])
-        elif len(p) == 4:
-            # Regular function with no args
-            p[0] = ('function_call', p[1], [])
-        else:
-            # Regular function with args
-            p[0] = ('function_call', p[1], p[3])
+        elif slice_type == 'IDENTIFIER':
+            if len(p) == 4: # IDENTIFIER LPAREN RPAREN
+                p[0] = ('function_call', p[1], [])
+            else: # IDENTIFIER LPAREN argument_list RPAREN
+                p[0] = ('function_call', p[1], p[3])
     
     def p_argument_list(self, p):
         '''argument_list : expression
@@ -269,17 +354,31 @@ class Parser:
     def p_block_statement(self, p):
         '''block_statement : LBRACE RBRACE
                           | LBRACE statement_list RBRACE'''
-        # Enter a new scope when entering a block
-        self.symbol_table.enter_scope()
-        
         if len(p) == 3:
             p[0] = ('block', [])
         else:
             p[0] = ('block', p[2])
-        
-        # Exit the scope when leaving the block
-        self.symbol_table.exit_scope()
     
+    def p_initializer_list(self, p):
+        '''initializer_list : LBRACE expression_list_opt RBRACE'''
+        p[0] = ('initializer_list', p[2])
+
+    def p_expression_list_opt(self, p):
+        '''expression_list_opt : expression_list
+                               | empty'''
+        if p[1] is None:
+            p[0] = []
+        else:
+            p[0] = p[1]
+
+    def p_expression_list(self, p):
+        '''expression_list : expression
+                           | expression_list COMMA expression'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[3]]
+
     def p_expression(self, p):
         '''expression : logical_expression'''
         p[0] = p[1]
@@ -350,16 +449,19 @@ class Parser:
                              | KEYWORD_FALSE
                              | KEYWORD_NULL
                              | LPAREN expression RPAREN
-                             | function_call'''
+                             | function_call
+                             | array_access'''
         if len(p) == 2:
-            # Check if identifier exists in symbol table
-            if p.slice[1].type == 'IDENTIFIER':
-                symbol = self.symbol_table.lookup_symbol(p[1])
-                if not symbol:
-                    print(f"Error: Variable '{p[1]}' used before declaration")
-            p[0] = ('primary', p[1])
+            if isinstance(p[1], tuple) and (p[1][0] == 'function_call' or p[1][0] == 'array_access'):
+                p[0] = p[1]
+            else:
+                p[0] = ('primary', p[1])
         else:
             p[0] = p[2]
+
+    def p_array_access(self, p):
+        '''array_access : IDENTIFIER LBRACKET expression RBRACKET'''
+        p[0] = ('array_access', p[1], p[3])
     
     def p_error(self, p):
         if p:

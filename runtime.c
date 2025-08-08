@@ -3,11 +3,11 @@
 #include <string.h>
 
 // Input function for float
-void input_float(float *ptr) {
+void input_float(double *ptr) {
     // Get the float input
-    if (scanf("%f", ptr) != 1) {
+    if (scanf("%lf", ptr) != 1) {
         fprintf(stderr, "Error reading float input\n");
-        *ptr = 0.0f;
+        *ptr = 0.0;
     }
 
     // Clear any remaining characters in the input buffer
@@ -58,7 +58,7 @@ void input_char(char *ptr) {
 }
 
 // Output function for float
-void output_float(float value) {
+void output_float(double value) {
     printf("%f\n", value);
 }
 
@@ -84,4 +84,16 @@ void output_char(char value) {
 // Exit function
 void exit_program() {
     exit(0);
+}
+
+// String concatenation
+char* concat_strings(const char* s1, const char* s2) {
+    size_t len1 = strlen(s1);
+    size_t len2 = strlen(s2);
+    char* result = (char*)malloc(len1 + len2 + 1);
+    if (result) {
+        strcpy(result, s1);
+        strcat(result, s2);
+    }
+    return result;
 }
