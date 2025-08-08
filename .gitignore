@@ -1,3 +1,11 @@
 test.pie
 ./venv/
 venv
+*test*.pie
+/__pycache__*
+*__pycache__*
+output.ll
+output.ir
+output.bc
+output.0
+program
