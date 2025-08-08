@@ -6,17 +6,17 @@ import subprocess
 def build_and_link():
     try:
         # Compile the runtime functions to an object file
-        subprocess.run(["clang", "-c", "runtime.c", "-o", "runtime.o"], check=True)
+        subprocess.run(["clang", "-c", "-fPIC", "runtime.c", "-o", "runtime.o"], check=True)
         # Compile the math library to an object file
-        subprocess.run(["clang", "-c", "math_lib.c", "-o", "math_lib.o"], check=True)
+        subprocess.run(["clang", "-c", "-fPIC", "math_lib.c", "-o", "math_lib.o"], check=True)
         # Compile the file library to an object file
-        subprocess.run(["clang", "-c", "file_lib.c", "-o", "file_lib.o"], check=True)
+        subprocess.run(["clang", "-c", "-fPIC", "file_lib.c", "-o", "file_lib.o"], check=True)
         # Compile the network library to an object file
-        subprocess.run(["clang", "-c", "net_lib.c", "-o", "net_lib.o"], check=True)
+        subprocess.run(["clang", "-c", "-fPIC", "net_lib.c", "-o", "net_lib.o"], check=True)
         # Convert LLVM IR to bitcode
         subprocess.run(["llvm-as", "output.ll", "-o", "output.bc"], check=True)
-        # Generate native object file from bitcode
-        subprocess.run(["llc", "-filetype=obj", "output.bc", "-o", "output.o"], check=True)
+        # Generate native object file from bitcode with PIC
+        subprocess.run(["llc", "-filetype=obj", "-relocation-model=pic", "output.bc", "-o", "output.o"], check=True)
         # Link everything together to create the executable
         subprocess.run(["clang", "output.o", "runtime.o", "math_lib.o", "file_lib.o", "net_lib.o", "-o", "program", "-lm"], check=True)
         print("Build and linking successful! Executable: ./program")
@@ -30,7 +30,7 @@ def main():
     # Example program
     # test_program_file="test_net.pie"
     #make sure that it is a .pie file
-    with open("test_net.pie", "r") as file:
+    with open("test_math.pie", "r") as file:
         input_program = file.read()
 
     try:
