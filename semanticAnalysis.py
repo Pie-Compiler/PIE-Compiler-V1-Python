@@ -1,277 +1,330 @@
-from symbol_table import SymbolTable, FunctionSymbolTable, TypeChecker
+from symbol_table import SymbolTable, TypeChecker
 
 class SemanticAnalyzer:
-    def __init__(self, symbol_table, function_table=None):
+    def __init__(self, symbol_table):
         self.symbol_table = symbol_table
-        self.function_table = function_table or FunctionSymbolTable()
-        self.type_checker = TypeChecker(self.symbol_table, self.function_table)
+        self.type_checker = TypeChecker(self.symbol_table)
         self.errors = []
         self.warnings = []
-        self.error_set = set()  # Track unique errors
+        self.error_set = set()
+        self.current_function = None
 
     def add_error(self, error_msg):
-        """Add an error if it hasn't been reported yet."""
         if error_msg not in self.error_set:
             self.error_set.add(error_msg)
             self.errors.append(error_msg)
-    
+
     def analyze(self, ast):
-        """Analyze the AST for semantic correctness."""
         if not ast:
-            return False
+            return False, None
         
-        # Start analysis from the root
-        self._analyze_node(ast)
+        new_ast, _ = self._analyze_node(ast)
         
-        # Return True if no errors, False otherwise
-        return len(self.errors) == 0
-    
+        return len(self.errors) == 0, new_ast
+
     def _analyze_node(self, node, expected_type=None):
-        """Recursively analyze a node and its children."""
         if not isinstance(node, tuple):
-            return None
+            return node, None
         
         node_type = node[0]
         
-        # Dispatch to the appropriate analysis method based on node type
-        if hasattr(self, f"_analyze_{node_type}"):
-            method = getattr(self, f"_analyze_{node_type}")
-            return method(node, expected_type)
+        method_name = f"_analyze_{node_type}"
+        if hasattr(self, method_name):
+            return getattr(self, method_name)(node, expected_type)
         else:
-            # Default handling for unrecognized nodes
-            self._analyze_children(node)
-            return None
-    
-    def _analyze_children(self, node):
-        """Analyze all children of a node."""
-        if isinstance(node, tuple):
+            new_children = []
             for child in node[1:]:
-                self._analyze_node(child)
-        elif isinstance(node, list):
-            for child in node:
-                self._analyze_node(child)
-    
-    # Add to the SemanticAnalyzer class
+                new_child, _ = self._analyze_node(child)
+                new_children.append(new_child)
+            return (node[0], *new_children), None
 
     def _analyze_program(self, node, _):
-        """Analyze the program node."""
-        # Program node contains a statement list
-        statements = node[1]
-        for statement in statements:
-            self._analyze_node(statement)
+        _, declarations = node
+        new_declarations = []
+        for declaration in declarations:
+            new_declaration, _ = self._analyze_node(declaration)
+            new_declarations.append(new_declaration)
+        return ('program', new_declarations), None
 
     def _analyze_declaration(self, node, _):
-        """Analyze variable declarations."""
-        # node structure: ('declaration', type, name, init_expr)
         var_type, var_name, init_expr = node[1], node[2], node[3]
         
-        # If there's an initializer, check type compatibility
+        if self.symbol_table.lookup_symbol_current_scope(var_name):
+            self.add_error(f"Variable '{var_name}' already defined in this scope.")
+            return node, None
+
+        is_initialized = init_expr is not None
+        self.symbol_table.add_symbol(var_name, var_type, is_initialized=is_initialized)
+
+        new_init_expr = None
         if init_expr:
-            expr_type = self._analyze_node(init_expr)
+            new_init_expr, expr_type = self._analyze_node(init_expr)
             if expr_type and not self.type_checker.is_compatible(var_type, expr_type):
                 self.add_error(f"Type mismatch in declaration: Cannot assign {expr_type} to {var_type} variable '{var_name}'")
 
+        return ('declaration', var_type, var_name, new_init_expr), None
+
+    def _analyze_array_declaration(self, node, _):
+        element_type, name, size_expr, init_list = node[1], node[2], node[3], node[4]
+
+        if self.symbol_table.lookup_symbol_current_scope(name):
+            self.add_error(f"Array '{name}' already defined in this scope.")
+            return node, None
+
+        size = None
+        if size_expr:
+            if size_expr[0] == 'primary' and isinstance(size_expr[1], str) and size_expr[1].isdigit():
+                size = int(size_expr[1])
+            else:
+                self.add_error("Array size must be a constant integer.")
+
+        new_init_list = None
+        if init_list:
+            init_list_exprs = init_list[1]
+            new_init_list_exprs = []
+            if size is None:
+                size = len(init_list_exprs)
+            elif size < len(init_list_exprs):
+                self.add_error(f"Too many initializers for array '{name}'")
+
+            for expr in init_list_exprs:
+                new_expr, expr_type = self._analyze_node(expr)
+                new_init_list_exprs.append(new_expr)
+                if not self.type_checker.is_compatible(element_type, expr_type):
+                    self.add_error(f"Type mismatch in initializer for array '{name}'. Expected {element_type}, got {expr_type}")
+            new_init_list = ('initializer_list', new_init_list_exprs)
+
+        self.symbol_table.add_symbol(name, 'array', element_type=element_type, size=size)
+        return ('array_declaration', element_type, name, size_expr, new_init_list), None
+
+    def _analyze_array_access(self, node, _):
+        name, index_expr = node[1], node[2]
+
+        symbol = self.symbol_table.lookup_symbol(name)
+        if not symbol or symbol.get('type') != 'array':
+            self.add_error(f"'{name}' is not an array.")
+            return node, None
+
+        new_index_expr, index_type = self._analyze_node(index_expr)
+        if index_type != 'KEYWORD_INT':
+            self.add_error(f"Array index must be an integer, got {index_type}.")
+
+        element_type = symbol.get('element_type')
+        return ('array_access', name, new_index_expr, element_type), element_type
+
+    def _analyze_function_definition(self, node, _):
+        if self.current_function:
+            self.add_error("Nested function definitions are not allowed.")
+            return node, None
+
+        return_type, name, params, body = node[1], node[2], node[3], node[4]
+
+        if self.symbol_table.lookup_symbol_current_scope(name):
+            self.add_error(f"Function '{name}' already defined.")
+            return node, None
+
+        param_types = [p[0] for p in params]
+        self.symbol_table.add_symbol(name, 'function', return_type=return_type, param_types=param_types, params=params)
+
+        self.current_function = self.symbol_table.lookup_function(name)
+        self.symbol_table.enter_scope()
+        for param_type, param_name in params:
+            self.symbol_table.add_symbol(param_name, param_type, is_initialized=True)
+
+        new_body, _ = self._analyze_node(body)
+
+        self.symbol_table.exit_scope()
+        self.current_function = None
+        return ('function_definition', return_type, name, params, new_body), None
+
+    def _analyze_block(self, node, _):
+        _, statement_list = node
+        self.symbol_table.enter_scope()
+        new_statement_list = []
+        for statement in statement_list:
+            new_statement, _ = self._analyze_node(statement)
+            new_statement_list.append(new_statement)
+        self.symbol_table.exit_scope()
+        return ('block', new_statement_list), None
+
+    def _analyze_function_call(self, node, _):
+        name, args = node[1], node[2]
+        function_symbol = self.symbol_table.lookup_function(name)
+
+        if not function_symbol:
+            self.add_error(f"Undefined function: '{name}'")
+            return node, None
+
+        param_types = function_symbol.get('param_types', [])
+        if len(args) != len(param_types):
+            self.add_error(f"Incorrect number of arguments for function '{name}'. Expected {len(param_types)}, got {len(args)}.")
+
+        new_args = []
+        for i, arg_expr in enumerate(args):
+            new_arg, arg_type = self._analyze_node(arg_expr)
+            new_args.append(new_arg)
+            if i < len(param_types):
+                param_type = param_types[i]
+                if not self.type_checker.is_compatible(param_type, arg_type):
+                    # Allow int to float conversion for math functions
+                    is_math_func = name in ["sqrt", "pow", "sin", "cos"]
+                    if not (is_math_func and param_type == 'float' and arg_type == 'KEYWORD_INT'):
+                        self.add_error(f"Type mismatch for argument {i+1} of function '{name}'. Expected {param_type}, got {arg_type}.")
+
+        return_type = function_symbol.get('return_type')
+        return ('function_call', name, new_args, return_type), return_type
+        
     def _analyze_assignment(self, node, _):
-        """Analyze assignment statements."""
-        # node structure: ('assignment', var_name, expr)
-        var_name, expr = node[1], node[2]
+        lhs, expr = node[1], node[2]
+
+        new_lhs, lhs_type = self._analyze_node(lhs)
+        new_expr, expr_type = self._analyze_node(expr)
+
+        if lhs_type and expr_type and not self.type_checker.is_compatible(lhs_type, expr_type):
+            self.add_error(f"Type mismatch in assignment: Cannot assign {expr_type} to {lhs_type}")
         
-        # Check if variable exists
-        symbol = self.symbol_table.lookup_symbol(var_name)
-        if not symbol:
-            self.add_error(f"Undefined variable: '{var_name}'")
-            return None
-        
-        # Get the variable's type
-        var_type = symbol.get('type')
-        
-        # Check expression type and compatibility
-        expr_type = self._analyze_node(expr)
-        if expr_type and not self.type_checker.is_compatible(var_type, expr_type):
-            self.add_error(f"Type mismatch in assignment: Cannot assign {expr_type} to {var_type} variable '{var_name}'")
-        
-        return var_type
+        if isinstance(lhs, str):
+            self.symbol_table.update_symbol(lhs, initialized=True)
+
+        return ('assignment', new_lhs, new_expr), None
 
     def _analyze_binary_op(self, node, _):
-        """Analyze binary operations."""
-        # node structure: ('binary_op', operator, left_expr, right_expr)
         operator, left_expr, right_expr = node[1], node[2], node[3]
         
-        # Map operator symbols to token names
         op_map = {
-            '+': 'PLUS',
-            '-': 'MINUS',
-            '*': 'MUL',
-            '/': 'DIV',
-            '%': 'MOD',
-            '<': 'LT',
-            '>': 'GT',
-            '<=': 'LEQ',
-            '>=': 'GEQ',
-            '==': 'EQ',
-            '!=': 'NEQ',
-            '&&': 'AND',
-            '||': 'OR'
+            '+': 'PLUS', '-': 'MINUS', '*': 'MUL', '/': 'DIV', '%': 'MOD',
+            '<': 'LT', '>': 'GT', '<=': 'LEQ', '>=': 'GEQ',
+            '==': 'EQ', '!=': 'NEQ', '&&': 'AND', '||': 'OR'
         }
-        
-        # Convert operator to token name
-        op_token = op_map.get(operator, operator)
-        
-        # Get types of operands
-        left_type = self._analyze_node(left_expr)
-        right_type = self._analyze_node(right_expr)
+        op_token_name = op_map.get(operator, operator)
+
+        new_left, left_type = self._analyze_node(left_expr)
+        new_right, right_type = self._analyze_node(right_expr)
         
         if not left_type or not right_type:
-            return None
+            return node, None
         
-        # Check if operation is valid for these types
-        result_type = self.type_checker.check_binary_op(op_token, left_type, right_type)
+        result_type = self.type_checker.check_binary_op(op_token_name, left_type, right_type)
         if not result_type:
             self.add_error(f"Invalid operation: {left_type} {operator} {right_type}")
+            return node, None
         
-        return result_type
+        return ('binary_op', operator, new_left, new_right, result_type), result_type
 
     def _analyze_unary_op(self, node, _):
-        """Analyze unary operations."""
-        # node structure: ('unary_op', operator, expr)
         operator, expr = node[1], node[2]
-        
-        # Get type of operand
-        expr_type = self._analyze_node(expr)
+        new_expr, expr_type = self._analyze_node(expr)
         
         if not expr_type:
-            return None
+            return node, None
         
-        # Check if unary operation is valid for this type
-        if operator == 'MINUS' and expr_type in ('KEYWORD_INT', 'KEYWORD_FLOAT'):
-            return expr_type
+        if operator == '-' and expr_type in ('KEYWORD_INT', 'KEYWORD_FLOAT'):
+            return ('unary_op', operator, new_expr, expr_type), expr_type
         else:
             self.add_error(f"Invalid unary operation: {operator} {expr_type}")
-            return None
+            return node, None
 
     def _analyze_primary(self, node, _):
-        """Analyze primary expressions (variables, literals)."""
         value = node[1]
-        # Handle literals vs variables based on value format
         if isinstance(value, str):
             if value.startswith('"') and value.endswith('"'):
-                return 'KEYWORD_STRING'
+                return ('primary', value, 'string'), 'KEYWORD_STRING'
             elif value.startswith("'") and value.endswith("'"):
-                return 'KEYWORD_CHAR'
+                return ('primary', value, 'char'), 'KEYWORD_CHAR'
             elif value.isdigit() or (value[0] == '-' and value[1:].isdigit()):
-                return 'KEYWORD_INT'
-            elif '.' in value and all(c.isdigit() or c == '.' or (i == 0 and c == '-') 
-                                   for i, c in enumerate(value.replace('.', '', 1))):
-                return 'KEYWORD_FLOAT'
+                return ('primary', value, 'int'), 'KEYWORD_INT'
+            elif '.' in value:
+                return ('primary', value, 'float'), 'KEYWORD_FLOAT'
             elif value in ['true', 'false']:
-                return 'KEYWORD_BOOL'
-            elif value == 'null':
-                return 'KEYWORD_NULL'
+                return ('primary', value, 'boolean'), 'KEYWORD_BOOL'
             else:
-                # It's a variable name - look it up
                 symbol = self.symbol_table.lookup_symbol(value)
                 if symbol:
-                    return self.type_checker._normalize_type(symbol.get('type'))
+                    var_type = self.type_checker._normalize_type(symbol.get('type'))
+                    return ('primary', value, var_type), var_type
                 else:
                     self.add_error(f"Undefined variable: '{value}'")
-                    return None
-        return None
-
-    # Add to the SemanticAnalyzer class
+                    return node, None
+        return node, None
 
     def _analyze_if(self, node, _):
-        """Analyze if statements."""
-        # node structure: ('if', condition, then_stmt, else_stmt)
         condition, then_stmt, else_stmt = node[1], node[2], node[3]
         
-        # Check that condition is boolean
-        cond_type = self._analyze_node(condition)
-        if cond_type:
-            if cond_type != 'KEYWORD_BOOL':
-                # Check if it's a relational expression that returns bool
-                if isinstance(condition, tuple) and condition[0] == 'binary_op' and condition[1] in ['GT', 'LT', 'GEQ', 'LEQ', 'EQ', 'NEQ']:
-                    pass  # This is OK - comparison operators produce boolean results
-                else:
-                    self.add_error(f"Condition must be boolean, got {cond_type}")
+        new_condition, cond_type = self._analyze_node(condition)
+        if cond_type and cond_type != 'KEYWORD_BOOL':
+            self.add_error(f"Condition must be boolean, got {cond_type}")
         
-        # Analyze then and else statements
-        self._analyze_node(then_stmt)
+        new_then, _ = self._analyze_node(then_stmt)
+        new_else = None
         if else_stmt:
-            self._analyze_node(else_stmt)
+            new_else, _ = self._analyze_node(else_stmt)
+
+        return ('if', new_condition, new_then, new_else), None
 
     def _analyze_while(self, node, _):
-        """Analyze while loops."""
-        # node structure: ('while', condition, body)
         condition, body = node[1], node[2]
-        
-        # Check that condition is boolean
-        cond_type = self._analyze_node(condition)
+        new_condition, cond_type = self._analyze_node(condition)
         if cond_type and cond_type != 'KEYWORD_BOOL':
             self.add_error(f"Loop condition must be boolean, got {cond_type}")
         
-        # Analyze loop body
-        self._analyze_node(body)
+        new_body, _ = self._analyze_node(body)
+        return ('while', new_condition, new_body), None
+
+    def _analyze_do_while(self, node, _):
+        body, condition = node[1], node[2]
+        new_body, _ = self._analyze_node(body)
+        new_condition, cond_type = self._analyze_node(condition)
+        if cond_type and cond_type != 'KEYWORD_BOOL':
+            self.add_error(f"Loop condition must be boolean, got {cond_type}")
+        return ('do_while', new_body, new_condition), None
 
     def _analyze_for(self, node, _):
-        """Analyze for loops."""
-        # node structure: ('for', init, condition, update, body)
         init, condition, update, body = node[1], node[2], node[3], node[4]
         
-        # Analyze initialization
-        if init:
-            self._analyze_node(init)
+        self.symbol_table.enter_scope()
+        new_init, _ = self._analyze_node(init)
+        new_condition, cond_type = self._analyze_node(condition)
+        if condition and cond_type and cond_type != 'KEYWORD_BOOL':
+            self.add_error(f"Loop condition must be boolean, got {cond_type}")
+        new_update, _ = self._analyze_node(update)
+        new_body, _ = self._analyze_node(body)
+        self.symbol_table.exit_scope()
         
-        # Check that condition is boolean
-        if condition:
-            cond_type = self._analyze_node(condition)
-            if cond_type and cond_type != 'KEYWORD_BOOL':
-                self.add_error(f"Loop condition must be boolean, got {cond_type}")
-        
-        # Analyze update and body
-        if update:
-            self._analyze_node(update)
-        self._analyze_node(body)
-
-        # Add to the SemanticAnalyzer class
-
-    def _analyze_system_input(self, node, _):
-        """Analyze system input calls."""
-        # node structure: ('system_input', var_name, type)
-        var_node, var_type = node[1], node[2]
-        # If var_node is a primary node, extract the name
-        if isinstance(var_node, tuple) and var_node[0] == 'primary':
-            var_name = var_node[1]
-        else:
-            var_name = var_node
-
-        symbol = self.symbol_table.lookup_symbol(var_name)
-        if not symbol:
-            self.add_error(f"Undefined variable for input: '{var_name}'")
-            return None
-
-        if symbol.get('type') != var_type:
-            self.add_error(f"Type mismatch in input: Variable '{var_name}' is {symbol.get('type')}, but input type is {var_type}")
-
-        return None
+        return ('for', new_init, new_condition, new_update, new_body), None
 
     def _analyze_system_output(self, node, _):
-        """Analyze system output calls."""
-        # node structure: ('system_output', expr, type)
-        expr, expected_type = node[1], node[2]
-        expr_type = self._analyze_node(expr)
-        # Normalize types for comparison
+        expr, expected_type, precision_expr = node[1], node[2], node[3]
+        new_expr, expr_type = self._analyze_node(expr)
         norm_expr_type = self.type_checker._normalize_type(expr_type)
         norm_expected_type = self.type_checker._normalize_type(expected_type)
         if norm_expr_type and norm_expr_type != norm_expected_type:
             self.add_error(f"Type mismatch in output: Expression is {expr_type}, but output type is {expected_type}")
-        return None
+
+        new_precision_expr = None
+        if precision_expr:
+            new_precision_expr, precision_type = self._analyze_node(precision_expr)
+            if precision_type != 'KEYWORD_INT':
+                self.add_error("Output precision must be an integer.")
+
+        return ('system_output', new_expr, expected_type, new_precision_expr), None
 
     def _analyze_return(self, node, _):
-        """Analyze return statements."""
-        # node structure: ('return', expr)
         expr = node[1]
-        
-        # If there's no active function, this is a return at global scope
-        # We'll just check the expression type
+        new_expr = None
+        if not self.current_function:
+            self.add_error("Return statement outside of a function.")
+            return node, None
+
+        return_type = self.current_function.get('return_type')
+
         if expr:
-            self._analyze_node(expr)
+            new_expr, expr_type = self._analyze_node(expr)
+            if return_type == 'void':
+                self.add_error(f"Function with void return type cannot return a value.")
+            elif not self.type_checker.is_compatible(return_type, expr_type):
+                self.add_error(f"Type mismatch in return statement. Expected {return_type}, got {expr_type}.")
+        else:
+            if return_type != 'void':
+                self.add_error(f"Function with non-void return type must return a value.")
+
+        return ('return', new_expr), None

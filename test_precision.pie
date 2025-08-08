@@ -1,0 +1,3 @@
+float x = 1.234567;
+output(x, float);    // Should default to 2dp: 1.23
+output(x, float, 4); // Should be 4dp: 1.2346 (rounded)

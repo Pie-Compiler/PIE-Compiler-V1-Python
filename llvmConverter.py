@@ -6,724 +6,412 @@ import sys
 class IRToLLVMConverter:
     def __init__(self, debug=True):
         self.debug = debug
-        self.module = ir.Module(name="main")
-        self.module.data_layout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
-        
-        # Initialize LLVM - this is critical for proper functioning
+        self.module = ir.Module(name="main_module")
         self._initialize_llvm()
         
-        # Create main function
-        int_type = ir.IntType(32)
-        func_type = ir.FunctionType(int_type, [])
-        self.function = ir.Function(self.module, func_type, name="main")
-        self.block = self.function.append_basic_block(name="entry")
-        self.builder = ir.IRBuilder(self.block)
-        self.var_table = {}  # Maps variable names to alloca pointers
-        self.labels = {}     # Maps label names to basic blocks
+        self.current_function = None
+        self.builder = None
+        self.var_table = {}
+        self.labels = {}
+        self.pending_params = []
 
-        # Declare system-defined functions
         self._declare_system_functions()
-        
-        if self.debug:
-            print("Converter initialized successfully")
 
     def _initialize_llvm(self):
-        """Initialize LLVM with proper error handling."""
-        try:
-            llvm.initialize()
-            llvm.initialize_native_target()
-            llvm.initialize_native_asmprinter()
-            self.target_machine = llvm.Target.from_default_triple().create_target_machine()
-            self.module.triple = self.target_machine.triple
-            if self.debug:
-                print(f"LLVM initialized with target triple: {self.module.triple}")
-        except Exception as e:
-            print(f"Error initializing LLVM: {e}")
-            traceback.print_exc()
-            sys.exit(1)
+        llvm.initialize()
+        llvm.initialize_native_target()
+        llvm.initialize_native_asmprinter()
+        self.target_machine = llvm.Target.from_default_triple().create_target_machine()
+        self.module.triple = self.target_machine.triple
+        self.module.data_layout = self.target_machine.target_data
+
+    def get_llvm_type(self, type_str):
+        if type_str == 'int':
+            return ir.IntType(32)
+        elif type_str == 'float':
+            return ir.DoubleType()
+        elif type_str == 'char':
+            return ir.IntType(8)
+        elif type_str == 'file':
+            return ir.IntType(64)
+        elif type_str == 'socket':
+            return ir.IntType(32)
+        elif type_str == 'string':
+            # Strings are pointers to char
+            return ir.PointerType(ir.IntType(8))
+        elif type_str == 'boolean':
+            return ir.IntType(1)
+        elif type_str == 'void':
+            return ir.VoidType()
+        else:
+            raise ValueError(f"Unknown type: {type_str}")
 
     def _declare_system_functions(self):
-        """Declare system-defined functions in the LLVM module."""
-        try:
-            # void input_float(float* ptr)
-            input_float_type = ir.FunctionType(ir.VoidType(), [ir.PointerType(ir.FloatType())])
-            self.input_float_func = ir.Function(self.module, input_float_type, name="input_float")
+        # input functions
+        self.input_int_func = ir.Function(self.module, ir.FunctionType(self.get_llvm_type('int'), []), name="input_int")
+        self.input_float_func = ir.Function(self.module, ir.FunctionType(self.get_llvm_type('float'), []), name="input_float")
 
-            # void input_int(int* ptr)
-            input_int_type = ir.FunctionType(ir.VoidType(), [ir.PointerType(ir.IntType(32))])
-            self.input_int_func = ir.Function(self.module, input_int_type, name="input_int")
+        # output functions
+        self.output_int_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int')]), name="output_int")
+        self.output_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float'), self.get_llvm_type('int')]), name="output_float")
+        self.output_string_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="output_string")
+        self.output_char_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char')]), name="output_char")
 
-            # void input_string(char* ptr)
-            input_string_type = ir.FunctionType(ir.VoidType(), [ir.PointerType(ir.IntType(8))])
-            self.input_string_func = ir.Function(self.module, input_string_type, name="input_string")
+        # exit function
+        self.exit_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), []), name="exit_program")
 
-            # void input_char(char* ptr)
-            input_char_type = ir.FunctionType(ir.VoidType(), [ir.PointerType(ir.IntType(8))])
-            self.input_char_func = ir.Function(self.module, input_char_type, name="input_char")
+        # Math functions
+        double_type = self.get_llvm_type('float')
+        self.sqrt_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sqrt")
+        self.pow_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_pow")
+        self.sin_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sin")
+        self.cos_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_cos")
 
-            # void output_float(float value)
-            output_float_type = ir.FunctionType(ir.VoidType(), [ir.FloatType()])
-            self.output_float_func = ir.Function(self.module, output_float_type, name="output_float")
+        # String functions
+        string_type = self.get_llvm_type('string')
+        self.concat_strings_func = ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="concat_strings")
 
-            # void output_int(int value)
-            output_int_type = ir.FunctionType(ir.VoidType(), [ir.IntType(32)])
-            self.output_int_func = ir.Function(self.module, output_int_type, name="output_int")
+        # File functions
+        file_type = self.get_llvm_type('file')
+        self.file_open_func = ir.Function(self.module, ir.FunctionType(file_type, [string_type, string_type]), name="file_open")
+        self.file_close_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_close")
+        self.file_write_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type]), name="file_write")
+        self.file_read_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type, self.get_llvm_type('int')]), name="file_read")
 
-            # void output_string(const char* value)
-            output_string_type = ir.FunctionType(ir.VoidType(), [ir.PointerType(ir.IntType(8))])
-            self.output_string_func = ir.Function(self.module, output_string_type, name="output_string")
-
-            # void output_char(char value)
-            output_char_type = ir.FunctionType(ir.VoidType(), [ir.IntType(8)])
-            self.output_char_func = ir.Function(self.module, output_char_type, name="output_char")
-
-            # void exit_program()
-            exit_type = ir.FunctionType(ir.VoidType(), [])
-            self.exit_func = ir.Function(self.module, exit_type, name="exit_program")
-            
-            if self.debug:
-                print("System functions declared successfully")
-        except Exception as e:
-            print(f"Error declaring system functions: {e}")
-            traceback.print_exc()
-            sys.exit(1)
-
-    def declare_variable(self, var_type, var_name):
-        """Declare a variable in the LLVM IR."""
-        try:
-            if var_type == 'int':
-                llvm_type = ir.IntType(32)
-            elif var_type == 'float':
-                llvm_type = ir.FloatType()
-            elif var_type == 'string':
-                llvm_type = ir.ArrayType(ir.IntType(8), 256)  # Fixed-size string buffer
-            elif var_type == 'char':
-                llvm_type = ir.IntType(8)  # Single character
-            elif var_type == 'boolean':
-                llvm_type = ir.IntType(1)  # Boolean as 1-bit integer
-            else:
-                raise ValueError(f"Unsupported type: {var_type}")
-                
-            # Allocate memory for the variable
-            ptr = self.builder.alloca(llvm_type, name=var_name)
-            self.var_table[var_name] = ptr
-            
-            # Initialize with default values
-            if var_type == 'int' or var_type == 'char':
-                self.builder.store(ir.Constant(llvm_type, 0), ptr)
-            elif var_type == 'float':
-                self.builder.store(ir.Constant(llvm_type, 0.0), ptr)
-            elif var_type == 'boolean':
-                self.builder.store(ir.Constant(llvm_type, 0), ptr)  # False
-            elif var_type == 'string':
-                # Initialize string with empty (all zeros)
-                zero = ir.Constant(ir.IntType(8), 0)
-                for i in range(256):
-                    idx = ir.Constant(ir.IntType(32), i)
-                    elem_ptr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32), 0), idx])
-                    self.builder.store(zero, elem_ptr)
-                    
-            if self.debug:
-                print(f"Declared variable '{var_name}' of type '{var_type}'")
-        except Exception as e:
-            print(f"Error declaring variable {var_name} of type {var_type}: {e}")
-            traceback.print_exc()
-            raise
-
-    def assign(self, var_name, value):
-        """Assign a value to a variable."""
-        try:
-            ptr = self.var_table.get(var_name)
-            if ptr is None:
-                raise ValueError(f"Undeclared variable: {var_name}")
-
-            # Handle special case for char literals
-            if isinstance(value, str) and value.startswith("'") and value.endswith("'") and len(value) == 3:
-                char_code = ord(value[1])
-                self.builder.store(ir.Constant(ir.IntType(8), char_code), ptr)
-                if self.debug:
-                    print(f"Assigned char '{value[1]}' to '{var_name}'")
-                return
-                
-            # Handle special case for boolean literals
-            if isinstance(value, str) and value.lower() in ('true', 'false'):
-                bool_val = 1 if value.lower() == 'true' else 0
-                self.builder.store(ir.Constant(ir.IntType(1), bool_val), ptr)
-                if self.debug:
-                    print(f"Assigned boolean {value} to '{var_name}'")
-                return
-
-            # Handle string literals
-            if isinstance(value, str) and value.startswith('"') and value.endswith('"'):
-                if not isinstance(ptr.type.pointee, ir.ArrayType):
-                    raise TypeError(f"Cannot assign string to non-string variable {var_name}")
-                    
-                # Get string content without quotes
-                string_content = value[1:-1]
-                
-                # Store each character in the string array
-                for i, char in enumerate(string_content):
-                    if i >= 255:  # Respect the 256 byte limit (including null terminator)
-                        break
-                        
-                    idx = ir.Constant(ir.IntType(32), i)
-                    elem_ptr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32), 0), idx])
-                    self.builder.store(ir.Constant(ir.IntType(8), ord(char)), elem_ptr)
-                    
-                # Add null terminator
-                null_idx = ir.Constant(ir.IntType(32), min(len(string_content), 255))
-                null_ptr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32), 0), null_idx])
-                self.builder.store(ir.Constant(ir.IntType(8), 0), null_ptr)
-                
-                if self.debug:
-                    print(f"Assigned string '{string_content}' to '{var_name}'")
-                return
-
-            # Handle variable to variable assignment
-            if isinstance(value, str) and value in self.var_table:
-                src_ptr = self.var_table[value]
-                src_type = src_ptr.type.pointee
-                dst_type = ptr.type.pointee
-                
-                # If types match directly
-                if src_type == dst_type:
-                    if isinstance(src_type, ir.ArrayType):
-                        # For arrays (strings), we need to copy element by element
-                        array_len = src_type.count
-                        for i in range(array_len):
-                            idx = ir.Constant(ir.IntType(32), i)
-                            src_elem_ptr = self.builder.gep(src_ptr, [ir.Constant(ir.IntType(32), 0), idx])
-                            dst_elem_ptr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32), 0), idx])
-                            elem_val = self.builder.load(src_elem_ptr)
-                            self.builder.store(elem_val, dst_elem_ptr)
-                    else:
-                        # For scalar types, just load and store
-                        val = self.builder.load(src_ptr)
-                        self.builder.store(val, ptr)
-                else:
-                    # Handle type conversions if needed
-                    val = self.builder.load(src_ptr)
-                    if isinstance(dst_type, ir.FloatType) and isinstance(src_type, ir.IntType):
-                        val = self.builder.sitofp(val, ir.FloatType())
-                    elif isinstance(dst_type, ir.IntType) and isinstance(src_type, ir.FloatType):
-                        val = self.builder.fptosi(val, ir.IntType(32))
-                    self.builder.store(val, ptr)
-                    
-                if self.debug:
-                    print(f"Assigned variable '{value}' to '{var_name}'")
-                return
-
-            # Handle numerical literals
-            try:
-                if isinstance(ptr.type.pointee, ir.FloatType):
-                    self.builder.store(ir.Constant(ir.FloatType(), float(value)), ptr)
-                    if self.debug:
-                        print(f"Assigned float {float(value)} to '{var_name}'")
-                elif isinstance(ptr.type.pointee, ir.IntType):
-                    bit_width = ptr.type.pointee.width
-                    self.builder.store(ir.Constant(ir.IntType(bit_width), int(value)), ptr)
-                    if self.debug:
-                        print(f"Assigned int {int(value)} to '{var_name}'")
-                else:
-                    raise ValueError(f"Unsupported target type for assignment to {var_name}")
-            except ValueError:
-                raise ValueError(f"Invalid value for assignment: {value}")
-        except Exception as e:
-            print(f"Error in assignment {var_name} = {value}: {e}")
-            traceback.print_exc()
-            raise
-
-    def create_string_literal(self, string_value):
-        """Create a global string literal and return a pointer to its first character."""
-        try:
-            # Add null terminator
-            byte_array = bytearray((string_value + '\0').encode("utf-8"))
-            const_array = ir.Constant(ir.ArrayType(ir.IntType(8), len(byte_array)), byte_array)
-            
-            # Create unique name for the global variable
-            global_str_name = f"str_{hash(string_value) & 0xFFFFFFFF}"
-            global_str = ir.GlobalVariable(self.module, const_array.type, name=global_str_name)
-            global_str.linkage = 'private'
-            global_str.global_constant = True
-            global_str.initializer = const_array
-            global_str.unnamed_addr = True
-            
-            # Get pointer to first byte
-            zero = ir.Constant(ir.IntType(32), 0)
-            return self.builder.gep(global_str, [zero, zero])
-        except Exception as e:
-            print(f"Error creating string literal '{string_value}': {e}")
-            traceback.print_exc()
-            raise
-
-    def binary_op(self, op, dest, lhs, rhs):
-        """Generate LLVM IR for binary operations."""
-        try:
-            lhs_val = self._load_val(lhs)
-            rhs_val = self._load_val(rhs)
-
-            # Type conversion for mixed types
-            if lhs_val.type != rhs_val.type:
-                if isinstance(lhs_val.type, ir.IntType) and isinstance(rhs_val.type, ir.FloatType):
-                    lhs_val = self.builder.sitofp(lhs_val, ir.FloatType())
-                elif isinstance(lhs_val.type, ir.FloatType) and isinstance(rhs_val.type, ir.IntType):
-                    rhs_val = self.builder.sitofp(rhs_val, ir.FloatType())
-
-            # Handle logical OR (||)
-            if op == '||':
-                # Create blocks for short-circuiting
-                or_true_block = self.function.append_basic_block(name="or_true")
-                or_end_block = self.function.append_basic_block(name="or_end")
-
-                # Save the current block before branching
-                current_block = self.builder.block
-
-                # Check LHS
-                if not self.builder.block.is_terminated:
-                    self.builder.cbranch(lhs_val, or_true_block, or_end_block)
-
-                # In the true block, set the result to true and branch to the end
-                self.builder.position_at_end(or_true_block)
-                self.builder.branch(or_end_block)
-
-                # In the end block, create the PHI node
-                self.builder.position_at_end(or_end_block)
-                result = self.builder.phi(ir.IntType(1))
-                result.add_incoming(ir.Constant(ir.IntType(1), 1), or_true_block)  # True if LHS is true
-                result.add_incoming(rhs_val, current_block)  # RHS value if LHS is false
-
-                # Store the result in the destination variable
-                if dest not in self.var_table:
-                    result_ptr = self.builder.alloca(result.type, name=dest)
-                    self.var_table[dest] = result_ptr
-                else:
-                    result_ptr = self.var_table[dest]
-
-                self.builder.store(result, result_ptr)
-
-            elif op == '&&':
-                # Handle logical AND (similar to your existing implementation)
-                and_true_block = self.function.append_basic_block(name="and_true")
-                and_end_block = self.function.append_basic_block(name="and_end")
-
-                current_block = self.builder.block
-
-                if not self.builder.block.is_terminated:
-                    self.builder.cbranch(lhs_val, and_true_block, and_end_block)
-
-                self.builder.position_at_end(and_true_block)
-                and_true_block_rhs_val = self._load_val(rhs)
-                self.builder.branch(and_end_block)
-
-                self.builder.position_at_end(and_end_block)
-                result = self.builder.phi(ir.IntType(1))
-                result.add_incoming(ir.Constant(ir.IntType(1), 0), current_block)
-                result.add_incoming(and_true_block_rhs_val, and_true_block)
-
-                # Store the result in the destination variable
-                if dest not in self.var_table:
-                    result_ptr = self.builder.alloca(result.type, name=dest)
-                    self.var_table[dest] = result_ptr
-                else:
-                    result_ptr = self.var_table[dest]
-
-                self.builder.store(result, result_ptr)
-
-            else:
-                if op in ['>', '<', '>=', '<=', '==', '!=']:
-                    if isinstance(lhs_val.type, ir.FloatType):  # Float comparisons
-                        if op == '>':
-                            result = self.builder.fcmp_ordered('>', lhs_val, rhs_val)
-                        elif op == '<':
-                            result = self.builder.fcmp_ordered('<', lhs_val, rhs_val)
-                        elif op == '>=':
-                            result = self.builder.fcmp_ordered('>=', lhs_val, rhs_val)
-                        elif op == '<=':
-                            result = self.builder.fcmp_ordered('<=', lhs_val, rhs_val)
-                        elif op == '==':
-                            result = self.builder.fcmp_ordered('==', lhs_val, rhs_val)
-                        elif op == '!=':
-                            result = self.builder.fcmp_ordered('!=', lhs_val, rhs_val)
-                    elif isinstance(lhs_val.type, ir.IntType):  # Integer comparisons
-                        if op == '>':
-                            result = self.builder.icmp_signed('>', lhs_val, rhs_val)
-                        elif op == '<':
-                            result = self.builder.icmp_signed('<', lhs_val, rhs_val)
-                        elif op == '>=':
-                            result = self.builder.icmp_signed('>=', lhs_val, rhs_val)
-                        elif op == '<=':
-                            result = self.builder.icmp_signed('<=', lhs_val, rhs_val)
-                        elif op == '==':
-                            result = self.builder.icmp_signed('==', lhs_val, rhs_val)
-                        elif op == '!=':
-                            result = self.builder.icmp_signed('!=', lhs_val, rhs_val)
-                    else:
-                        raise ValueError(f"Unsupported comparison types: {lhs_val.type} and {rhs_val.type}")
-                else:
-                    # Handle other binary operations (e.g., +, -, *, /, etc.)
-                    if op == '+':
-                        result = self.builder.add(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fadd(lhs_val, rhs_val)
-                    elif op == '-':
-                        result = self.builder.sub(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fsub(lhs_val, rhs_val)
-                    elif op == '*':
-                        result = self.builder.mul(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fmul(lhs_val, rhs_val)
-                    elif op == '/':
-                        result = self.builder.sdiv(lhs_val, rhs_val) if isinstance(lhs_val.type, ir.IntType) else self.builder.fdiv(lhs_val, rhs_val)
-                    else:
-                        raise ValueError(f"Unsupported binary operator: {op}")
-                 # Store the result in the destination variable
-                if dest not in self.var_table:
-                    result_ptr = self.builder.alloca(result.type, name=dest)
-                    self.var_table[dest] = result_ptr
-                else:
-                    result_ptr = self.var_table[dest]
-
-                self.builder.store(result, result_ptr)
-
-        except Exception as e:
-            print(f"Error in binary_op {lhs} {op} {rhs} -> {dest}: {e}")
-            traceback.print_exc()
-            raise
-
-
-    def system_input(self, var_name, data_type):
-        """Generate LLVM IR for the input system function."""
-        try:
-            ptr = self.var_table.get(var_name)
-            if ptr is None:
-                raise ValueError(f"Undeclared variable: {var_name}")
-
-            if data_type == 'float':
-                self.builder.call(self.input_float_func, [ptr])
-            elif data_type == 'int':
-                self.builder.call(self.input_int_func, [ptr])
-            elif data_type == 'string':
-                str_ptr = self.builder.bitcast(ptr, ir.PointerType(ir.IntType(8)))  # Cast to i8*
-                self.builder.call(self.input_string_func, [str_ptr])
-            elif data_type == 'char':
-                char_ptr = self.builder.bitcast(ptr, ir.PointerType(ir.IntType(8)))  # Cast to i8*
-                self.builder.call(self.input_char_func, [char_ptr])
-            else:
-                raise ValueError(f"Unsupported input type: {data_type}")
-                
-            if self.debug:
-                print(f"Generated input for {var_name} of type {data_type}")
-        except Exception as e:
-            print(f"Error in system_input for {var_name} of type {data_type}: {e}")
-            traceback.print_exc()
-            raise
-
-    def system_output(self, value, data_type):
-        """Generate LLVM IR for the output system function."""
-        try:
-            if data_type == 'string':
-                if isinstance(value, str) and value.startswith('"') and value.endswith('"'):
-                    # Handle string literals
-                    str_content = value.strip('"')
-                    str_ptr = self.create_string_literal(str_content)
-                    self.builder.call(self.output_string_func, [str_ptr])
-                    if self.debug:
-                        print(f"Generated output for string literal: {str_content}")
-                else:
-                    # Handle string variables
-                    if value in self.var_table:
-                        ptr = self.var_table[value]
-                        # For string variables, we need to bitcast the array pointer to i8*
-                        str_ptr = self.builder.bitcast(ptr, ir.PointerType(ir.IntType(8)))
-                        self.builder.call(self.output_string_func, [str_ptr])
-                        if self.debug:
-                            print(f"Generated output for string variable: {value}")
-                    else:
-                        raise ValueError(f"Unknown string variable: {value}")
-            elif data_type == 'float' or data_type == 'int' or data_type == 'char':
-                val = self._load_val(value)
-                if data_type == 'float':
-                    self.builder.call(self.output_float_func, [val])
-                elif data_type == 'int':
-                    self.builder.call(self.output_int_func, [val])
-                elif data_type == 'char':
-                    self.builder.call(self.output_char_func, [val])
-                if self.debug:
-                    print(f"Generated output for {data_type} value: {value}")
-            else:
-                raise ValueError(f"Unsupported output type: {data_type}")
-        except Exception as e:
-            print(f"Error in system_output for {value} of type {data_type}: {e}")
-            traceback.print_exc()
-            raise
-
-    def system_exit(self):
-        """Generate LLVM IR for the exit system function."""
-        try:
-            if not self.builder.block.is_terminated:
-                self.builder.call(self.exit_func, [])
-                self.builder.ret(ir.Constant(ir.IntType(32), 0))
-                if self.debug:
-                    print("Generated exit call")
-        except Exception as e:
-            print(f"Error in system_exit: {e}")
-            traceback.print_exc()
-            raise
-
-    def handle_label(self, label_name, branch=False):
-        try:
-            # Create the label block if not already created
-            if label_name not in self.labels:
-                self.labels[label_name] = self.function.append_basic_block(name=label_name)
-
-            if branch and not self.builder.block.is_terminated:
-                self.builder.branch(self.labels[label_name])
-                if self.debug:
-                    print(f"Branching to label: {label_name}")
-
-            # Only position to label block — don't insert a branch unless requested
-            self.builder.position_at_end(self.labels[label_name])
-
-            if self.debug:
-                print(f"Positioned at label: {label_name}")
-        except Exception as e:
-            print(f"Error handling label {label_name}: {e}")
-            traceback.print_exc()
-            raise
-
-    def handle_if_false(self, condition, label_name):
-        """Handle an IF_FALSE instruction."""
-        try:
-            # Load the condition value
-            cond_val = self._load_val(condition)
-            
-            # Get or create the false block (label)
-            if label_name not in self.labels:
-                self.labels[label_name] = self.function.append_basic_block(name=label_name)
-            false_block = self.labels[label_name]
-            
-            # Create the next block for the true branch
-            next_block = self.function.append_basic_block(name="if_true")
-            # Add the conditional branch
-            if not self.builder.block.is_terminated:
-                # Note: since we're doing IF_FALSE, the condition is negated
-                # If condition is true, we go to next_block, otherwise to false_block
-                self.builder.cbranch(cond_val, next_block, false_block)
-                if self.debug:
-                    print(f"Added conditional branch for condition {condition} to label {label_name}")
-            
-            # Position the builder at the start of the next block
-            self.builder.position_at_end(next_block)
-            
-            # We don't add unreachable here - leave the block open for following instructions
-            
-        except Exception as e:
-            print(f"Error in if_false for condition {condition} to label {label_name}: {e}")
-            traceback.print_exc()
-            raise
-
-    def _load_val(self, name):
-        """Load a value (variable or constant) into LLVM IR."""
-        try:
-            # Check if the value is a variable
-            if name in self.var_table:
-                return self.builder.load(self.var_table[name], name=name)
-            
-            # Handle integer literals
-            if name.isdigit() or (name[0] == '-' and name[1:].isdigit()):
-                return ir.Constant(ir.IntType(32), int(name))
-            
-            # Handle float literals
-            try:
-                float_val = float(name)
-                return ir.Constant(ir.FloatType(), float_val)
-            except ValueError:
-                pass
-            
-            # Handle boolean literals
-            if name.lower() == "true":
-                return ir.Constant(ir.IntType(1), 1)  # Boolean true as 1-bit integer
-            if name.lower() == "false":
-                return ir.Constant(ir.IntType(1), 0)  # Boolean false as 1-bit integer
-            
-            # Handle character literals
-            if name.startswith("'") and name.endswith("'") and len(name) == 3:
-                return ir.Constant(ir.IntType(8), ord(name[1]))
-            
-            # Handle string literals
-            if name.startswith('"') and name.endswith('"'):
-                return self.create_string_literal(name[1:-1])
-            
-            # If the value is not recognized, raise an error
-            raise ValueError(f"Unknown value: {name}")
-        except Exception as e:
-            print(f"Error loading value {name}: {e}")
-            traceback.print_exc()
-            raise
-
-    def finalize(self):
-        """Finalize the LLVM module."""
-        try:
-            # Ensure the function returns 0 if it doesn't have a return already
-            if not self.builder.block.is_terminated:
-                self.builder.ret(ir.Constant(ir.IntType(32), 0))
-                if self.debug:
-                    print("Added implicit return 0")
-            
-            # Validate the module
-            llvm_ir = str(self.module)
-            
-            # Print the IR for debugging
-            if self.debug:
-                print("\nGenerated LLVM IR:\n")
-                print(llvm_ir)
-            
-            # Verify the module
-            try:
-                llvm_module = llvm.parse_assembly(llvm_ir)
-                llvm_module.verify()
-                if self.debug:
-                    print("Module verification successful!")
-            except RuntimeError as e:
-                print(f"LLVM Module Validation Error: {e}")
-                raise ValueError(f"LLVM Module Validation Error: {e}")
-            
-            return llvm_ir
-        except Exception as e:
-            print(f"Error in finalize: {e}")
-            traceback.print_exc()
-            raise
+        # Network functions
+        socket_type = self.get_llvm_type('socket')
+        int_type = self.get_llvm_type('int')
+        self.tcp_socket_func = ir.Function(self.module, ir.FunctionType(socket_type, []), name="tcp_socket")
+        self.tcp_connect_func = ir.Function(self.module, ir.FunctionType(int_type, [socket_type, string_type, int_type]), name="tcp_connect")
+        self.tcp_send_func = ir.Function(self.module, ir.FunctionType(int_type, [socket_type, string_type]), name="tcp_send")
+        self.tcp_recv_func = ir.Function(self.module, ir.FunctionType(int_type, [socket_type, string_type, int_type]), name="tcp_recv")
+        self.tcp_close_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [socket_type]), name="tcp_close")
 
     def convert_ir(self, ir_code):
-        """Convert the IR code to LLVM IR."""
-        try:
-            if self.debug:
-                print(f"Starting conversion of {len(ir_code)} IR instructions")
-                
-            # Validate IR code format
-            if not isinstance(ir_code, list):
-                raise ValueError("IR code must be a list of instructions")
-                
-            for i, instr in enumerate(ir_code):
-                if not instr:  # Skip empty instructions
-                    continue
-                
-                if self.debug:
-                    print(f"Processing instruction {i}: {instr}")
-                    
-                if not isinstance(instr, (list, tuple)):
-                    raise ValueError(f"Invalid instruction format at index {i}: {instr}")
-                
-                if len(instr) == 0:
-                    raise ValueError(f"Empty instruction at index {i}")
-                    
-                op = instr[0]
-                    
-                if op == 'START_PROGRAM':
-                    if self.debug:
-                        print("START_PROGRAM - no action needed")
-                    continue  # No action needed for START_PROGRAM
-                elif op == 'END_PROGRAM':
-                    # Only add exit/ret if this block hasn't already terminated
-                    if not self.builder.block.is_terminated:
-                        self.system_exit()
-                    if self.debug:
-                        print("Generated end program")
+        for instr in ir_code:
+            op = instr[0]
+            method_name = f"handle_{op}"
+            if hasattr(self, method_name):
+                getattr(self, method_name)(instr)
+            else:
+                raise ValueError(f"Unsupported IR instruction: {op}")
+        return self.finalize()
 
-                elif op == 'DECLARE':
-                    if len(instr) != 3:
-                        raise ValueError(f"Invalid DECLARE instruction at index {i}: {instr}")
-                    _, var_type, var_name = instr
-                    self.declare_variable(var_type, var_name)
-                    if self.debug:
-                        print(f"Declared variable {var_name} of type {var_type}")
-                elif op == 'RETURN':
-                    if len(instr) > 1 and instr[1] is not None:
-                        return_val = self._load_val(instr[1])
-                        # If return value is not an i32, convert it
-                        if isinstance(return_val.type, ir.FloatType):
-                            return_val = self.builder.fptosi(return_val, ir.IntType(32))
-                        elif isinstance(return_val.type, ir.IntType) and return_val.type.width != 32:
-                            if return_val.type.width < 32:
-                                return_val = self.builder.sext(return_val, ir.IntType(32))
-                            else:
-                                return_val = self.builder.trunc(return_val, ir.IntType(32))
-                        self.builder.ret(return_val)
-                        if self.debug:
-                            print(f"Generated return with value {instr[1]}")
-                    else:
-                        # Return 0 by default
-                        self.builder.ret(ir.Constant(ir.IntType(32), 0))
-                        if self.debug:
-                            print("Generated default return 0")
-                elif op == 'BINARY_OP':
-                    if len(instr) != 5:
-                        raise ValueError(f"Invalid BINARY_OP instruction at index {i}: {instr}")
-                    _, op_type, dest, lhs, rhs = instr
-                    self.binary_op(op_type, dest, lhs, rhs)
-                elif op == 'INPUT':
-                    if len(instr) != 3:
-                        raise ValueError(f"Invalid INPUT instruction at index {i}: {instr}")
-                    _, var_name, data_type = instr
-                    self.system_input(var_name, data_type)
-                elif op == 'OUTPUT':
-                    if len(instr) != 3:
-                        raise ValueError(f"Invalid OUTPUT instruction at index {i}: {instr}")
-                    _, value, data_type = instr
-                    self.system_output(value, data_type)
-                elif op == 'ASSIGN':
-                    if len(instr) < 3 or len(instr) > 4:
-                        raise ValueError(f"Invalid ASSIGN instruction at index {i}: {instr}")
-                    _, var_name, value = instr[:3]  # Extract the first three components
-                    self.assign(var_name, value)
-                
-                elif op == 'STRING_LITERAL':
-                    if len(instr) != 2:
-                        raise ValueError(f"Invalid STRING_LITERAL instruction at index {i}: {instr}")
-                    _, string_value = instr
-                    self.create_string_literal(string_value)
-                elif op == 'SYSTEM_EXIT':
-                    if len(instr) != 1:
-                        raise ValueError(f"Invalid SYSTEM_EXIT instruction at index {i}: {instr}")
-                    self.system_exit()
-                    if self.debug:
-                        print("Generated system exit")
-                elif op == 'SYSTEM_INPUT':
-                    if len(instr) != 3:
-                        raise ValueError(f"Invalid SYSTEM_INPUT instruction at index {i}: {instr}")
-                    _, var_name, data_type = instr
-                    self.system_input(var_name, data_type)
-                    if self.debug:
-                        print(f"Generated system input for {var_name} of type {data_type}")
-                elif op == 'SYSTEM_OUTPUT':
-                    if len(instr) != 3:
-                        raise ValueError(f"Invalid SYSTEM_OUTPUT instruction at index {i}: {instr}")
-                    _, value, data_type = instr
-                    self.system_output(value, data_type)
-                    if self.debug:
-                        print(f"Generated system output for {value} of type {data_type}")
-                elif op == 'EXIT':
-                    self.system_exit()
-                    # Add an unreachable instruction after EXIT
-                    self.builder.unreachable()
-                    if self.debug:
-                        print("Generated exit with unreachable")
-                elif op == 'LABEL':
-                    if len(instr) != 2:
-                        raise ValueError(f"Invalid LABEL instruction at index {i}: {instr}")
-                    _, label_name = instr
-                    self.handle_label(label_name, branch=False)
-                elif op == 'IF_FALSE':
-                    if len(instr) != 3:
-                        raise ValueError(f"Invalid IF_FALSE instruction at index {i}: {instr}")
-                    _, condition, label_name = instr
-                    self.handle_if_false(condition, label_name)
-                elif op == 'GOTO':
-                    if len(instr) != 2:
-                        raise ValueError(f"Invalid GOTO instruction at index {i}: {instr}")
-                    _, label_name = instr
-                    self.handle_label(label_name, branch=True)
-                else:
-                    raise ValueError(f"Unsupported instruction: {op} at index {i}")
-                    
-            # Finalize and return the generated LLVM IR
-            return self.finalize()
-        except Exception as e:
-            print(f"Error during IR conversion: {e}")
-            traceback.print_exc()
+    def finalize(self):
+        llvm_ir = str(self.module)
+        if self.debug:
+            print("\nGenerated LLVM IR:\n")
+            print(llvm_ir)
+
+        try:
+            llvm_module = llvm.parse_assembly(llvm_ir)
+            llvm_module.verify()
+            if self.debug:
+                print("Module verification successful!")
+            return llvm_ir
+        except RuntimeError as e:
+            print(f"LLVM Module Validation Error: {e}")
             raise
+
+    def handle_FUNC_START(self, instr):
+        _, name, return_type_str, params = instr
+
+        # Correctly handle parameter type mapping
+        param_types = []
+        if params:
+            # Assuming params is a list of tuples (type, name)
+            # We need to extract the type string for get_llvm_type
+            param_type_strs = [p[0] for p in params]
+            param_types = [self.get_llvm_type(p_type) for p_type in param_type_strs]
+
+        return_type = self.get_llvm_type(return_type_str)
+
+        func_type = ir.FunctionType(return_type, param_types)
+        self.current_function = ir.Function(self.module, func_type, name=name)
+
+        entry_block = self.current_function.append_basic_block(name="entry")
+        self.builder = ir.IRBuilder(entry_block)
+
+        self.var_table = {}
+        self.labels = {}
+
+        # Process parameters
+        if params:
+            for i, (p_type, p_name) in enumerate(params):
+                arg = self.current_function.args[i]
+                arg.name = p_name
+                ptr = self.builder.alloca(self.get_llvm_type(p_type), name=p_name)
+                self.builder.store(arg, ptr)
+                self.var_table[p_name] = ptr
+
+    def handle_FUNC_END(self, instr):
+        if self.builder and not self.builder.block.is_terminated:
+            if self.current_function.return_value.type == ir.VoidType():
+                self.builder.ret_void()
+            else:
+                # Default return for non-void functions, e.g., return 0 for int main
+                zero = ir.Constant(self.current_function.return_value.type, 0)
+                self.builder.ret(zero)
+        self.current_function = None
+        self.builder = None
+
+    def handle_DECLARE(self, instr):
+        _, var_type_str, var_name = instr
+        llvm_type = self.get_llvm_type(var_type_str)
+        ptr = self.builder.alloca(llvm_type, name=var_name)
+        self.var_table[var_name] = ptr
+
+    def handle_DECLARE_ARRAY(self, instr):
+        _, element_type_str, name, size = instr
+        element_type = self.get_llvm_type(element_type_str)
+        array_type = ir.ArrayType(element_type, int(size))
+        ptr = self.builder.alloca(array_type, name=name)
+        self.var_table[name] = ptr
+
+    def handle_STORE_ARRAY(self, instr):
+        _, name, index, value = instr
+        ptr = self.var_table[name]
+        index_val = self._load_val(str(index))
+        val = self._load_val(value)
+
+        addr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32), 0), index_val], inbounds=True)
+        self.builder.store(val, addr)
+
+    def handle_LOAD_ARRAY(self, instr):
+        _, dest, name, index = instr
+        ptr = self.var_table[name]
+        index_val = self._load_val(str(index))
+
+        addr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32), 0), index_val], inbounds=True)
+        val = self.builder.load(addr)
+        self.var_table[dest] = val
+
+    def handle_ASSIGN(self, instr):
+        _, var_name, value = instr
+        ptr = self.var_table[var_name]
+        val = self._load_val(value)
+
+        # Type casting if necessary
+        if ptr.type.pointee != val.type:
+            if isinstance(ptr.type.pointee, ir.FloatType) and isinstance(val.type, ir.IntType):
+                val = self.builder.sitofp(val, ptr.type.pointee)
+            elif isinstance(ptr.type.pointee, ir.IntType) and isinstance(val.type, ir.FloatType):
+                val = self.builder.fptosi(val, ptr.type.pointee)
+
+        self.builder.store(val, ptr)
+
+    def handle_BINARY_OP(self, instr):
+        _, op, dest, lhs, rhs = instr
+        lhs_val = self._load_val(lhs)
+        rhs_val = self._load_val(rhs)
+
+        # Type promotion
+        if isinstance(lhs_val.type, ir.FloatType) or isinstance(rhs_val.type, ir.FloatType):
+            if isinstance(lhs_val.type, ir.IntType):
+                lhs_val = self.builder.sitofp(lhs_val, ir.FloatType())
+            if isinstance(rhs_val.type, ir.IntType):
+                rhs_val = self.builder.sitofp(rhs_val, ir.FloatType())
+
+        op_map = {'+': 'add', '-': 'sub', '*': 'mul', '/': 'div'}
+        if op in op_map:
+            if isinstance(lhs_val.type, ir.FloatType):
+                result = getattr(self.builder, f'f{op_map[op]}')(lhs_val, rhs_val, name=dest)
+            else: # sdiv for integer division
+                op_func = 'sdiv' if op == '/' else op_map[op]
+                result = getattr(self.builder, op_func)(lhs_val, rhs_val, name=dest)
+        elif op in ['<', '>', '<=', '>=', '==', '!=']:
+            if isinstance(lhs_val.type, ir.FloatType):
+                result = self.builder.fcmp_ordered(op, lhs_val, rhs_val, name=dest)
+            else:
+                result = self.builder.icmp_signed(op, lhs_val, rhs_val, name=dest)
+        else:
+            raise ValueError(f"Unsupported binary operator: {op}")
+
+        self.var_table[dest] = result
+
+    def handle_CONCAT_STRINGS(self, instr):
+        _, dest, s1, s2 = instr
+        s1_val = self._load_val(s1)
+        s2_val = self._load_val(s2)
+        result = self.builder.call(self.concat_strings_func, [s1_val, s2_val], name=dest)
+        self.var_table[dest] = result
+
+    def handle_UNARY_OP(self, instr):
+        _, op, dest, val_name = instr
+        val = self._load_val(val_name)
+        if op == '-':
+            if isinstance(val.type, ir.DoubleType):
+                result = self.builder.fsub(ir.Constant(ir.DoubleType(), 0.0), val, name=dest)
+            else:
+                result = self.builder.sub(ir.Constant(val.type, 0), val, name=dest)
+        else:
+            raise ValueError(f"Unsupported unary operator: {op}")
+        self.var_table[dest] = result
+
+    def handle_PARAM(self, instr):
+        _, value = instr
+        self.pending_params.append(self._load_val(value))
+
+    def handle_CALL(self, instr):
+        _, name, num_args, dest = instr
+
+        func_map = {
+            "sqrt": self.sqrt_func,
+            "pow": self.pow_func,
+            "sin": self.sin_func,
+            "cos": self.cos_func,
+            "file_open": self.file_open_func,
+            "file_close": self.file_close_func,
+            "file_write": self.file_write_func,
+            "file_read": self.file_read_func,
+            "tcp_socket": self.tcp_socket_func,
+            "tcp_connect": self.tcp_connect_func,
+            "tcp_send": self.tcp_send_func,
+            "tcp_recv": self.tcp_recv_func,
+            "tcp_close": self.tcp_close_func,
+        }
+
+        if name in func_map:
+            func = func_map[name]
+        else:
+            func = self.module.get_global(name)
+
+        if not func:
+            raise ValueError(f"Function {name} not found in module")
+
+        args = self.pending_params[-num_args:]
+        self.pending_params = self.pending_params[:-num_args]
+
+        # Handle implicit type casting for math functions
+        if name in ["sqrt", "pow", "sin", "cos"]:
+            new_args = []
+            for i, arg in enumerate(args):
+                if isinstance(arg.type, ir.IntType):
+                    new_args.append(self.builder.sitofp(arg, self.get_llvm_type('float')))
+                else:
+                    new_args.append(arg)
+            args = new_args
+
+        result = self.builder.call(func, args, name=dest)
+        self.var_table[dest] = result
+
+    def handle_RETURN(self, instr):
+        _, value = instr
+        if value is not None:
+            ret_val = self._load_val(value)
+            self.builder.ret(ret_val)
+        else:
+            self.builder.ret_void()
+
+    def handle_LABEL(self, instr):
+        _, label_name = instr
+        if label_name not in self.labels:
+            self.labels[label_name] = self.current_function.append_basic_block(name=label_name)
+
+        if not self.builder.block.is_terminated:
+            self.builder.branch(self.labels[label_name])
+
+        self.builder.position_at_end(self.labels[label_name])
+
+    def handle_GOTO(self, instr):
+        _, label_name = instr
+        if label_name not in self.labels:
+            self.labels[label_name] = self.current_function.append_basic_block(name=label_name)
+
+        if not self.builder.block.is_terminated:
+            self.builder.branch(self.labels[label_name])
+
+    def handle_IF_FALSE(self, instr):
+        _, cond, label_name = instr
+        cond_val = self._load_val(cond)
+
+        true_block = self.current_function.append_basic_block(name="if_true")
+        if label_name not in self.labels:
+            self.labels[label_name] = self.current_function.append_basic_block(name=label_name)
+        false_block = self.labels[label_name]
+
+        self.builder.cbranch(cond_val, true_block, false_block)
+        self.builder.position_at_end(true_block)
+
+    def handle_IF_TRUE(self, instr):
+        _, cond, label_name = instr
+        cond_val = self._load_val(cond)
+
+        if label_name not in self.labels:
+            self.labels[label_name] = self.current_function.append_basic_block(name=label_name)
+        true_block = self.labels[label_name]
+
+        false_block = self.current_function.append_basic_block(name="if_false")
+
+        self.builder.cbranch(cond_val, true_block, false_block)
+        self.builder.position_at_end(false_block)
+
+    def handle_INPUT(self, instr):
+        _, var_name, var_type = instr
+        if var_type == 'int':
+            val = self.builder.call(self.input_int_func, [])
+        elif var_type == 'float':
+            val = self.builder.call(self.input_float_func, [])
+        else:
+            raise ValueError(f"Unsupported input type: {var_type}")
+
+        ptr = self.var_table[var_name]
+        self.builder.store(val, ptr)
+
+    def handle_OUTPUT(self, instr):
+        _, value, var_type, precision = instr
+        val = self._load_val(value)
+        if var_type == 'int':
+            self.builder.call(self.output_int_func, [val])
+        elif var_type == 'float':
+            precision_val = self._load_val(precision)
+            self.builder.call(self.output_float_func, [val, precision_val])
+        elif var_type == 'string':
+            self.builder.call(self.output_string_func, [val])
+        elif var_type == 'char':
+            self.builder.call(self.output_char_func, [val])
+        else:
+            raise ValueError(f"Unsupported output type: {var_type}")
+
+    def handle_EXIT(self, instr):
+        self.builder.call(self.exit_func, [])
+
+    def _load_val(self, name):
+        if isinstance(name, str):
+            if name in self.var_table:
+                # If it's a temporary variable, it's already a value.
+                if name.startswith('t'):
+                    return self.var_table[name]
+                # Otherwise, it's a declared variable, so it's a pointer that needs to be loaded.
+                else:
+                    return self.builder.load(self.var_table[name])
+            
+            if name.isdigit() or (name.startswith('-') and name[1:].isdigit()):
+                return ir.Constant(ir.IntType(32), int(name))
+            if name.lower() == 'true':
+                return ir.Constant(ir.IntType(1), 1)
+            if name.lower() == 'false':
+                return ir.Constant(ir.IntType(1), 0)
+            if name.startswith("'") and name.endswith("'"):
+                return ir.Constant(ir.IntType(8), ord(name[1]))
+            if name.startswith('"'):
+                str_val = name[1:-1].replace('\\n', '\n') + '\0'
+                c_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_val)), bytearray(str_val.encode('utf8')))
+                
+                # Check if a similar global string already exists
+                str_name = f"str_literal.{hash(str_val)}"
+                if str_name in self.module.globals:
+                    global_str = self.module.globals[str_name]
+                else:
+                    global_str = ir.GlobalVariable(self.module, c_str.type, name=str_name)
+                    global_str.initializer = c_str
+                    global_str.global_constant = True
+                    global_str.linkage = 'internal'
+
+                return self.builder.bitcast(global_str, self.get_llvm_type('string'))
+            try:
+                return ir.Constant(ir.DoubleType(), float(name))
+            except ValueError:
+                pass
+
+        raise ValueError(f"Unknown value to load: {name}")

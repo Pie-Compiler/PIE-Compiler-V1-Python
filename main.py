@@ -5,26 +5,32 @@ from llvmConverter import IRToLLVMConverter
 import subprocess
 def build_and_link():
     try:
-        # Compile the runtime functions to an object file
-        subprocess.run(["clang", "-c", "runtime.c", "-o", "runtime.o"], check=True)
+        # Compile the runtime functions to an object file with PIC
+        subprocess.run(["clang", "-c", "-fPIC", "runtime.c", "-o", "runtime.o"], check=True)
+        # Compile the math library to an object file with PIC
+        subprocess.run(["clang", "-c", "-fPIC", "math_lib.c", "-o", "math_lib.o"], check=True)
+        # Compile the file library to an object file with PIC
+        subprocess.run(["clang", "-c", "-fPIC", "file_lib.c", "-o", "file_lib.o"], check=True)
+        # Compile the network library to an object file with PIC
+        subprocess.run(["clang", "-c", "-fPIC", "net_lib.c", "-o", "net_lib.o"], check=True)
         # Convert LLVM IR to bitcode
         subprocess.run(["llvm-as", "output.ll", "-o", "output.bc"], check=True)
-        # Generate native object file from bitcode
-        subprocess.run(["llc", "-filetype=obj", "output.bc", "-o", "output.o"], check=True)
+        # Generate native object file from bitcode with PIC
+        subprocess.run(["llc", "-filetype=obj", "-relocation-model=pic", "output.bc", "-o", "output.o"], check=True)
         # Link everything together to create the executable
-        subprocess.run(["clang", "output.o", "runtime.o", "-o", "program"], check=True)
+        subprocess.run(["clang", "output.o", "runtime.o", "math_lib.o", "file_lib.o", "net_lib.o", "-o", "program", "-lm"], check=True)
         print("Build and linking successful! Executable: ./program")
-    except subprocess:
-        print("Error during build and linking process.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during build and linking process: {e}")
         raise
 def main():
     # Create an instance of our parser
     parser = Parser()
     
     # Example program
-    # test_program_file="test2.pie"
+    # test_program_file="test_math_int.pie"
     #make sure that it is a .pie file
-    with open("test2.pie", "r") as file: 
+    with open("test_net.pie", "r") as file:
         input_program = file.read()
 
     try:
@@ -35,7 +41,7 @@ def main():
         print_ast(ast)  # Use prettier printing
         # Perform semantic analysis
         analyzer = SemanticAnalyzer(parser.symbol_table)
-        is_valid = analyzer.analyze(ast)
+        is_valid, new_ast = analyzer.analyze(ast)
         
         # Print semantic errors/warnings
         if analyzer.errors:
@@ -53,7 +59,7 @@ def main():
             
             # Generate intermediate representation
             ir_gen = IRGenerator()
-            ir_code = ir_gen.generate(ast, parser.symbol_table)
+            ir_code = ir_gen.generate(new_ast, parser.symbol_table)
             
             print("\nIntermediate Representation (3-Address Code):")
 

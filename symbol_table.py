@@ -27,7 +27,7 @@ class SymbolTable:
             self.current_scope = self.scope_stack[-1]
         return self.current_scope
     
-    def add_symbol(self, name, type_info, line_num=None, is_initialized=False):
+    def add_symbol(self, name, type_info, line_num=None, is_initialized=False, **kwargs):
         """Add a symbol to the current scope."""
         if self.current_scope not in self.table:
             self.table[self.current_scope] = {}
@@ -37,6 +37,7 @@ class SymbolTable:
             'line': line_num,
             'initialized': is_initialized
         }
+        symbol_info.update(kwargs)
         
         self.table[self.current_scope][name] = symbol_info
         return symbol_info
@@ -49,6 +50,15 @@ class SymbolTable:
                 return self.table[scope][name]
         return None
     
+    def lookup_function(self, name):
+        """Looks up a function in the symbol table."""
+        # Functions are typically in the global scope
+        if 0 in self.table and name in self.table[0]:
+            symbol = self.table[0][name]
+            if symbol['type'] == 'function':
+                return symbol
+        return None
+
     def lookup_symbol_current_scope(self, name):
         """Look up a symbol in ONLY the current scope."""
         if self.current_scope in self.table and name in self.table[self.current_scope]:
@@ -70,54 +80,17 @@ class SymbolTable:
         for scope, symbols in self.table.items():
             result.append(f"Scope {scope}:")
             for name, info in symbols.items():
-                result.append(f"  {name}: {info}")
-        return "\n".join(result)
-
-# Function Symbol Table (for function declarations/definitions)
-class FunctionSymbolTable:
-    def __init__(self):
-        self.functions = {}
-    
-    def add_function(self, name, return_type, parameters=None, is_defined=False):
-        """Add a function to the symbol table."""
-        if parameters is None:
-            parameters = []
-            
-        # Store function signature
-        self.functions[name] = {
-            'return_type': return_type,
-            'parameters': parameters,  # List of (param_type, param_name) tuples
-            'is_defined': is_defined   # False for declarations, True for definitions
-        }
-        return self.functions[name]
-    
-    def lookup_function(self, name):
-        """Look up a function in the symbol table."""
-        if name in self.functions:
-            return self.functions[name]
-        return None
-    
-    def update_function(self, name, **updates):
-        """Update a function's information."""
-        if name in self.functions:
-            for key, value in updates.items():
-                self.functions[name][key] = value
-            return True
-        return False
-    
-    def __str__(self):
-        """String representation of the function table for debugging."""
-        result = ["Function Table:"]
-        for name, info in self.functions.items():
-            params = ", ".join(f"{p_type} {p_name}" for p_type, p_name in info['parameters'])
-            result.append(f"  {info['return_type']} {name}({params}) {'[defined]' if info['is_defined'] else '[declared]'}")
+                if info['type'] == 'function':
+                    params = ", ".join(f"{p['type']} {p['name']}" for p in info.get('params', []))
+                    result.append(f"  {info.get('return_type')} {name}({params})")
+                else:
+                    result.append(f"  {name}: {info}")
         return "\n".join(result)
 
 # Type Checking Helper
 class TypeChecker:
-    def __init__(self, symbol_table, function_table):
+    def __init__(self, symbol_table):
         self.symbol_table = symbol_table
-        self.function_table = function_table
         
         # This specific compatible_types map might be less needed if is_compatible is robust
         self.compatible_types = {
@@ -190,6 +163,8 @@ class TypeChecker:
                     return 'KEYWORD_FLOAT'
                 else:
                     return 'KEYWORD_INT'
+            elif op == 'PLUS' and norm_left == 'KEYWORD_STRING' and norm_right == 'KEYWORD_STRING':
+                return 'KEYWORD_STRING'
             else:
                 return None
 
@@ -248,15 +223,14 @@ def test_symbol_table():
     print("After exiting scope, looking up 'z':", symbol_table.lookup_symbol("z"))
     
     # Test function table
-    function_table = FunctionSymbolTable()
-    function_table.add_function("calculateArea", "KEYWORD_FLOAT", [("KEYWORD_FLOAT", "width"), ("KEYWORD_FLOAT", "height")])
-    function_table.add_function("main", "KEYWORD_INT")
+    symbol_table.add_symbol("calculateArea", "function", return_type="KEYWORD_FLOAT", params=[{'type': 'KEYWORD_FLOAT', 'name': 'width'}, {'type': 'KEYWORD_FLOAT', 'name': 'height'}])
+    symbol_table.add_symbol("main", "function", return_type="KEYWORD_INT", params=[])
     
-    print("\nFunction Table:")
-    print(function_table)
+    print("\nSymbol Table with Functions:")
+    print(symbol_table)
     
     # Test type checker
-    type_checker = TypeChecker(symbol_table, function_table)
+    type_checker = TypeChecker(symbol_table)
     print("\nType compatibility checks:")
     print("int + float =", type_checker.check_binary_op("PLUS", "KEYWORD_INT", "KEYWORD_FLOAT"))
     print("bool && bool =", type_checker.check_binary_op("AND", "KEYWORD_BOOL", "KEYWORD_BOOL"))

@@ -1,0 +1,5 @@
+//a file to test the file_io
+file f;
+f=file_open("test3.txt","w");
+file_write(f,"Content exxxtra");
+file_close(f);

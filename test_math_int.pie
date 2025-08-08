@@ -1,0 +1,6 @@
+int main() {
+  float y;
+  y = sqrt(16);
+  output(y, float);
+  return 0;
+}
