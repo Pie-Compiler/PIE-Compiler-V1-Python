@@ -15,6 +15,22 @@ class IRToLLVMConverter:
         self.labels = {}
         self.pending_params = []
 
+        d_array_int_struct = self.module.context.get_identified_type("DArrayInt")
+        d_array_int_struct.set_body(
+            ir.IntType(32).as_pointer(), # data
+            ir.IntType(64), # size
+            ir.IntType(64)  # capacity
+        )
+        self.d_array_int_type = d_array_int_struct.as_pointer()
+
+        d_array_string_struct = self.module.context.get_identified_type("DArrayString")
+        d_array_string_struct.set_body(
+            ir.IntType(8).as_pointer().as_pointer(), # data
+            ir.IntType(64), # size
+            ir.IntType(64)  # capacity
+        )
+        self.d_array_string_type = d_array_string_struct.as_pointer()
+
         self._declare_system_functions()
 
     def _initialize_llvm(self):
@@ -36,6 +52,10 @@ class IRToLLVMConverter:
             return ir.IntType(64)
         elif type_str == 'socket':
             return ir.IntType(32)
+        elif type_str == 'd_array_int':
+            return self.d_array_int_type
+        elif type_str == 'd_array_string':
+            return self.d_array_string_type
         elif type_str == 'string':
             # Strings are pointers to char
             return ir.PointerType(ir.IntType(8))
@@ -80,6 +100,7 @@ class IRToLLVMConverter:
         self.file_write_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type]), name="file_write")
         self.file_read_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type, self.get_llvm_type('int')]), name="file_read")
         self.file_read_all_func = ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_all")
+        self.file_read_lines_func = ir.Function(self.module, ir.FunctionType(self.d_array_string_type, [file_type]), name="file_read_lines")
 
         # Network functions
         socket_type = self.get_llvm_type('socket')
@@ -89,6 +110,23 @@ class IRToLLVMConverter:
         self.tcp_send_func = ir.Function(self.module, ir.FunctionType(int_type, [socket_type, string_type]), name="tcp_send")
         self.tcp_recv_func = ir.Function(self.module, ir.FunctionType(int_type, [socket_type, string_type, int_type]), name="tcp_recv")
         self.tcp_close_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [socket_type]), name="tcp_close")
+
+        # Dynamic array functions
+        d_array_int_type = self.d_array_int_type
+        self.d_array_int_create_func = ir.Function(self.module, ir.FunctionType(d_array_int_type, []), name="d_array_int_create")
+        self.d_array_int_append_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_int_type, int_type]), name="d_array_int_append")
+        self.d_array_int_get_func = ir.Function(self.module, ir.FunctionType(int_type, [d_array_int_type, int_type]), name="d_array_int_get")
+        self.d_array_int_set_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_int_type, int_type, int_type]), name="d_array_int_set")
+        self.d_array_int_size_func = ir.Function(self.module, ir.FunctionType(int_type, [d_array_int_type]), name="d_array_int_size")
+        self.d_array_int_free_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_int_type]), name="d_array_int_free")
+
+        d_array_string_type = self.d_array_string_type
+        self.d_array_string_create_func = ir.Function(self.module, ir.FunctionType(d_array_string_type, []), name="d_array_string_create")
+        self.d_array_string_append_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_string_type, string_type]), name="d_array_string_append")
+        self.d_array_string_get_func = ir.Function(self.module, ir.FunctionType(string_type, [d_array_string_type, int_type]), name="d_array_string_get")
+        self.d_array_string_set_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_string_type, int_type, string_type]), name="d_array_string_set")
+        self.d_array_string_size_func = ir.Function(self.module, ir.FunctionType(int_type, [d_array_string_type]), name="d_array_string_size")
+        self.d_array_string_free_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_string_type]), name="d_array_string_free")
 
     def convert_ir(self, ir_code):
         for instr in ir_code:
@@ -200,6 +238,8 @@ class IRToLLVMConverter:
                 val = self.builder.sitofp(val, ptr.type.pointee)
             elif isinstance(ptr.type.pointee, ir.IntType) and isinstance(val.type, ir.FloatType):
                 val = self.builder.fptosi(val, ptr.type.pointee)
+            elif isinstance(ptr.type.pointee, ir.IntType) and isinstance(val.type, ir.PointerType):
+                val = self.builder.ptrtoint(val, ptr.type.pointee)
 
         self.builder.store(val, ptr)
 
@@ -268,11 +308,24 @@ class IRToLLVMConverter:
             "file_write": self.file_write_func,
             "file_read": self.file_read_func,
             "file_read_all": self.file_read_all_func,
+            "file_read_lines": self.file_read_lines_func,
             "tcp_socket": self.tcp_socket_func,
             "tcp_connect": self.tcp_connect_func,
             "tcp_send": self.tcp_send_func,
             "tcp_recv": self.tcp_recv_func,
             "tcp_close": self.tcp_close_func,
+            "d_array_int_create": self.d_array_int_create_func,
+            "d_array_int_append": self.d_array_int_append_func,
+            "d_array_int_get": self.d_array_int_get_func,
+            "d_array_int_set": self.d_array_int_set_func,
+            "d_array_int_size": self.d_array_int_size_func,
+            "d_array_int_free": self.d_array_int_free_func,
+            "d_array_string_create": self.d_array_string_create_func,
+            "d_array_string_append": self.d_array_string_append_func,
+            "d_array_string_get": self.d_array_string_get_func,
+            "d_array_string_set": self.d_array_string_set_func,
+            "d_array_string_size": self.d_array_string_size_func,
+            "d_array_string_free": self.d_array_string_free_func,
         }
 
         if name in func_map:
@@ -421,6 +474,10 @@ class IRToLLVMConverter:
                 return ir.Constant(ir.IntType(1), 1)
             if name.lower() == 'false':
                 return ir.Constant(ir.IntType(1), 0)
+            if name.lower() == 'null':
+                # This is a generic null. The type will be determined by the context.
+                # For now, we'll assume it's a null pointer to i8, which can be cast.
+                return ir.Constant(ir.IntType(8).as_pointer(), None)
             if name.startswith("'") and name.endswith("'"):
                 return ir.Constant(ir.IntType(8), ord(name[1]))
             if name.startswith('"'):

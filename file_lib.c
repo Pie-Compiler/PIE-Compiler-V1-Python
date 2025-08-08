@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "d_array.h"
 
 intptr_t file_open(const char* filename, const char* mode) {
     FILE* file = fopen(filename, mode);
@@ -48,4 +49,25 @@ char* file_read_all(intptr_t file_handle) {
     buffer[length] = '\0';
 
     return buffer;
+}
+
+DArrayString* file_read_lines(intptr_t file_handle) {
+    FILE* file = (FILE*)file_handle;
+    if (!file) return NULL;
+
+    DArrayString* arr = d_array_string_create();
+    char* line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    while ((read = getline(&line, &len, file)) != -1) {
+        // Remove trailing newline
+        if (read > 0 && line[read - 1] == '\n') {
+            line[read - 1] = '\0';
+        }
+        d_array_string_append(arr, line);
+    }
+
+    free(line);
+    return arr;
 }

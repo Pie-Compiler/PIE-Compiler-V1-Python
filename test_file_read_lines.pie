@@ -1,0 +1,27 @@
+int main() {
+  file f;
+  f = file_open("test.txt", "w");
+  file_write(f, "line 1\n");
+  file_write(f, "line 2\n");
+  file_close(f);
+
+  f = file_open("test.txt", "r");
+  d_array_string lines;
+  lines = file_read_lines(f);
+
+  int size;
+  size = d_array_string_size(lines);
+  output(size, int); // Should be 2
+
+  string s;
+  s = d_array_string_get(lines, 0);
+  output(s, string); // Should be "line 1"
+
+  s = d_array_string_get(lines, 1);
+  output(s, string); // Should be "line 2"
+
+  d_array_string_free(lines);
+  file_close(f);
+
+  return 0;
+}

@@ -1,0 +1,19 @@
+int main() {
+  d_array_int arr;
+  arr = d_array_int_create();
+
+  d_array_int_append(arr, 10);
+  d_array_int_append(arr, 20);
+
+  int x;
+  x = d_array_int_get(arr, 1);
+  output(x, int); // Should output 20
+
+  int size;
+  size = d_array_int_size(arr);
+  output(size, int); // Should output 2
+
+  d_array_int_free(arr);
+
+  return 0;
+}

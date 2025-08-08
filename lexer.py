@@ -249,6 +249,8 @@ def build_master_nfa():
         "float": "KEYWORD_FLOAT",
         "file": "KEYWORD_FILE",
         "socket": "KEYWORD_SOCKET",
+        "d_array_int": "KEYWORD_D_ARRAY_INT",
+        "d_array_string": "KEYWORD_D_ARRAY_STRING",
         "char": "KEYWORD_CHAR",
         "void": "KEYWORD_VOID",
         "null": "KEYWORD_NULL",

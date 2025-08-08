@@ -11,7 +11,7 @@ class Parser:
             'IDENTIFIER', 'INT_LITERAL', 'FLOAT_LITERAL', 'STRING_LITERAL', 'CHAR_LITERAL',  # Added CHAR_LITERAL
             'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE', 'KEYWORD_DO',
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
-            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET',
+            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_D_ARRAY_INT', 'KEYWORD_D_ARRAY_STRING',
             'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 
             'KEYWORD_NULL', 'KEYWORD_EXIT',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
@@ -55,6 +55,42 @@ class Parser:
                 params=info['params']
             )
 
+        d_array_string_functions = {
+            "d_array_string_create": {"return_type": "d_array_string", "params": []},
+            "d_array_string_append": {"return_type": "void", "params": [("d_array_string", "arr"), ("string", "value")]},
+            "d_array_string_get": {"return_type": "string", "params": [("d_array_string", "arr"), ("int", "index")]},
+            "d_array_string_set": {"return_type": "void", "params": [("d_array_string", "arr"), ("int", "index"), ("string", "value")]},
+            "d_array_string_size": {"return_type": "int", "params": [("d_array_string", "arr")]},
+            "d_array_string_free": {"return_type": "void", "params": [("d_array_string", "arr")]},
+        }
+        for name, info in d_array_string_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
+        d_array_functions = {
+            "d_array_int_create": {"return_type": "d_array_int", "params": []},
+            "d_array_int_append": {"return_type": "void", "params": [("d_array_int", "arr"), ("int", "value")]},
+            "d_array_int_get": {"return_type": "int", "params": [("d_array_int", "arr"), ("int", "index")]},
+            "d_array_int_set": {"return_type": "void", "params": [("d_array_int", "arr"), ("int", "index"), ("int", "value")]},
+            "d_array_int_size": {"return_type": "int", "params": [("d_array_int", "arr")]},
+            "d_array_int_free": {"return_type": "void", "params": [("d_array_int", "arr")]},
+        }
+        for name, info in d_array_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
         net_functions = {
             "tcp_socket": {"return_type": "socket", "params": []},
             "tcp_connect": {"return_type": "int", "params": [("socket", "sockfd"), ("string", "host"), ("int", "port")]},
@@ -78,6 +114,7 @@ class Parser:
             "file_write": {"return_type": "void", "params": [("file", "file_handle"), ("string", "content")]},
             "file_read": {"return_type": "void", "params": [("file", "file_handle"), ("string", "buffer"), ("int", "size")]},
             "file_read_all": {"return_type": "string", "params": [("file", "file_handle")]},
+            "file_read_lines": {"return_type": "d_array_string", "params": [("file", "file_handle")]},
         }
         for name, info in file_functions.items():
             param_types = [p[0] for p in info['params']]
@@ -263,7 +300,9 @@ class Parser:
                          | KEYWORD_STRING
                          | KEYWORD_BOOL
                          | KEYWORD_FILE
-                         | KEYWORD_SOCKET'''
+                         | KEYWORD_SOCKET
+                         | KEYWORD_D_ARRAY_INT
+                         | KEYWORD_D_ARRAY_STRING'''
         p[0] = p[1]
     
     def p_assignment_statement(self, p):

@@ -120,6 +120,8 @@ class TypeChecker:
             'boolean': 'KEYWORD_BOOL', # From test2.pie
             'bool': 'KEYWORD_BOOL',
             'void': 'KEYWORD_VOID',
+            'file': 'KEYWORD_FILE',
+            'socket': 'KEYWORD_SOCKET',
             # Idempotent entries for already normalized types
             'KEYWORD_INT': 'KEYWORD_INT',
             'KEYWORD_FLOAT': 'KEYWORD_FLOAT',
@@ -127,6 +129,7 @@ class TypeChecker:
             'KEYWORD_STRING': 'KEYWORD_STRING',
             'KEYWORD_CHAR': 'KEYWORD_CHAR',
             'KEYWORD_VOID': 'KEYWORD_VOID',
+            'KEYWORD_NULL': 'KEYWORD_NULL',
         }
         return mapping.get(type_name, type_name) # Return original if not in map, though ideally all types should be mappable or already KEYWORD_
 
@@ -137,6 +140,9 @@ class TypeChecker:
 
         if norm_target_type is None or norm_source_type is None:
             return False
+
+        if norm_source_type == 'KEYWORD_NULL':
+            return norm_target_type in ['KEYWORD_STRING', 'KEYWORD_FILE', 'KEYWORD_SOCKET']
 
         if norm_target_type == norm_source_type:
             return True

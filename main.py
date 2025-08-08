@@ -13,12 +13,14 @@ def build_and_link():
         subprocess.run(["clang", "-c", "file_lib.c", "-o", "file_lib.o"], check=True)
         # Compile the network library to an object file
         subprocess.run(["clang", "-c", "net_lib.c", "-o", "net_lib.o"], check=True)
+        # Compile the dynamic array library to an object file
+        subprocess.run(["clang", "-c", "d_array.c", "-o", "d_array.o"], check=True)
         # Convert LLVM IR to bitcode
         subprocess.run(["llvm-as", "output.ll", "-o", "output.bc"], check=True)
         # Generate native object file from bitcode
         subprocess.run(["llc", "-filetype=obj", "output.bc", "-o", "output.o"], check=True)
         # Link everything together to create the executable
-        subprocess.run(["clang", "output.o", "runtime.o", "math_lib.o", "file_lib.o", "net_lib.o", "-o", "program", "-lm"], check=True)
+        subprocess.run(["clang", "output.o", "runtime.o", "math_lib.o", "file_lib.o", "net_lib.o", "d_array.o", "-o", "program", "-lm"], check=True)
         print("Build and linking successful! Executable: ./program")
     except subprocess.CalledProcessError as e:
         print(f"Error during build and linking process: {e}")
@@ -28,9 +30,9 @@ def main():
     parser = Parser()
     
     # Example program
-    # test_program_file="test_switch.pie"
+    # test_program_file="test_file_read_lines.pie"
     #make sure that it is a .pie file
-    with open("test_switch.pie", "r") as file:
+    with open("test_file_read_lines.pie", "r") as file:
         input_program = file.read()
 
     try:

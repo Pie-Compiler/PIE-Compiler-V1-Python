@@ -238,6 +238,8 @@ class SemanticAnalyzer:
                 return ('primary', value, 'float'), 'KEYWORD_FLOAT'
             elif value in ['true', 'false']:
                 return ('primary', value, 'boolean'), 'KEYWORD_BOOL'
+            elif value == 'null':
+                return ('primary', value, 'null'), 'KEYWORD_NULL'
             else:
                 symbol = self.symbol_table.lookup_symbol(value)
                 if symbol:
