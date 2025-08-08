@@ -99,7 +99,7 @@ class SemanticAnalyzer:
 
     def _analyze_array_access(self, node, _):
         name, index_expr = node[1], node[2]
-        
+
         symbol = self.symbol_table.lookup_symbol(name)
         if not symbol or symbol.get('type') != 'array':
             self.add_error(f"'{name}' is not an array.")
@@ -113,6 +113,10 @@ class SemanticAnalyzer:
         return ('array_access', name, new_index_expr, element_type), element_type
 
     def _analyze_function_definition(self, node, _):
+        if self.current_function:
+            self.add_error("Nested function definitions are not allowed.")
+            return node, None
+
         return_type, name, params, body = node[1], node[2], node[3], node[4]
 
         if self.symbol_table.lookup_symbol_current_scope(name):
@@ -132,7 +136,7 @@ class SemanticAnalyzer:
         self.symbol_table.exit_scope()
         self.current_function = None
         return ('function_definition', return_type, name, params, new_body), None
-        
+
     def _analyze_block(self, node, _):
         _, statement_list = node
         self.symbol_table.enter_scope()
@@ -162,7 +166,10 @@ class SemanticAnalyzer:
             if i < len(param_types):
                 param_type = param_types[i]
                 if not self.type_checker.is_compatible(param_type, arg_type):
-                    self.add_error(f"Type mismatch for argument {i+1} of function '{name}'. Expected {param_type}, got {arg_type}.")
+                    # Allow int to float conversion for math functions
+                    is_math_func = name in ["sqrt", "pow", "sin", "cos"]
+                    if not (is_math_func and param_type == 'float' and arg_type == 'KEYWORD_INT'):
+                        self.add_error(f"Type mismatch for argument {i+1} of function '{name}'. Expected {param_type}, got {arg_type}.")
 
         return_type = function_symbol.get('return_type')
         return ('function_call', name, new_args, return_type), return_type
@@ -286,13 +293,20 @@ class SemanticAnalyzer:
         return ('for', new_init, new_condition, new_update, new_body), None
 
     def _analyze_system_output(self, node, _):
-        expr, expected_type = node[1], node[2]
+        expr, expected_type, precision_expr = node[1], node[2], node[3]
         new_expr, expr_type = self._analyze_node(expr)
         norm_expr_type = self.type_checker._normalize_type(expr_type)
         norm_expected_type = self.type_checker._normalize_type(expected_type)
         if norm_expr_type and norm_expr_type != norm_expected_type:
             self.add_error(f"Type mismatch in output: Expression is {expr_type}, but output type is {expected_type}")
-        return ('system_output', new_expr, expected_type), None
+
+        new_precision_expr = None
+        if precision_expr:
+            new_precision_expr, precision_type = self._analyze_node(precision_expr)
+            if precision_type != 'KEYWORD_INT':
+                self.add_error("Output precision must be an integer.")
+
+        return ('system_output', new_expr, expected_type, new_precision_expr), None
 
     def _analyze_return(self, node, _):
         expr = node[1]

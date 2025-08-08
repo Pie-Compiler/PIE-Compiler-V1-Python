@@ -53,7 +53,7 @@ class IRToLLVMConverter:
 
         # output functions
         self.output_int_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int')]), name="output_int")
-        self.output_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float')]), name="output_float")
+        self.output_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float'), self.get_llvm_type('int')]), name="output_float")
         self.output_string_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="output_string")
         self.output_char_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char')]), name="output_char")
 
@@ -282,6 +282,16 @@ class IRToLLVMConverter:
         args = self.pending_params[-num_args:]
         self.pending_params = self.pending_params[:-num_args]
 
+        # Handle implicit type casting for math functions
+        if name in ["sqrt", "pow", "sin", "cos"]:
+            new_args = []
+            for i, arg in enumerate(args):
+                if isinstance(arg.type, ir.IntType):
+                    new_args.append(self.builder.sitofp(arg, self.get_llvm_type('float')))
+                else:
+                    new_args.append(arg)
+            args = new_args
+
         result = self.builder.call(func, args, name=dest)
         self.var_table[dest] = result
 
@@ -349,12 +359,13 @@ class IRToLLVMConverter:
         self.builder.store(val, ptr)
 
     def handle_OUTPUT(self, instr):
-        _, value, var_type = instr
+        _, value, var_type, precision = instr
         val = self._load_val(value)
         if var_type == 'int':
             self.builder.call(self.output_int_func, [val])
         elif var_type == 'float':
-            self.builder.call(self.output_float_func, [val])
+            precision_val = self._load_val(precision)
+            self.builder.call(self.output_float_func, [val, precision_val])
         elif var_type == 'string':
             self.builder.call(self.output_string_func, [val])
         elif var_type == 'char':

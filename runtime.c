@@ -58,8 +58,8 @@ void input_char(char *ptr) {
 }
 
 // Output function for float
-void output_float(double value) {
-    printf("%f\n", value);
+void output_float(double value, int precision) {
+    printf("%.*f\n", precision, value);
 }
 
 // Output function for int

@@ -158,21 +158,8 @@ class Parser:
     # Grammar rules defined below
     
     def p_program(self, p):
-        '''program : external_declaration_list'''
+        '''program : statement_list'''
         p[0] = ('program', p[1])
-
-    def p_external_declaration_list(self, p):
-        '''external_declaration_list : external_declaration
-                                     | external_declaration_list external_declaration'''
-        if len(p) == 2:
-            p[0] = [p[1]]
-        else:
-            p[0] = p[1] + [p[2]]
-
-    def p_external_declaration(self, p):
-        '''external_declaration : declaration_statement
-                                | function_definition'''
-        p[0] = p[1]
 
     def p_function_definition(self, p):
         '''function_definition : type_specifier IDENTIFIER LPAREN params RPAREN block_statement'''
@@ -219,7 +206,8 @@ class Parser:
                     | for_statement
                     | return_statement
                     | function_call_statement
-                    | block_statement'''
+                    | block_statement
+                    | function_definition'''
         p[0] = p[1]
 
     def p_do_while_statement(self, p):
@@ -327,6 +315,7 @@ class Parser:
                         | IDENTIFIER LPAREN RPAREN
                         | SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
+                        | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
                         | KEYWORD_EXIT LPAREN RPAREN'''
 
         slice_type = p.slice[1].type
@@ -334,7 +323,10 @@ class Parser:
         if slice_type == 'SYSTEM_INPUT':
             p[0] = ('system_input', p[3], p[5])
         elif slice_type == 'SYSTEM_OUTPUT':
-            p[0] = ('system_output', p[3], p[5])
+            if len(p) == 7:
+                p[0] = ('system_output', p[3], p[5], None)
+            else:
+                p[0] = ('system_output', p[3], p[5], p[7])
         elif slice_type == 'KEYWORD_EXIT':
             p[0] = ('system_exit',)
         elif slice_type == 'IDENTIFIER':

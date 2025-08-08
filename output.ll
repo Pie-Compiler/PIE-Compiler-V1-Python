@@ -8,7 +8,7 @@ declare double @"input_float"()
 
 declare void @"output_int"(i32 %".1")
 
-declare void @"output_float"(double %".1")
+declare void @"output_float"(double %".1", i32 %".2")
 
 declare void @"output_string"(i8* %".1")
 
@@ -47,27 +47,11 @@ declare void @"tcp_close"(i32 %".1")
 define i32 @"main"()
 {
 entry:
-  %"sock" = alloca i32
-  %"t0" = call i32 @"tcp_socket"()
-  store i32 %"t0", i32* %"sock"
-  %"result" = alloca i32
-  %".3" = load i32, i32* %"sock"
-  %".4" = bitcast [10 x i8]* @"str_literal.1821049986429703613" to i8*
-  %"t1" = call i32 @"tcp_connect"(i32 %".3", i8* %".4", i32 12345)
-  store i32 %"t1", i32* %"result"
-  %".6" = load i32, i32* %"result"
-  %"t2" = icmp eq i32 %".6", 0
-  br i1 %"t2", label %"if_true", label %"L1"
-if_true:
-  %".8" = load i32, i32* %"sock"
-  %".9" = bitcast [21 x i8]* @"str_literal.674422486138608885" to i8*
-  %"t3" = call i32 @"tcp_send"(i32 %".8", i8* %".9")
-  %".10" = load i32, i32* %"sock"
-  call void @"tcp_close"(i32 %".10")
-  br label %"L1"
-L1:
+  %"y" = alloca double
+  %".2" = sitofp i32 16 to double
+  %"t0" = call double @"pie_sqrt"(double %".2")
+  store double %"t0", double* %"y"
+  %".4" = load double, double* %"y"
+  call void @"output_float"(double %".4", i32 2)
   ret i32 0
 }
-
-@"str_literal.1821049986429703613" = internal constant [10 x i8] c"127.0.0.1\00"
-@"str_literal.674422486138608885" = internal constant [21 x i8] c"hello from pie net!\0a\00"

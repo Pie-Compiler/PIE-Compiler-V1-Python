@@ -39,7 +39,22 @@ class IRGenerator:
             return None
 
     def _process_program(self, node):
-        self._process_node(node[1])
+        statements = node[1]
+
+        has_top_level_statements = any(stmt[0] != 'function_definition' for stmt in statements)
+
+        # Process all function definitions first
+        for stmt in statements:
+            if stmt[0] == 'function_definition':
+                self._process_node(stmt)
+
+        # Then, if there are top-level statements, process them in an implicit main function
+        if has_top_level_statements:
+            self.code.append(("FUNC_START", "main", "int", []))
+            for stmt in statements:
+                if stmt[0] != 'function_definition':
+                    self._process_node(stmt)
+            self.code.append(("FUNC_END", "main"))
 
     def _process_function_definition(self, node):
         _, return_type, name, params, body = node
@@ -201,9 +216,10 @@ class IRGenerator:
         self.code.append(("INPUT", var_name, var_type))
 
     def _process_system_output(self, node):
-        expr, output_type = node[1], node[2]
+        expr, output_type, precision = node[1], node[2], node[3]
         expr_result = self._process_expression(expr)
-        self.code.append(("OUTPUT", expr_result, output_type))
+        precision_result = self._process_expression(precision) if precision else '2' # Default to 2dp
+        self.code.append(("OUTPUT", expr_result, output_type, precision_result))
 
     def _process_system_exit(self, node):
         self.code.append(("EXIT",))
