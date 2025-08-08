@@ -47,11 +47,37 @@ declare void @"tcp_close"(i32 %".1")
 define i32 @"main"()
 {
 entry:
-  %"y" = alloca double
-  %".2" = sitofp i32 16 to double
-  %"t0" = call double @"pie_sqrt"(double %".2")
-  store double %"t0", double* %"y"
-  %".4" = load double, double* %"y"
-  call void @"output_float"(double %".4", i32 2)
+  %"sock" = alloca i32
+  %"t0" = call i32 @"tcp_socket"()
+  store i32 %"t0", i32* %"sock"
+  %"result" = alloca i32
+  %".3" = load i32, i32* %"sock"
+  %".4" = bitcast [10 x i8]* @"str_literal.-1099183792774921535" to i8*
+  %"t1" = call i32 @"tcp_connect"(i32 %".3", i8* %".4", i32 12345)
+  store i32 %"t1", i32* %"result"
+  %".6" = load i32, i32* %"result"
+  call void @"output_int"(i32 %".6")
+  %".8" = load i32, i32* %"result"
+  %"t2" = icmp eq i32 %".8", 0
+  br i1 %"t2", label %"if_true", label %"L0"
+if_true:
+  %".10" = load i32, i32* %"sock"
+  %".11" = bitcast [21 x i8]* @"str_literal.-8430177797559898463" to i8*
+  %"t3" = call i32 @"tcp_send"(i32 %".10", i8* %".11")
+  %".12" = load i32, i32* %"sock"
+  call void @"tcp_close"(i32 %".12")
+  br label %"L1"
+L0:
+  %"error" = alloca i8*
+  %".14" = bitcast [22 x i8]* @"str_literal.-1298646941824887973" to i8*
+  store i8* %".14", i8** %"error"
+  %".16" = load i8*, i8** %"error"
+  call void @"output_string"(i8* %".16")
+  br label %"L1"
+L1:
   ret i32 0
 }
+
+@"str_literal.-1099183792774921535" = internal constant [10 x i8] c"127.0.0.1\00"
+@"str_literal.-8430177797559898463" = internal constant [21 x i8] c"hello from pie net!\0a\00"
+@"str_literal.-1298646941824887973" = internal constant [22 x i8] c"Error sending request\00"

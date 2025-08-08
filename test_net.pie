@@ -1,9 +1,11 @@
-int main() {
+
   socket sock;
   sock = tcp_socket();
 
   int result;
   result = tcp_connect(sock, "127.0.0.1", 12345);
+  output(result,int);
+
 
   if (result == 0) {
     tcp_send(sock, "hello from pie net!\n");
@@ -12,7 +14,8 @@ int main() {
     // I will skip the recv test for now.
 
     tcp_close(sock);
+  }else{
+    string error="Error sending request";
+    output(error,string);
   }
 
-  return 0;
-}
