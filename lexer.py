@@ -241,6 +241,9 @@ def build_master_nfa():
         "return": "KEYWORD_RETURN",
         "break": "KEYWORD_BREAK",
         "continue": "KEYWORD_CONTINUE",
+        "switch": "KEYWORD_SWITCH",
+        "case": "KEYWORD_CASE",
+        "default": "KEYWORD_DEFAULT",
         "exit": "KEYWORD_EXIT",
         "int": "KEYWORD_INT",
         "float": "KEYWORD_FLOAT",
@@ -325,7 +328,7 @@ def build_master_nfa():
         '(': "LPAREN", ')': "RPAREN",
         '{': "LBRACE", '}': "RBRACE",
         '[': "LBRACKET", ']': "RBRACKET",
-        ';': "SEMICOLON", ',': "COMMA"
+        ';': "SEMICOLON", ',': "COMMA", ':': "COLON"
     }
     for p, token_name in punctuations.items():
         start, end = build_literal_nfa(p)

@@ -48,8 +48,10 @@ class IRToLLVMConverter:
 
     def _declare_system_functions(self):
         # input functions
-        self.input_int_func = ir.Function(self.module, ir.FunctionType(self.get_llvm_type('int'), []), name="input_int")
-        self.input_float_func = ir.Function(self.module, ir.FunctionType(self.get_llvm_type('float'), []), name="input_float")
+        self.input_int_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int').as_pointer()]), name="input_int")
+        self.input_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float').as_pointer()]), name="input_float")
+        self.input_string_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="input_string")
+        self.input_char_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char').as_pointer()]), name="input_char")
 
         # output functions
         self.output_int_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int')]), name="output_int")
@@ -77,6 +79,7 @@ class IRToLLVMConverter:
         self.file_close_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_close")
         self.file_write_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type]), name="file_write")
         self.file_read_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type, self.get_llvm_type('int')]), name="file_read")
+        self.file_read_all_func = ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_all")
 
         # Network functions
         socket_type = self.get_llvm_type('socket')
@@ -264,6 +267,7 @@ class IRToLLVMConverter:
             "file_close": self.file_close_func,
             "file_write": self.file_write_func,
             "file_read": self.file_read_func,
+            "file_read_all": self.file_read_all_func,
             "tcp_socket": self.tcp_socket_func,
             "tcp_connect": self.tcp_connect_func,
             "tcp_send": self.tcp_send_func,
@@ -346,17 +350,42 @@ class IRToLLVMConverter:
         self.builder.cbranch(cond_val, true_block, false_block)
         self.builder.position_at_end(false_block)
 
+    def handle_SWITCH(self, instr):
+        _, expr, default_label, cases = instr
+        expr_val = self._load_val(expr)
+
+        if default_label not in self.labels:
+            self.labels[default_label] = self.current_function.append_basic_block(name=default_label)
+        default_dest = self.labels[default_label]
+
+        switch = self.builder.switch(expr_val, default_dest)
+
+        for val, label_name in cases:
+            if label_name not in self.labels:
+                self.labels[label_name] = self.current_function.append_basic_block(name=label_name)
+            case_dest = self.labels[label_name]
+            case_val = ir.Constant(ir.IntType(32), val)
+            switch.add_case(case_val, case_dest)
+
     def handle_INPUT(self, instr):
         _, var_name, var_type = instr
+        ptr = self.var_table[var_name]
+
         if var_type == 'int':
-            val = self.builder.call(self.input_int_func, [])
+            self.builder.call(self.input_int_func, [ptr])
         elif var_type == 'float':
-            val = self.builder.call(self.input_float_func, [])
+            self.builder.call(self.input_float_func, [ptr])
+        elif var_type == 'string':
+            # For string, we need to allocate a buffer and store the pointer.
+            # This is a simplification. A real implementation would need memory management.
+            buffer = self.builder.alloca(ir.ArrayType(ir.IntType(8), 256))
+            buffer_ptr = self.builder.gep(buffer, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+            self.builder.store(buffer_ptr, ptr)
+            self.builder.call(self.input_string_func, [buffer_ptr])
+        elif var_type == 'char':
+            self.builder.call(self.input_char_func, [ptr])
         else:
             raise ValueError(f"Unsupported input type: {var_type}")
-
-        ptr = self.var_table[var_name]
-        self.builder.store(val, ptr)
 
     def handle_OUTPUT(self, instr):
         _, value, var_type, precision = instr

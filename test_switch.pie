@@ -1,0 +1,15 @@
+int main() {
+  int x = 2;
+  switch (x) {
+    case 1:
+      output(1, int);
+      break;
+    case 2:
+      output(2, int);
+      break;
+    default:
+      output(3, int);
+      break;
+  }
+  return 0;
+}

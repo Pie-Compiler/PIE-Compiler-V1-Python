@@ -1,0 +1,14 @@
+int main() {
+  file f;
+  f = file_open("test.txt", "w");
+  file_write(f, "hello from file read test!\n");
+  file_close(f);
+
+  f = file_open("test.txt", "r");
+  string content;
+  content = file_read_all(f);
+  output(content, string);
+  file_close(f);
+
+  return 0;
+}

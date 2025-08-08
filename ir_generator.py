@@ -3,6 +3,7 @@ class IRGenerator:
         self.code = []
         self.temp_counter = 0
         self.label_counter = 0
+        self.switch_end_labels = []
 
     def _get_temp(self):
         temp = f"t{self.temp_counter}"
@@ -179,6 +180,55 @@ class IRGenerator:
         self._process_node(body)
         condition_result = self._process_expression(condition)
         self.code.append(("IF_TRUE", condition_result, start_label))
+
+    def _process_switch(self, node):
+        expression, case_list = node[1], node[2]
+        expr_result = self._process_expression(expression)
+
+        end_label = self._get_label()
+        self.switch_end_labels.append(end_label)
+
+        default_label = None
+        case_targets = []
+
+        case_label_map = {}
+        for case_clause in case_list:
+            if case_clause[0] == 'case':
+                case_value_node = case_clause[1]
+                case_value = int(self._process_expression(case_value_node))
+                if case_value not in case_label_map:
+                    case_label_map[case_value] = self._get_label()
+            elif case_clause[0] == 'default':
+                if default_label is None:
+                    default_label = self._get_label()
+
+        if default_label is None:
+            default_label = end_label
+
+        for value, label in case_label_map.items():
+            case_targets.append((value, label))
+
+        self.code.append(("SWITCH", expr_result, default_label, case_targets))
+
+        for case_clause in case_list:
+            if case_clause[0] == 'case':
+                case_value_node, statements = case_clause[1], case_clause[2]
+                case_value = int(self._process_expression(case_value_node))
+                self.code.append(("LABEL", case_label_map[case_value]))
+                self._process_node(statements)
+            elif case_clause[0] == 'default':
+                self.code.append(("LABEL", default_label))
+                self._process_node(case_clause[1])
+
+        self.code.append(("LABEL", end_label))
+        self.switch_end_labels.pop()
+
+    def _process_break(self, node):
+        if not self.switch_end_labels:
+            # This should be caught by the semantic analyzer, but as a safeguard:
+            raise Exception("Break statement outside of switch")
+        end_label = self.switch_end_labels[-1]
+        self.code.append(("GOTO", end_label))
 
     def _process_for(self, node):
         init, condition, update, body = node[1], node[2], node[3], node[4]

@@ -10,12 +10,12 @@ class Parser:
         self.tokens = [
             'IDENTIFIER', 'INT_LITERAL', 'FLOAT_LITERAL', 'STRING_LITERAL', 'CHAR_LITERAL',  # Added CHAR_LITERAL
             'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE', 'KEYWORD_DO',
-            'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE',
+            'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
             'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET',
             'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 
             'KEYWORD_NULL', 'KEYWORD_EXIT',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
-            'SEMICOLON', 'COMMA', 'DOT',
+            'SEMICOLON', 'COMMA', 'DOT', 'COLON',
             'PLUS', 'MINUS', 'MUL', 'DIV', 'MOD',
             'GT', 'LT', 'GEQ', 'LEQ', 'EQ', 'NEQ', 'AND', 'OR', 'ASSIGN',
             'SYSTEM_INPUT', 'SYSTEM_OUTPUT', 'SYSTEM_EXIT', 'COMMENT'
@@ -77,6 +77,7 @@ class Parser:
             "file_close": {"return_type": "void", "params": [("file", "file_handle")]},
             "file_write": {"return_type": "void", "params": [("file", "file_handle"), ("string", "content")]},
             "file_read": {"return_type": "void", "params": [("file", "file_handle"), ("string", "buffer"), ("int", "size")]},
+            "file_read_all": {"return_type": "string", "params": [("file", "file_handle")]},
         }
         for name, info in file_functions.items():
             param_types = [p[0] for p in info['params']]
@@ -204,6 +205,8 @@ class Parser:
                     | while_statement
                     | do_while_statement
                     | for_statement
+                    | switch_statement
+                    | break_statement
                     | return_statement
                     | function_call_statement
                     | block_statement
@@ -213,6 +216,30 @@ class Parser:
     def p_do_while_statement(self, p):
         '''do_while_statement : KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON'''
         p[0] = ('do_while', p[2], p[5])
+
+    def p_switch_statement(self, p):
+        '''switch_statement : KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE'''
+        p[0] = ('switch', p[3], p[6])
+
+    def p_case_list(self, p):
+        '''case_list : case_clause
+                     | case_list case_clause'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[2]]
+
+    def p_case_clause(self, p):
+        '''case_clause : KEYWORD_CASE expression COLON statement_list
+                       | KEYWORD_DEFAULT COLON statement_list'''
+        if len(p) == 5:
+            p[0] = ('case', p[2], p[4])
+        else:
+            p[0] = ('default', p[3])
+
+    def p_break_statement(self, p):
+        '''break_statement : KEYWORD_BREAK SEMICOLON'''
+        p[0] = ('break',)
     
     def p_declaration_statement(self, p):
         '''declaration_statement : type_specifier IDENTIFIER SEMICOLON

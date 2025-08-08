@@ -8,6 +8,7 @@ class SemanticAnalyzer:
         self.warnings = []
         self.error_set = set()
         self.current_function = None
+        self.in_switch = False
 
     def add_error(self, error_msg):
         if error_msg not in self.error_set:
@@ -173,7 +174,7 @@ class SemanticAnalyzer:
 
         return_type = function_symbol.get('return_type')
         return ('function_call', name, new_args, return_type), return_type
-        
+
     def _analyze_assignment(self, node, _):
         lhs, expr = node[1], node[2]
 
@@ -182,7 +183,7 @@ class SemanticAnalyzer:
 
         if lhs_type and expr_type and not self.type_checker.is_compatible(lhs_type, expr_type):
             self.add_error(f"Type mismatch in assignment: Cannot assign {expr_type} to {lhs_type}")
-        
+
         if isinstance(lhs, str):
             self.symbol_table.update_symbol(lhs, initialized=True)
 
@@ -278,9 +279,59 @@ class SemanticAnalyzer:
             self.add_error(f"Loop condition must be boolean, got {cond_type}")
         return ('do_while', new_body, new_condition), None
 
+    def _analyze_switch_statement(self, node, _):
+        expression, case_list = node[1], node[2]
+        new_expression, expr_type = self._analyze_node(expression)
+        if expr_type != 'KEYWORD_INT':
+            self.add_error("Switch expression must be an integer.")
+
+        was_in_switch = self.in_switch
+        self.in_switch = True
+
+        new_case_list = []
+        case_labels = set()
+        for case_clause in case_list:
+            new_case_clause, _ = self._analyze_node(case_clause)
+            new_case_list.append(new_case_clause)
+            # Check for duplicate case labels
+            if new_case_clause[0] == 'case':
+                case_label_node = new_case_clause[1]
+                if case_label_node[0] == 'primary' and isinstance(case_label_node[1], str) and case_label_node[1].isdigit():
+                    label = int(case_label_node[1])
+                    if label in case_labels:
+                        self.add_error(f"Duplicate case label: {label}")
+                    case_labels.add(label)
+                else:
+                    self.add_error("Case label must be a constant integer.")
+
+        self.in_switch = was_in_switch
+        return ('switch', new_expression, new_case_list), None
+
+    def _analyze_break_statement(self, node, _):
+        if not self.in_switch:
+            self.add_error("Break statement not within a switch statement.")
+        return node, None
+
+    def _analyze_case(self, node, _):
+        label, statements = node[1], node[2]
+        new_label, _ = self._analyze_node(label)
+        new_statements = []
+        for stmt in statements:
+            new_stmt, _ = self._analyze_node(stmt)
+            new_statements.append(new_stmt)
+        return ('case', new_label, new_statements), None
+
+    def _analyze_default(self, node, _):
+        statements = node[1]
+        new_statements = []
+        for stmt in statements:
+            new_stmt, _ = self._analyze_node(stmt)
+            new_statements.append(new_stmt)
+        return ('default', new_statements), None
+
     def _analyze_for(self, node, _):
         init, condition, update, body = node[1], node[2], node[3], node[4]
-        
+
         self.symbol_table.enter_scope()
         new_init, _ = self._analyze_node(init)
         new_condition, cond_type = self._analyze_node(condition)
@@ -289,7 +340,7 @@ class SemanticAnalyzer:
         new_update, _ = self._analyze_node(update)
         new_body, _ = self._analyze_node(body)
         self.symbol_table.exit_scope()
-        
+
         return ('for', new_init, new_condition, new_update, new_body), None
 
     def _analyze_system_output(self, node, _):
