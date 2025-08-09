@@ -67,29 +67,29 @@ class IRToLLVMConverter:
             raise ValueError(f"Unknown type: {type_str}")
 
     def _declare_system_functions(self):
-        # input functions
+        # Input functions
         self.input_int_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int').as_pointer()]), name="input_int")
         self.input_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float').as_pointer()]), name="input_float")
         self.input_string_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="input_string")
         self.input_char_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char').as_pointer()]), name="input_char")
 
-        # output functions
+        # Output functions
         self.output_int_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int')]), name="output_int")
-        self.output_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float'), self.get_llvm_type('int')]), name="output_float")
+        self.output_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float')]), name="output_float")
         self.output_string_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="output_string")
         self.output_char_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char')]), name="output_char")
 
-        # exit function
+        # Exit function
         self.exit_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), []), name="exit_program")
 
-        # Math functions
+    # Math functions (double precision for 'float' language type)
         double_type = self.get_llvm_type('float')
         self.sqrt_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sqrt")
         self.pow_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_pow")
         self.sin_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sin")
         self.cos_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_cos")
 
-        # String functions
+    # String functions
         string_type = self.get_llvm_type('string')
         self.concat_strings_func = ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="concat_strings")
 
@@ -111,7 +111,7 @@ class IRToLLVMConverter:
         self.tcp_recv_func = ir.Function(self.module, ir.FunctionType(int_type, [socket_type, string_type, int_type]), name="tcp_recv")
         self.tcp_close_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [socket_type]), name="tcp_close")
 
-        # Dynamic array functions
+        # Dynamic array functions (int)
         d_array_int_type = self.d_array_int_type
         self.d_array_int_create_func = ir.Function(self.module, ir.FunctionType(d_array_int_type, []), name="d_array_int_create")
         self.d_array_int_append_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_int_type, int_type]), name="d_array_int_append")
@@ -120,6 +120,7 @@ class IRToLLVMConverter:
         self.d_array_int_size_func = ir.Function(self.module, ir.FunctionType(int_type, [d_array_int_type]), name="d_array_int_size")
         self.d_array_int_free_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_int_type]), name="d_array_int_free")
 
+        # Dynamic array functions (string)
         d_array_string_type = self.d_array_string_type
         self.d_array_string_create_func = ir.Function(self.module, ir.FunctionType(d_array_string_type, []), name="d_array_string_create")
         self.d_array_string_append_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_string_type, string_type]), name="d_array_string_append")
@@ -234,9 +235,9 @@ class IRToLLVMConverter:
 
         # Type casting if necessary
         if ptr.type.pointee != val.type:
-            if isinstance(ptr.type.pointee, ir.FloatType) and isinstance(val.type, ir.IntType):
+            if isinstance(ptr.type.pointee, ir.DoubleType) and isinstance(val.type, ir.IntType):
                 val = self.builder.sitofp(val, ptr.type.pointee)
-            elif isinstance(ptr.type.pointee, ir.IntType) and isinstance(val.type, ir.FloatType):
+            elif isinstance(ptr.type.pointee, ir.IntType) and isinstance(val.type, ir.DoubleType):
                 val = self.builder.fptosi(val, ptr.type.pointee)
             elif isinstance(ptr.type.pointee, ir.IntType) and isinstance(val.type, ir.PointerType):
                 val = self.builder.ptrtoint(val, ptr.type.pointee)
@@ -248,25 +249,67 @@ class IRToLLVMConverter:
         lhs_val = self._load_val(lhs)
         rhs_val = self._load_val(rhs)
 
-        # Type promotion
-        if isinstance(lhs_val.type, ir.FloatType) or isinstance(rhs_val.type, ir.FloatType):
+        # Basic promotion for non-division operations (division handled separately)
+        if isinstance(lhs_val.type, ir.DoubleType) or isinstance(rhs_val.type, ir.DoubleType):
             if isinstance(lhs_val.type, ir.IntType):
-                lhs_val = self.builder.sitofp(lhs_val, ir.FloatType())
+                lhs_val = self.builder.sitofp(lhs_val, ir.DoubleType())
             if isinstance(rhs_val.type, ir.IntType):
-                rhs_val = self.builder.sitofp(rhs_val, ir.FloatType())
+                rhs_val = self.builder.sitofp(rhs_val, ir.DoubleType())
 
         op_map = {'+': 'add', '-': 'sub', '*': 'mul', '/': 'div'}
         if op in op_map:
-            if isinstance(lhs_val.type, ir.FloatType):
-                result = getattr(self.builder, f'f{op_map[op]}')(lhs_val, rhs_val, name=dest)
-            else: # sdiv for integer division
-                op_func = 'sdiv' if op == '/' else op_map[op]
-                result = getattr(self.builder, op_func)(lhs_val, rhs_val, name=dest)
+            if op == '/':
+                # Always produce float division result
+                # Cast operands to double if not already
+                if not isinstance(lhs_val.type, ir.DoubleType):
+                    if isinstance(lhs_val.type, ir.IntType):
+                        lhs_val = self.builder.sitofp(lhs_val, ir.DoubleType())
+                if not isinstance(rhs_val.type, ir.DoubleType):
+                    if isinstance(rhs_val.type, ir.IntType):
+                        rhs_val = self.builder.sitofp(rhs_val, ir.DoubleType())
+                result = self.builder.fdiv(lhs_val, rhs_val, name=dest)
+            else:
+                if isinstance(lhs_val.type, ir.DoubleType) or isinstance(rhs_val.type, ir.DoubleType):
+                    # Promote ints to double
+                    if isinstance(lhs_val.type, ir.IntType):
+                        lhs_val = self.builder.sitofp(lhs_val, ir.DoubleType())
+                    if isinstance(rhs_val.type, ir.IntType):
+                        rhs_val = self.builder.sitofp(rhs_val, ir.DoubleType())
+                    # floating arithmetic
+                    if op == '+':
+                        result = self.builder.fadd(lhs_val, rhs_val, name=dest)
+                    elif op == '-':
+                        result = self.builder.fsub(lhs_val, rhs_val, name=dest)
+                    elif op == '*':
+                        result = self.builder.fmul(lhs_val, rhs_val, name=dest)
+                else:
+                    # Pure integer arithmetic
+                    if op == '+':
+                        result = self.builder.add(lhs_val, rhs_val, name=dest)
+                    elif op == '-':
+                        result = self.builder.sub(lhs_val, rhs_val, name=dest)
+                    elif op == '*':
+                        result = self.builder.mul(lhs_val, rhs_val, name=dest)
         elif op in ['<', '>', '<=', '>=', '==', '!=']:
-            if isinstance(lhs_val.type, ir.FloatType):
+            if isinstance(lhs_val.type, ir.DoubleType):
                 result = self.builder.fcmp_ordered(op, lhs_val, rhs_val, name=dest)
             else:
                 result = self.builder.icmp_signed(op, lhs_val, rhs_val, name=dest)
+        elif op in ['&&', '||']:
+            # Convert operands to boolean (i1) if needed
+            def to_bool(val):
+                if isinstance(val.type, ir.IntType) and val.type.width == 1:
+                    return val
+                if isinstance(val.type, ir.IntType):
+                    zero = ir.Constant(val.type, 0)
+                    return self.builder.icmp_signed('!=', val, zero)
+                if isinstance(val.type, ir.PointerType):
+                    null_ptr = ir.Constant(val.type, None)
+                    return self.builder.icmp_unsigned('!=', val, null_ptr)
+                return val  # assume already boolean-compatible
+            lhs_bool = to_bool(lhs_val)
+            rhs_bool = to_bool(rhs_val)
+            result = self.builder.and_(lhs_bool, rhs_bool, name=dest) if op == '&&' else self.builder.or_(lhs_bool, rhs_bool, name=dest)
         else:
             raise ValueError(f"Unsupported binary operator: {op}")
 
@@ -446,8 +489,8 @@ class IRToLLVMConverter:
         if var_type == 'int':
             self.builder.call(self.output_int_func, [val])
         elif var_type == 'float':
-            precision_val = self._load_val(precision)
-            self.builder.call(self.output_float_func, [val, precision_val])
+            # precision currently ignored because runtime output_float has single param
+            self.builder.call(self.output_float_func, [val])
         elif var_type == 'string':
             self.builder.call(self.output_string_func, [val])
         elif var_type == 'char':

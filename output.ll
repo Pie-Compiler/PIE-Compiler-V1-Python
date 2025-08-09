@@ -14,7 +14,7 @@ declare void @"input_char"(i8* %".1")
 
 declare void @"output_int"(i32 %".1")
 
-declare void @"output_float"(double %".1", i32 %".2")
+declare void @"output_float"(double %".1")
 
 declare void @"output_string"(i8* %".1")
 
@@ -81,82 +81,54 @@ declare void @"d_array_string_free"(%"DArrayString"* %".1")
 define i32 @"main"()
 {
 entry:
-  %"filename" = alloca i8*
-  %".2" = bitcast [15 x i8]* @"str_literal.-1959383206911544472" to i8*
-  store i8* %".2", i8** %"filename"
-  %"entriesFile" = alloca i64
-  %".4" = load i8*, i8** %"filename"
-  %".5" = bitcast [2 x i8]* @"str_literal.-1277787442202164103" to i8*
-  %"t0" = call i64 @"file_open"(i8* %".4", i8* %".5")
-  store i64 %"t0", i64* %"entriesFile"
-  %"prompt" = alloca i8*
-  %".7" = bitcast [16 x i8]* @"str_literal.3324229588093334085" to i8*
-  store i8* %".7", i8** %"prompt"
-  %"prompt2" = alloca i8*
-  %".9" = bitcast [23 x i8]* @"str_literal.6550093605949987392" to i8*
-  store i8* %".9", i8** %"prompt2"
-  %"state" = alloca i32
-  store i32 0, i32* %"state"
-  %"readingFile" = alloca i64
-  %".12" = load i8*, i8** %"filename"
-  %".13" = bitcast [2 x i8]* @"str_literal.6225869764800647149" to i8*
-  %"t1" = call i64 @"file_open"(i8* %".12", i8* %".13")
-  store i64 %"t1", i64* %"readingFile"
+  %"arr" = alloca %"DArrayInt"*
+  %"count" = alloca i32
+  %".2" = bitcast [39 x i8]* @"str_literal.-8030652404147510688" to i8*
+  call void @"output_string"(i8* %".2")
+  call void @"input_int"(i32* %"count")
+  %"num" = alloca i32
+  %"sum" = alloca i32
+  store i32 0, i32* %"sum"
+  %"i" = alloca i32
+  store i32 0, i32* %"i"
   br label %"L0"
 L0:
-  %".16" = load i32, i32* %"state"
-  %"t2" = icmp eq i32 %".16", 0
-  br i1 %"t2", label %"if_true", label %"L1"
+  %".8" = load i32, i32* %"i"
+  %".9" = load i32, i32* %"count"
+  %"t0" = icmp slt i32 %".8", %".9"
+  br i1 %"t0", label %"if_true", label %"L1"
 if_true:
-  %".18" = load i8*, i8** %"prompt"
-  call void @"output_string"(i8* %".18")
-  %"userInput" = alloca i8*
-  %".20" = alloca [256 x i8]
-  %".21" = getelementptr [256 x i8], [256 x i8]* %".20", i32 0, i32 0
-  store i8* %".21", i8** %"userInput"
-  call void @"input_string"(i8* %".21")
-  %".24" = load i8*, i8** %"userInput"
-  call void @"output_string"(i8* %".24")
-  %".26" = load i8*, i8** %"userInput"
-  %".27" = bitcast [2 x i8]* @"str_literal.-4646666681103889553" to i8*
-  %"t3" = call i8* @"concat_strings"(i8* %".26", i8* %".27")
-  %".28" = load i64, i64* %"entriesFile"
-  call void @"file_write"(i64 %".28", i8* %"t3")
-  %"fileContents" = alloca i8*
-  %".29" = load i64, i64* %"readingFile"
-  %"t5" = call i8* @"file_read_all"(i64 %".29")
-  store i8* %"t5", i8** %"fileContents"
-  %".31" = load i8*, i8** %"fileContents"
-  call void @"output_string"(i8* %".31")
-  %".33" = load i8*, i8** %"prompt2"
-  call void @"output_string"(i8* %".33")
-  %"userChoice" = alloca i32
-  call void @"input_int"(i32* %"userChoice")
-  %"stop" = alloca i32
-  store i32 0, i32* %"stop"
-  %".37" = load i32, i32* %"userChoice"
-  %".38" = load i32, i32* %"stop"
-  %"t6" = icmp eq i32 %".37", %".38"
-  br i1 %"t6", label %"if_true.1", label %"L3"
-L1:
-  %".44" = load i64, i64* %"entriesFile"
-  call void @"file_close"(i64 %".44")
-  %".45" = bitcast [17 x i8]* @"str_literal.-8377212011927257488" to i8*
-  call void @"output_string"(i8* %".45")
-  ret i32 0
-if_true.1:
-  %".40" = load i32, i32* %"state"
-  %"t7" = add i32 %".40", 1
-  store i32 %"t7", i32* %"state"
-  br label %"L3"
-L3:
+  %".11" = bitcast [15 x i8]* @"str_literal.5811775124267156209" to i8*
+  call void @"output_string"(i8* %".11")
+  call void @"input_int"(i32* %"num")
+  %".14" = load i32, i32* %"sum"
+  %".15" = load i32, i32* %"num"
+  %"t1" = add i32 %".14", %".15"
+  store i32 %"t1", i32* %"sum"
+  %".17" = load i32, i32* %"i"
+  %"t2" = add i32 %".17", 1
+  store i32 %"t2", i32* %"i"
   br label %"L0"
+L1:
+  %"average" = alloca double
+  %".20" = load i32, i32* %"sum"
+  %".21" = load i32, i32* %"count"
+  %".22" = sitofp i32 %".20" to double
+  %".23" = sitofp i32 %".21" to double
+  %"t3" = fdiv double %".22", %".23"
+  store double %"t3", double* %"average"
+  %".25" = bitcast [11 x i8]* @"str_literal.3644668908010861392" to i8*
+  call void @"output_string"(i8* %".25")
+  %".27" = load i32, i32* %"sum"
+  call void @"output_int"(i32 %".27")
+  %".29" = bitcast [15 x i8]* @"str_literal.-3787800507713842230" to i8*
+  call void @"output_string"(i8* %".29")
+  %".31" = load double, double* %"average"
+  call void @"output_float"(double %".31")
+  ret i32 0
 }
 
-@"str_literal.-1959383206911544472" = internal constant [15 x i8] c"my_entries.txt\00"
-@"str_literal.-1277787442202164103" = internal constant [2 x i8] c"a\00"
-@"str_literal.3324229588093334085" = internal constant [16 x i8] c"Enter something\00"
-@"str_literal.6550093605949987392" = internal constant [23 x i8] c"Continue ? (y->1/n->0)\00"
-@"str_literal.6225869764800647149" = internal constant [2 x i8] c"r\00"
-@"str_literal.-4646666681103889553" = internal constant [2 x i8] c"\0a\00"
-@"str_literal.-8377212011927257488" = internal constant [17 x i8] c"Program complete\00"
+@"str_literal.-8030652404147510688" = internal constant [39 x i8] c"How many numbers do you want to enter?\00"
+@"str_literal.5811775124267156209" = internal constant [15 x i8] c"Enter a number\00"
+@"str_literal.3644668908010861392" = internal constant [11 x i8] c"The sum is\00"
+@"str_literal.-3787800507713842230" = internal constant [15 x i8] c"The average is\00"

@@ -122,6 +122,10 @@ class TypeChecker:
             'void': 'KEYWORD_VOID',
             'file': 'KEYWORD_FILE',
             'socket': 'KEYWORD_SOCKET',
+            'd_array_int': 'KEYWORD_D_ARRAY_INT',
+            'd_array_string': 'KEYWORD_D_ARRAY_STRING',
+            'array_int': 'KEYWORD_D_ARRAY_INT',
+            'array_string': 'KEYWORD_D_ARRAY_STRING',
             # Idempotent entries for already normalized types
             'KEYWORD_INT': 'KEYWORD_INT',
             'KEYWORD_FLOAT': 'KEYWORD_FLOAT',
@@ -130,6 +134,8 @@ class TypeChecker:
             'KEYWORD_CHAR': 'KEYWORD_CHAR',
             'KEYWORD_VOID': 'KEYWORD_VOID',
             'KEYWORD_NULL': 'KEYWORD_NULL',
+            'KEYWORD_D_ARRAY_INT': 'KEYWORD_D_ARRAY_INT',
+            'KEYWORD_D_ARRAY_STRING': 'KEYWORD_D_ARRAY_STRING',
         }
         return mapping.get(type_name, type_name) # Return original if not in map, though ideally all types should be mappable or already KEYWORD_
 
@@ -142,7 +148,8 @@ class TypeChecker:
             return False
 
         if norm_source_type == 'KEYWORD_NULL':
-            return norm_target_type in ['KEYWORD_STRING', 'KEYWORD_FILE', 'KEYWORD_SOCKET']
+            # Allow assigning null to reference-like types
+            return norm_target_type in ['KEYWORD_STRING', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_D_ARRAY_INT', 'KEYWORD_D_ARRAY_STRING']
 
         if norm_target_type == norm_source_type:
             return True
@@ -163,16 +170,19 @@ class TypeChecker:
 
         # Arithmetic operators: +, -, *, /
         if op in ['PLUS', 'MINUS', 'MUL', 'DIV', 'MOD']:
+            # String concatenation special-case
+            if op == 'PLUS' and norm_left == 'KEYWORD_STRING' and norm_right == 'KEYWORD_STRING':
+                return 'KEYWORD_STRING'
+            # Arithmetic numeric operations
             if norm_left in ['KEYWORD_INT', 'KEYWORD_FLOAT'] and norm_right in ['KEYWORD_INT', 'KEYWORD_FLOAT']:
-                # Result is float if either is float, else int
+                if op == 'DIV':
+                    # Division always produces float (even int/int)
+                    return 'KEYWORD_FLOAT'
                 if 'KEYWORD_FLOAT' in [norm_left, norm_right]:
                     return 'KEYWORD_FLOAT'
-                else:
-                    return 'KEYWORD_INT'
-            elif op == 'PLUS' and norm_left == 'KEYWORD_STRING' and norm_right == 'KEYWORD_STRING':
-                return 'KEYWORD_STRING'
-            else:
-                return None
+                # For MOD we still want int result; others int if both ints
+                return 'KEYWORD_INT'
+            return None
 
         # Comparison operators: <, >, <=, >=
         if op in ['LT', 'GT', 'LEQ', 'GEQ']:
@@ -187,6 +197,10 @@ class TypeChecker:
                 return 'KEYWORD_BOOL'
             # Allow int/float comparison
             if {norm_left, norm_right} <= {'KEYWORD_INT', 'KEYWORD_FLOAT'}:
+                return 'KEYWORD_BOOL'
+            # Allow null equality comparisons with reference-like types
+            ref_types = {'KEYWORD_STRING','KEYWORD_FILE','KEYWORD_SOCKET','KEYWORD_D_ARRAY_INT','KEYWORD_D_ARRAY_STRING'}
+            if (norm_left == 'KEYWORD_NULL' and norm_right in ref_types) or (norm_right == 'KEYWORD_NULL' and norm_left in ref_types):
                 return 'KEYWORD_BOOL'
             return None
 

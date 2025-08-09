@@ -2,15 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Input function for float
-void input_float(float *ptr) {
-    // Get the float input
-    if (scanf("%f", ptr) != 1) {
+// Input function for float (language 'float' mapped to double in LLVM)
+void input_float(double *ptr) {
+    if (scanf("%lf", ptr) != 1) {
         fprintf(stderr, "Error reading float input\n");
-        *ptr = 0.0f;
+        *ptr = 0.0;
     }
-
-    // Clear any remaining characters in the input buffer
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
@@ -53,8 +50,8 @@ void input_char(char *ptr) {
     *ptr = getchar();
 }
 
-// Output function for float
-void output_float(float value) {
+// Output function for float (double precision)
+void output_float(double value) {
     printf("%f\n", value);
 }
 

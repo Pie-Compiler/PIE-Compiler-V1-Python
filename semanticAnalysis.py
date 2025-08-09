@@ -254,7 +254,7 @@ class SemanticAnalyzer:
         condition, then_stmt, else_stmt = node[1], node[2], node[3]
         
         new_condition, cond_type = self._analyze_node(condition)
-        if cond_type and cond_type != 'KEYWORD_BOOL':
+        if cond_type and cond_type not in ('KEYWORD_BOOL','KEYWORD_NULL'):
             self.add_error(f"Condition must be boolean, got {cond_type}")
         
         new_then, _ = self._analyze_node(then_stmt)
@@ -267,7 +267,7 @@ class SemanticAnalyzer:
     def _analyze_while(self, node, _):
         condition, body = node[1], node[2]
         new_condition, cond_type = self._analyze_node(condition)
-        if cond_type and cond_type != 'KEYWORD_BOOL':
+        if cond_type and cond_type not in ('KEYWORD_BOOL','KEYWORD_NULL'):
             self.add_error(f"Loop condition must be boolean, got {cond_type}")
         
         new_body, _ = self._analyze_node(body)
@@ -277,7 +277,7 @@ class SemanticAnalyzer:
         body, condition = node[1], node[2]
         new_body, _ = self._analyze_node(body)
         new_condition, cond_type = self._analyze_node(condition)
-        if cond_type and cond_type != 'KEYWORD_BOOL':
+        if cond_type and cond_type not in ('KEYWORD_BOOL','KEYWORD_NULL'):
             self.add_error(f"Loop condition must be boolean, got {cond_type}")
         return ('do_while', new_body, new_condition), None
 
@@ -337,7 +337,7 @@ class SemanticAnalyzer:
         self.symbol_table.enter_scope()
         new_init, _ = self._analyze_node(init)
         new_condition, cond_type = self._analyze_node(condition)
-        if condition and cond_type and cond_type != 'KEYWORD_BOOL':
+        if condition and cond_type and cond_type not in ('KEYWORD_BOOL','KEYWORD_NULL'):
             self.add_error(f"Loop condition must be boolean, got {cond_type}")
         new_update, _ = self._analyze_node(update)
         new_body, _ = self._analyze_node(body)

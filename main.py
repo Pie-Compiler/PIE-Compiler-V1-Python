@@ -32,7 +32,7 @@ def main():
     # Example program
     # test_program_file="test_file_read_lines.pie"
     #make sure that it is a .pie file
-    with open("test12.pie", "r") as file:
+    with open("test13.pie", "r") as file:
         input_program = file.read()
 
     try:
