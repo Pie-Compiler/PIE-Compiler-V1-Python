@@ -29,7 +29,7 @@ A compiler for the PIE programming language, supporting parsing, semantic analys
 
 PIE is a C-like language. All executable statements must be inside a function. The program execution starts from the `main` function.
 
-- **Data Types**: `int`, `float`, `string`, `char`, `boolean`, `file`, `socket`.
+- **Data Types**: `int`, `float`, `string`, `char`, `boolean`, `file`, `socket`, `dict`.
 - **Control Flow**: `if/else`, `for`, `while`, `do...while`.
 - **Comments**: `// single line` and `/* multi-line */`.
 
@@ -60,7 +60,8 @@ int main() {
 
 ### 3. Arrays
 
-One-dimensional arrays are supported.
+#### Static Arrays
+One-dimensional static arrays with a fixed size are supported.
 
 **Syntax:**
 ```pie
@@ -83,7 +84,50 @@ int main() {
 }
 ```
 
-### 4. String Concatenation
+#### Dynamic Arrays
+PIE also supports dynamic arrays which can grow or shrink in size.
+
+**Syntax:**
+```pie
+<type>[] <array_name>;
+<type>[] <array_name> = {<value1>, <value2>, ...};
+```
+
+**Example:**
+```pie
+int main() {
+    int[] my_arr = {10, 20, 30};
+    // Dynamic arrays are manipulated using functions from the standard library
+    // (e.g., d_array_int_append, d_array_int_get).
+    return 0;
+}
+```
+
+### 4. Dictionaries
+PIE supports dictionaries (hash maps) with string keys.
+
+**Syntax:**
+```pie
+dict <dict_name> = dict_create();
+```
+
+**Example:**
+```pie
+int main() {
+    dict my_dict = dict_create();
+    dict_set(my_dict, "name", new_string("Jules"));
+    dict_set(my_dict, "age", new_int(30));
+
+    string name = dict_get_string(my_dict, "name");
+    int age = dict_get_int(my_dict, "age");
+
+    output(name, string); // Outputs: Jules
+    output(age, int);     // Outputs: 30
+    return 0;
+}
+```
+
+### 5. String Concatenation
 
 Strings can be concatenated using the `+` operator.
 
@@ -98,7 +142,7 @@ int main() {
 }
 ```
 
-### 5. Standard Library
+### 6. Standard Library
 
 PIE includes a standard library for common operations.
 
@@ -107,19 +151,29 @@ PIE includes a standard library for common operations.
 - `output(value, type)`: Prints a value to the console.
 - `exit()`: Exits the program.
 
-#### Math Library (`#include <math.h>`)
+#### Math Library
 - `float sqrt(float x)`
 - `float pow(float base, float exp)`
 - `float sin(float x)`
 - `float cos(float x)`
+- `float floor(float x)`
+- `float ceil(float x)`
+- `int rand()`
 
-#### File Access Library (`#include <stdio.h>`)
+#### File Access Library
 - `file file_open(string filename, string mode)`
 - `void file_close(file file_handle)`
 - `void file_write(file file_handle, string content)`
+- `void file_flush(file file_handle)`
 - `void file_read(file file_handle, string buffer, int size)`
 
-#### Network Library (`#include <sys/socket.h>`)
+#### String Utilities
+- `int strlen(string s)`
+- `int strcmp(string s1, string s2)`
+- `string strcpy(string dest, string src)`
+- `string strcat(string dest, string src)`
+
+#### Network Library
 - `socket tcp_socket()`
 - `int tcp_connect(socket sockfd, string host, int port)`
 - `int tcp_send(socket sockfd, string data)`
