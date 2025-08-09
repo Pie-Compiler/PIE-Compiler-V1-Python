@@ -3,6 +3,7 @@ from semanticAnalysis import SemanticAnalyzer
 from ir_generator import IRGenerator
 from llvmConverter import IRToLLVMConverter
 import subprocess
+import traceback
 def build_and_link():
     try:
         # Compile the runtime functions to an object file
@@ -97,6 +98,7 @@ def main():
                 
     except Exception as e:
         print(f"Parsing error: {e}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()

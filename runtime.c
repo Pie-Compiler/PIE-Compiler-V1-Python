@@ -50,9 +50,14 @@ void input_char(char *ptr) {
     *ptr = getchar();
 }
 
-// Output function for float (double precision)
-void output_float(double value) {
-    printf("%f\n", value);
+// Output function for float (double precision) with precision specifier
+void output_float(double value, int precision) {
+    if(precision < 0) precision = 0;
+    if(precision > 12) precision = 12; // clamp to reasonable max
+    char fmt[16];
+    // Build format string like %.3f\n
+    snprintf(fmt, sizeof(fmt), "%%.%df\n", precision);
+    printf(fmt, value);
 }
 
 // Output function for int

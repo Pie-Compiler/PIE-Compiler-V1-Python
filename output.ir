@@ -25,5 +25,5 @@
 ('OUTPUT', '"The sum is"', 'string', '2')
 ('OUTPUT', 'sum', 'int', '2')
 ('OUTPUT', '"The average is"', 'string', '2')
-('OUTPUT', 'average', 'float', '0')
+('OUTPUT', 'average', 'float', '2')
 ('FUNC_END', 'main')

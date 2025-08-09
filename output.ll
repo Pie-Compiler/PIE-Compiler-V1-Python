@@ -14,13 +14,11 @@ declare void @"input_char"(i8* %".1")
 
 declare void @"output_int"(i32 %".1")
 
-declare void @"output_float"(double %".1")
-
 declare void @"output_string"(i8* %".1")
 
 declare void @"output_char"(i8 %".1")
 
-declare void @"exit_program"()
+declare void @"output_float"(double %".1", i32 %".2")
 
 declare double @"pie_sqrt"(double %".1")
 
@@ -83,7 +81,7 @@ define i32 @"main"()
 entry:
   %"arr" = alloca %"DArrayInt"*
   %"count" = alloca i32
-  %".2" = bitcast [39 x i8]* @"str_literal.-8030652404147510688" to i8*
+  %".2" = bitcast [39 x i8]* @"str_literal.-3411070238544654591" to i8*
   call void @"output_string"(i8* %".2")
   call void @"input_int"(i32* %"count")
   %"num" = alloca i32
@@ -98,7 +96,7 @@ L0:
   %"t0" = icmp slt i32 %".8", %".9"
   br i1 %"t0", label %"if_true", label %"L1"
 if_true:
-  %".11" = bitcast [15 x i8]* @"str_literal.5811775124267156209" to i8*
+  %".11" = bitcast [15 x i8]* @"str_literal.-6743355020410993927" to i8*
   call void @"output_string"(i8* %".11")
   call void @"input_int"(i32* %"num")
   %".14" = load i32, i32* %"sum"
@@ -117,18 +115,18 @@ L1:
   %".23" = sitofp i32 %".21" to double
   %"t3" = fdiv double %".22", %".23"
   store double %"t3", double* %"average"
-  %".25" = bitcast [11 x i8]* @"str_literal.3644668908010861392" to i8*
+  %".25" = bitcast [11 x i8]* @"str_literal.-7631091780012005918" to i8*
   call void @"output_string"(i8* %".25")
   %".27" = load i32, i32* %"sum"
   call void @"output_int"(i32 %".27")
-  %".29" = bitcast [15 x i8]* @"str_literal.-3787800507713842230" to i8*
+  %".29" = bitcast [15 x i8]* @"str_literal.-2504062024577931927" to i8*
   call void @"output_string"(i8* %".29")
   %".31" = load double, double* %"average"
-  call void @"output_float"(double %".31")
+  call void @"output_float"(double %".31", i32 2)
   ret i32 0
 }
 
-@"str_literal.-8030652404147510688" = internal constant [39 x i8] c"How many numbers do you want to enter?\00"
-@"str_literal.5811775124267156209" = internal constant [15 x i8] c"Enter a number\00"
-@"str_literal.3644668908010861392" = internal constant [11 x i8] c"The sum is\00"
-@"str_literal.-3787800507713842230" = internal constant [15 x i8] c"The average is\00"
+@"str_literal.-3411070238544654591" = internal constant [39 x i8] c"How many numbers do you want to enter?\00"
+@"str_literal.-6743355020410993927" = internal constant [15 x i8] c"Enter a number\00"
+@"str_literal.-7631091780012005918" = internal constant [11 x i8] c"The sum is\00"
+@"str_literal.-2504062024577931927" = internal constant [15 x i8] c"The average is\00"

@@ -75,12 +75,11 @@ class IRToLLVMConverter:
 
         # Output functions
         self.output_int_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int')]), name="output_int")
-        self.output_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float')]), name="output_float")
         self.output_string_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="output_string")
         self.output_char_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char')]), name="output_char")
 
         # Exit function
-        self.exit_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), []), name="exit_program")
+        self.output_float_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float'), self.get_llvm_type('int')]), name="output_float")
 
     # Math functions (double precision for 'float' language type)
         double_type = self.get_llvm_type('float')
@@ -489,8 +488,8 @@ class IRToLLVMConverter:
         if var_type == 'int':
             self.builder.call(self.output_int_func, [val])
         elif var_type == 'float':
-            # precision currently ignored because runtime output_float has single param
-            self.builder.call(self.output_float_func, [val])
+                precision_val = self._load_val(precision)
+                self.builder.call(self.output_float_func, [val, precision_val])
         elif var_type == 'string':
             self.builder.call(self.output_string_func, [val])
         elif var_type == 'char':
