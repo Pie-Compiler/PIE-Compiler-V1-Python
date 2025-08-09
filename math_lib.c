@@ -1,4 +1,17 @@
 #include <math.h>
+#include <stdlib.h>
+
+double pie_floor(double x) {
+    return floor(x);
+}
+
+double pie_ceil(double x) {
+    return ceil(x);
+}
+
+int pie_rand() {
+    return rand();
+}
 
 double pie_sqrt(double x) {
     return sqrt(x);

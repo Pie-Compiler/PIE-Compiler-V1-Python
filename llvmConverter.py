@@ -31,6 +31,24 @@ class IRToLLVMConverter:
         )
         self.d_array_string_type = d_array_string_struct.as_pointer()
 
+        dict_value_struct = self.module.context.get_identified_type("DictValue")
+        dict_struct = self.module.context.get_identified_type("Dictionary")
+
+        # Forward declare Dictionary to use in DictValue
+        dict_value_struct.set_body(
+            ir.IntType(32), # type
+            ir.IntType(64)  # union, simplified to i64 for now
+        )
+        self.dict_value_type = dict_value_struct.as_pointer()
+
+        dict_struct.set_body(
+            ir.IntType(8).as_pointer().as_pointer(), # buckets
+            ir.IntType(32), # capacity
+            ir.IntType(32)  # size
+        )
+        self.dict_type = dict_struct.as_pointer()
+
+
         self._declare_system_functions()
 
     def _initialize_llvm(self):
@@ -56,6 +74,10 @@ class IRToLLVMConverter:
             return self.d_array_int_type
         elif type_str == 'd_array_string':
             return self.d_array_string_type
+        elif type_str == 'dict':
+            return self.dict_type
+        elif type_str == 'void*':
+            return ir.IntType(8).as_pointer()
         elif type_str == 'string':
             # Strings are pointers to char
             return ir.PointerType(ir.IntType(8))
@@ -83,20 +105,30 @@ class IRToLLVMConverter:
 
     # Math functions (double precision for 'float' language type)
         double_type = self.get_llvm_type('float')
+        int_type = self.get_llvm_type('int')
         self.sqrt_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sqrt")
         self.pow_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_pow")
         self.sin_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sin")
         self.cos_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_cos")
+        self.floor_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_floor")
+        self.ceil_func = ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_ceil")
+        self.rand_func = ir.Function(self.module, ir.FunctionType(int_type, []), name="pie_rand")
 
     # String functions
         string_type = self.get_llvm_type('string')
+        int_type = self.get_llvm_type('int')
         self.concat_strings_func = ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="concat_strings")
+        self.strlen_func = ir.Function(self.module, ir.FunctionType(int_type, [string_type]), name="pie_strlen")
+        self.strcmp_func = ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="pie_strcmp")
+        self.strcpy_func = ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcpy")
+        self.strcat_func = ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcat")
 
         # File functions
         file_type = self.get_llvm_type('file')
         self.file_open_func = ir.Function(self.module, ir.FunctionType(file_type, [string_type, string_type]), name="file_open")
         self.file_close_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_close")
         self.file_write_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type]), name="file_write")
+        self.file_flush_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_flush")
         self.file_read_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type, self.get_llvm_type('int')]), name="file_read")
         self.file_read_all_func = ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_all")
         self.file_read_lines_func = ir.Function(self.module, ir.FunctionType(self.d_array_string_type, [file_type]), name="file_read_lines")
@@ -127,6 +159,27 @@ class IRToLLVMConverter:
         self.d_array_string_set_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_string_type, int_type, string_type]), name="d_array_string_set")
         self.d_array_string_size_func = ir.Function(self.module, ir.FunctionType(int_type, [d_array_string_type]), name="d_array_string_size")
         self.d_array_string_free_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [d_array_string_type]), name="d_array_string_free")
+
+        # Dictionary functions
+        dict_type = self.dict_type
+        dict_value_type = self.dict_value_type
+        string_type = self.get_llvm_type('string')
+        int_type = self.get_llvm_type('int')
+        float_type = self.get_llvm_type('float')
+
+        self.dict_create_func = ir.Function(self.module, ir.FunctionType(dict_type, []), name="dict_create")
+        self.dict_set_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type, string_type, dict_value_type]), name="dict_set")
+        self.dict_get_func = ir.Function(self.module, ir.FunctionType(dict_value_type, [dict_type, string_type]), name="dict_get")
+        self.dict_get_int_func = ir.Function(self.module, ir.FunctionType(int_type, [dict_type, string_type]), name="dict_get_int")
+        self.dict_get_float_func = ir.Function(self.module, ir.FunctionType(float_type, [dict_type, string_type]), name="dict_get_float")
+        self.dict_get_string_func = ir.Function(self.module, ir.FunctionType(string_type, [dict_type, string_type]), name="dict_get_string")
+        self.dict_delete_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type, string_type]), name="dict_delete")
+        self.dict_free_func = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type]), name="dict_free")
+
+        self.new_int_func = ir.Function(self.module, ir.FunctionType(dict_value_type, [int_type]), name="dict_value_create_int")
+        self.new_float_func = ir.Function(self.module, ir.FunctionType(dict_value_type, [float_type]), name="dict_value_create_float")
+        self.new_string_func = ir.Function(self.module, ir.FunctionType(dict_value_type, [string_type]), name="dict_value_create_string")
+
 
     def convert_ir(self, ir_code):
         for instr in ir_code:
@@ -204,10 +257,11 @@ class IRToLLVMConverter:
 
     def handle_DECLARE_ARRAY(self, instr):
         _, element_type_str, name, size = instr
-        element_type = self.get_llvm_type(element_type_str)
-        array_type = ir.ArrayType(element_type, int(size))
-        ptr = self.builder.alloca(array_type, name=name)
-        self.var_table[name] = ptr
+        if size is not None:
+            element_type = self.get_llvm_type(element_type_str)
+            array_type = ir.ArrayType(element_type, int(size))
+            ptr = self.builder.alloca(array_type, name=name)
+            self.var_table[name] = ptr
 
     def handle_STORE_ARRAY(self, instr):
         _, name, index, value = instr
@@ -345,9 +399,28 @@ class IRToLLVMConverter:
             "pow": self.pow_func,
             "sin": self.sin_func,
             "cos": self.cos_func,
+            "floor": self.floor_func,
+            "ceil": self.ceil_func,
+            "rand": self.rand_func,
+            "dict_create": self.dict_create_func,
+            "dict_set": self.dict_set_func,
+            "dict_get": self.dict_get_func,
+            "dict_get_int": self.dict_get_int_func,
+            "dict_get_float": self.dict_get_float_func,
+            "dict_get_string": self.dict_get_string_func,
+            "dict_delete": self.dict_delete_func,
+            "dict_free": self.dict_free_func,
+            "new_int": self.new_int_func,
+            "new_float": self.new_float_func,
+            "new_string": self.new_string_func,
+            "strlen": self.strlen_func,
+            "strcmp": self.strcmp_func,
+            "strcpy": self.strcpy_func,
+            "strcat": self.strcat_func,
             "file_open": self.file_open_func,
             "file_close": self.file_close_func,
             "file_write": self.file_write_func,
+            "file_flush": self.file_flush_func,
             "file_read": self.file_read_func,
             "file_read_all": self.file_read_all_func,
             "file_read_lines": self.file_read_lines_func,

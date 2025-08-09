@@ -54,6 +54,20 @@ class SemanticAnalyzer:
             self.add_error(f"Variable '{var_name}' already defined in this scope.")
             return node, None
 
+        if isinstance(var_type, tuple) and var_type[0] == 'array_type':
+            element_type = var_type[1]
+            self.symbol_table.add_symbol(var_name, 'array', element_type=element_type, is_dynamic=True, is_initialized=init_expr is not None)
+
+            new_init_expr = None
+            if init_expr:
+                if init_expr[0] != 'initializer_list':
+                    self.add_error(f"Dynamic array '{var_name}' must be initialized with an initializer list.")
+                    return node, None
+
+                new_init_expr, _ = self._analyze_node(init_expr, expected_type=element_type)
+
+            return ('array_declaration', element_type, var_name, None, new_init_expr, True), None
+
         is_initialized = init_expr is not None
         self.symbol_table.add_symbol(var_name, var_type, is_initialized=is_initialized)
 
@@ -95,23 +109,57 @@ class SemanticAnalyzer:
                     self.add_error(f"Type mismatch in initializer for array '{name}'. Expected {element_type}, got {expr_type}")
             new_init_list = ('initializer_list', new_init_list_exprs)
 
-        self.symbol_table.add_symbol(name, 'array', element_type=element_type, size=size)
-        return ('array_declaration', element_type, name, size_expr, new_init_list), None
+        self.symbol_table.add_symbol(name, 'array', element_type=element_type, size=size, is_dynamic=False)
+        return ('array_declaration', element_type, name, size_expr, new_init_list, False), None
 
-    def _analyze_array_access(self, node, _):
-        name, index_expr = node[1], node[2]
+    def _analyze_initializer_list(self, node, expected_type):
+        expr_list = node[1]
+        new_expr_list = []
+        for expr in expr_list:
+            new_expr, expr_type = self._analyze_node(expr)
+            if not self.type_checker.is_compatible(expected_type, expr_type):
+                self.add_error(f"Type mismatch in initializer list. Expected {expected_type}, got {expr_type}")
+            new_expr_list.append(new_expr)
+        return ('initializer_list', new_expr_list), ('array_type', expected_type)
+
+    def _analyze_dictionary_literal(self, node, _):
+        key_value_pairs = node[1]
+        new_key_value_pairs = []
+        for key_expr, value_expr in key_value_pairs:
+            new_key_expr, key_type = self._analyze_node(key_expr)
+            if key_type != 'KEYWORD_STRING':
+                self.add_error(f"Dictionary keys must be strings, but got {key_type}")
+
+            new_value_expr, _ = self._analyze_node(value_expr)
+            new_key_value_pairs.append((new_key_expr, new_value_expr))
+
+        return ('dictionary_literal', new_key_value_pairs), 'KEYWORD_DICT'
+
+    def _analyze_subscript_access(self, node, _):
+        name, key_expr = node[1], node[2]
 
         symbol = self.symbol_table.lookup_symbol(name)
-        if not symbol or symbol.get('type') != 'array':
-            self.add_error(f"'{name}' is not an array.")
+        if not symbol:
+            self.add_error(f"Undefined variable: '{name}'")
             return node, None
 
-        new_index_expr, index_type = self._analyze_node(index_expr)
-        if index_type != 'KEYWORD_INT':
-            self.add_error(f"Array index must be an integer, got {index_type}.")
-
-        element_type = symbol.get('element_type')
-        return ('array_access', name, new_index_expr, element_type), element_type
+        var_type = symbol.get('type')
+        if var_type == 'array':
+            new_key_expr, key_type = self._analyze_node(key_expr)
+            if key_type != 'KEYWORD_INT':
+                self.add_error(f"Array index must be an integer, got {key_type}.")
+            element_type = symbol.get('element_type')
+            return ('subscript_access', name, new_key_expr, element_type), element_type
+        elif var_type == 'KEYWORD_DICT':
+            new_key_expr, key_type = self._analyze_node(key_expr)
+            if key_type != 'KEYWORD_STRING':
+                self.add_error(f"Dictionary key must be a string, got {key_type}.")
+            # The value type is dynamic, so we can't know it at compile time.
+            # We'll represent it as 'void*' for now.
+            return ('subscript_access', name, new_key_expr, 'void*'), 'void*'
+        else:
+            self.add_error(f"'{name}' is not a subscriptable type (array or dictionary).")
+            return node, None
 
     def _analyze_function_definition(self, node, _):
         if self.current_function:
@@ -181,7 +229,14 @@ class SemanticAnalyzer:
         new_lhs, lhs_type = self._analyze_node(lhs)
         new_expr, expr_type = self._analyze_node(expr)
 
-        if lhs_type and expr_type and not self.type_checker.is_compatible(lhs_type, expr_type):
+        # Special handling for dictionary assignments, since the value type is dynamic.
+        if isinstance(lhs, tuple) and lhs[0] == 'subscript_access':
+            symbol = self.symbol_table.lookup_symbol(lhs[1])
+            if symbol and symbol.get('type') == 'KEYWORD_DICT':
+                # This is a dictionary assignment. We can't type check the value
+                # at compile time, so we allow it.
+                pass
+        elif lhs_type and expr_type and not self.type_checker.is_compatible(lhs_type, expr_type):
             self.add_error(f"Type mismatch in assignment: Cannot assign {expr_type} to {lhs_type}")
 
         if isinstance(lhs, str):

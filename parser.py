@@ -11,7 +11,7 @@ class Parser:
             'IDENTIFIER', 'INT_LITERAL', 'FLOAT_LITERAL', 'STRING_LITERAL', 'CHAR_LITERAL',  # Added CHAR_LITERAL
             'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE', 'KEYWORD_DO',
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
-            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_D_ARRAY_INT', 'KEYWORD_D_ARRAY_STRING',
+            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_DICT',
             'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 
             'KEYWORD_NULL', 'KEYWORD_EXIT',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
@@ -44,6 +44,9 @@ class Parser:
             "pow": {"return_type": "float", "params": [("float", "base"), ("float", "exp")]},
             "sin": {"return_type": "float", "params": [("float", "x")]},
             "cos": {"return_type": "float", "params": [("float", "x")]},
+            "floor": {"return_type": "float", "params": [("float", "x")]},
+            "ceil": {"return_type": "float", "params": [("float", "x")]},
+            "rand": {"return_type": "int", "params": []},
         }
         for name, info in math_functions.items():
             param_types = [p[0] for p in info['params']]
@@ -54,6 +57,45 @@ class Parser:
                 param_types=param_types,
                 params=info['params']
             )
+
+        string_functions = {
+            "strlen": {"return_type": "int", "params": [("string", "s")]},
+            "strcmp": {"return_type": "int", "params": [("string", "s1"), ("string", "s2")]},
+            "strcpy": {"return_type": "string", "params": [("string", "dest"), ("string", "src")]},
+            "strcat": {"return_type": "string", "params": [("string", "dest"), ("string", "src")]},
+        }
+        for name, info in string_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
+        dict_functions = {
+            "dict_create": {"return_type": "dict", "params": []},
+            "dict_set": {"return_type": "void", "params": [("dict", "d"), ("string", "key"), ("void*", "value")]},
+            "dict_get": {"return_type": "void*", "params": [("dict", "d"), ("string", "key")]},
+            "dict_get_int": {"return_type": "int", "params": [("dict", "d"), ("string", "key")]},
+            "dict_get_float": {"return_type": "float", "params": [("dict", "d"), ("string", "key")]},
+            "dict_get_string": {"return_type": "string", "params": [("dict", "d"), ("string", "key")]},
+            "dict_delete": {"return_type": "void", "params": [("dict", "d"), ("string", "key")]},
+            "new_int": {"return_type": "void*", "params": [("int", "value")]},
+            "new_float": {"return_type": "void*", "params": [("float", "value")]},
+            "new_string": {"return_type": "void*", "params": [("string", "value")]},
+        }
+        for name, info in dict_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
 
         d_array_string_functions = {
             "d_array_string_create": {"return_type": "d_array_string", "params": []},
@@ -90,7 +132,6 @@ class Parser:
                 param_types=param_types,
                 params=info['params']
             )
-
         net_functions = {
             "tcp_socket": {"return_type": "socket", "params": []},
             "tcp_connect": {"return_type": "int", "params": [("socket", "sockfd"), ("string", "host"), ("int", "port")]},
@@ -112,6 +153,7 @@ class Parser:
             "file_open": {"return_type": "file", "params": [("string", "filename"), ("string", "mode")]},
             "file_close": {"return_type": "void", "params": [("file", "file_handle")]},
             "file_write": {"return_type": "void", "params": [("file", "file_handle"), ("string", "content")]},
+            "file_flush": {"return_type": "void", "params": [("file", "file_handle")]},
             "file_read": {"return_type": "void", "params": [("file", "file_handle"), ("string", "buffer"), ("int", "size")]},
             "file_read_all": {"return_type": "string", "params": [("file", "file_handle")]},
             "file_read_lines": {"return_type": "d_array_string", "params": [("file", "file_handle")]},
@@ -293,17 +335,25 @@ class Parser:
             p[0] = ('array_declaration', p[1], p[2], None, p[6])
     
     def p_type_specifier(self, p):
-        '''type_specifier : KEYWORD_INT
-                         | KEYWORD_FLOAT
-                         | KEYWORD_CHAR
-                         | KEYWORD_VOID
-                         | KEYWORD_STRING
-                         | KEYWORD_BOOL
-                         | KEYWORD_FILE
-                         | KEYWORD_SOCKET
-                         | KEYWORD_D_ARRAY_INT
-                         | KEYWORD_D_ARRAY_STRING'''
+        '''type_specifier : primitive_type
+                         | array_type'''
         p[0] = p[1]
+
+    def p_primitive_type(self, p):
+        '''primitive_type : KEYWORD_INT
+                          | KEYWORD_FLOAT
+                          | KEYWORD_CHAR
+                          | KEYWORD_VOID
+                          | KEYWORD_STRING
+                          | KEYWORD_BOOL
+                          | KEYWORD_FILE
+                          | KEYWORD_SOCKET
+                          | KEYWORD_DICT'''
+        p[0] = p[1]
+
+    def p_array_type(self, p):
+        '''array_type : primitive_type LBRACKET RBRACKET'''
+        p[0] = ('array_type', p[1])
     
     def p_assignment_statement(self, p):
         '''assignment_statement : left_hand_side ASSIGN expression SEMICOLON'''
@@ -311,7 +361,7 @@ class Parser:
     
     def p_left_hand_side(self, p):
         '''left_hand_side : IDENTIFIER
-                         | array_access'''
+                         | subscript_access'''
         p[0] = p[1]
 
     def p_assignment_statement_no_semi(self, p):
@@ -438,7 +488,8 @@ class Parser:
             p[0] = p[1] + [p[3]]
 
     def p_expression(self, p):
-        '''expression : logical_expression'''
+        '''expression : logical_expression
+                      | initializer_list'''
         p[0] = p[1]
     
     def p_logical_expression(self, p):
@@ -508,18 +559,43 @@ class Parser:
                              | KEYWORD_NULL
                              | LPAREN expression RPAREN
                              | function_call
-                             | array_access'''
+                             | subscript_access
+                             | dictionary_literal'''
         if len(p) == 2:
-            if isinstance(p[1], tuple) and (p[1][0] == 'function_call' or p[1][0] == 'array_access'):
+            if isinstance(p[1], tuple) and (p[1][0] in ['function_call', 'subscript_access', 'dictionary_literal']):
                 p[0] = p[1]
             else:
                 p[0] = ('primary', p[1])
         else:
             p[0] = p[2]
 
-    def p_array_access(self, p):
-        '''array_access : IDENTIFIER LBRACKET expression RBRACKET'''
-        p[0] = ('array_access', p[1], p[3])
+    def p_dictionary_literal(self, p):
+        '''dictionary_literal : LBRACE key_value_list_opt RBRACE'''
+        p[0] = ('dictionary_literal', p[2])
+
+    def p_key_value_list_opt(self, p):
+        '''key_value_list_opt : key_value_list
+                              | empty'''
+        if p[1] is None:
+            p[0] = []
+        else:
+            p[0] = p[1]
+
+    def p_key_value_list(self, p):
+        '''key_value_list : key_value
+                          | key_value_list COMMA key_value'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[3]]
+
+    def p_key_value(self, p):
+        '''key_value : expression COLON expression'''
+        p[0] = (p[1], p[3])
+
+    def p_subscript_access(self, p):
+        '''subscript_access : IDENTIFIER LBRACKET expression RBRACKET'''
+        p[0] = ('subscript_access', p[1], p[3])
     
     def p_error(self, p):
         if p:

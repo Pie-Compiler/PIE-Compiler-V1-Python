@@ -16,12 +16,16 @@ def build_and_link():
         subprocess.run(["clang", "-c","-fPIC", "net_lib.c", "-o", "net_lib.o"], check=True)
         # Compile the dynamic array library to an object file
         subprocess.run(["clang", "-c", "-fPIC","d_array.c", "-o", "d_array.o"], check=True)
+        # Compile the string library to an object file
+        subprocess.run(["clang", "-c", "-fPIC","string_lib.c", "-o", "string_lib.o"], check=True)
+        # Compile the dictionary library to an object file
+        subprocess.run(["clang", "-c", "-fPIC","dict_lib.c", "-o", "dict_lib.o"], check=True)
         # Convert LLVM IR to bitcode
         subprocess.run(["llvm-as", "output.ll", "-o", "output.bc"], check=True)
         # Generate native object file from bitcode with PIC
         subprocess.run(["llc", "-filetype=obj", "-relocation-model=pic", "output.bc", "-o", "output.o"], check=True)
         # Link everything together to create the executable
-        subprocess.run(["clang", "output.o", "runtime.o", "math_lib.o", "file_lib.o", "net_lib.o", "d_array.o", "-o", "program", "-lm"], check=True)
+        subprocess.run(["clang", "output.o", "runtime.o", "math_lib.o", "file_lib.o", "net_lib.o", "d_array.o", "string_lib.o", "dict_lib.o", "-o", "program", "-lm"], check=True)
         print("Build and linking successful! Executable: ./program")
     except subprocess.CalledProcessError as e:
         print(f"Error during build and linking process: {e}")
@@ -33,7 +37,7 @@ def main():
     # Example program
     # test_program_file="test_file_read_lines.pie"
     #make sure that it is a .pie file
-    with open("test13.pie", "r") as file:
+    with open("test12.pie", "r") as file:
         input_program = file.read()
 
     try:

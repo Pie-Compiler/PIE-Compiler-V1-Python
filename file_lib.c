@@ -24,6 +24,13 @@ void file_write(intptr_t file_handle, const char* content) {
     }
 }
 
+void file_flush(intptr_t file_handle) {
+    FILE* file = (FILE*)file_handle;
+    if (file) {
+        fflush(file);
+    }
+}
+
 // file_read is more complex. For now, let's assume it reads a line.
 // The buffer needs to be allocated by the caller.
 void file_read(intptr_t file_handle, char* buffer, int size) {

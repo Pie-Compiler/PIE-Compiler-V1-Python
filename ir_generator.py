@@ -71,31 +71,156 @@ class IRGenerator:
             self.code.append(("ASSIGN", var_name, expr_result))
 
     def _process_array_declaration(self, node):
-        element_type, name, size, init_list = node[1], node[2], node[3], node[4]
-        if size:
-            size = self._process_expression(size)
-        self.code.append(("DECLARE_ARRAY", element_type, name, size))
-        if init_list:
-            init_values = [self._process_expression(expr) for expr in init_list[1]]
-            for i, val in enumerate(init_values):
-                self.code.append(("STORE_ARRAY", name, i, val))
+        element_type, name, size, init_list, is_dynamic = node[1], node[2], node[3], node[4], node[5]
 
-    def _process_array_access(self, node):
-        name, index_expr = node[1], node[2]
-        index = self._process_expression(index_expr)
-        temp = self._get_temp()
-        self.code.append(("LOAD_ARRAY", temp, name, index))
-        return temp
+        if is_dynamic:
+            # Dynamic array
+            create_func = f"d_array_{element_type.replace('KEYWORD_', '').lower()}_create"
+            append_func = f"d_array_{element_type.replace('KEYWORD_', '').lower()}_append"
+
+            self.code.append(("DECLARE", f"d_array_{element_type.replace('KEYWORD_', '').lower()}", name))
+
+            # Call create function
+            temp = self._get_temp()
+            self.code.append(("CALL", create_func, 0, temp))
+            self.code.append(("ASSIGN", name, temp))
+
+            if init_list:
+                init_values = [self._process_expression(expr) for expr in init_list[1]]
+                for val in init_values:
+                    self.code.append(("PARAM", name))
+                    self.code.append(("PARAM", val))
+                    self.code.append(("CALL", append_func, 2, self._get_temp()))
+
+        else:
+            # Static array
+            if size:
+                size = self._process_expression(size)
+            self.code.append(("DECLARE_ARRAY", element_type, name, size))
+            if init_list:
+                init_values = [self._process_expression(expr) for expr in init_list[1]]
+                for i, val in enumerate(init_values):
+                    self.code.append(("STORE_ARRAY", name, i, val))
+
+    def _get_value_type(self, node):
+        if not isinstance(node, tuple):
+            if isinstance(node, str):
+                if node.isdigit() or (node.startswith('-') and node[1:].isdigit()):
+                    return 'int'
+                elif '.' in node:
+                    return 'float'
+                elif node.startswith('"'):
+                    return 'string'
+                elif node.startswith("'"):
+                    return 'char'
+                elif node in ['true', 'false']:
+                    return 'boolean'
+                elif node == 'null':
+                    return 'null'
+                else:
+                    symbol = self.symbol_table.lookup_symbol(node)
+                    if symbol:
+                        return symbol.get('type')
+            return None
+
+        node_type = node[0]
+        if node_type == 'primary':
+            return self._get_value_type(node[1])
+        elif node_type == 'function_call':
+            func_symbol = self.symbol_table.lookup_function(node[1])
+            if func_symbol:
+                return func_symbol.get('return_type')
+        elif node_type == 'binary_op':
+            return node[4] # result_type is stored in the node
+        return None
+
+    def _process_dictionary_literal(self, node):
+        key_value_pairs = node[1]
+        dict_var = self._get_temp()
+        self.code.append(("CALL", "dict_create", 0, dict_var))
+
+        for key_expr, value_expr in key_value_pairs:
+            key = self._process_expression(key_expr)
+            value = self._process_expression(value_expr)
+            value_type = self._get_value_type(value_expr)
+
+            new_func = f"new_{value_type.replace('KEYWORD_', '').lower()}"
+
+            value_var = self._get_temp()
+            self.code.append(("PARAM", value))
+            self.code.append(("CALL", new_func, 1, value_var))
+
+            self.code.append(("PARAM", dict_var))
+            self.code.append(("PARAM", key))
+            self.code.append(("PARAM", value_var))
+            self.code.append(("CALL", "dict_set", 3, self._get_temp()))
+
+        return dict_var
+
+    def _process_subscript_access(self, node):
+        name, key_expr, element_type = node[1], node[2], node[3]
+        symbol = self.symbol_table.lookup_symbol(name)
+
+        if symbol and symbol.get('type') == 'array':
+            if symbol.get('is_dynamic'):
+                get_func = f"d_array_{element_type.replace('KEYWORD_', '').lower()}_get"
+                index = self._process_expression(key_expr)
+                temp = self._get_temp()
+                self.code.append(("PARAM", name))
+                self.code.append(("PARAM", index))
+                self.code.append(("CALL", get_func, 2, temp))
+                return temp
+            else:
+                index = self._process_expression(key_expr)
+                temp = self._get_temp()
+                self.code.append(("LOAD_ARRAY", temp, name, index))
+                return temp
+        elif symbol and symbol.get('type') == 'KEYWORD_DICT':
+            key = self._process_expression(key_expr)
+            temp = self._get_temp()
+            self.code.append(("PARAM", name))
+            self.code.append(("PARAM", key))
+            self.code.append(("CALL", "dict_get", 2, temp))
+            return temp
+        else:
+            raise Exception("Subscript access on non-array/dictionary type")
 
     def _process_assignment(self, node):
         lhs, expr = node[1], node[2]
 
-        if isinstance(lhs, tuple) and lhs[0] == 'array_access':
-            array_name = lhs[1]
-            index_expr = lhs[2]
-            index = self._process_expression(index_expr)
-            value = self._process_expression(expr)
-            self.code.append(("STORE_ARRAY", array_name, index, value))
+        if isinstance(lhs, tuple) and lhs[0] == 'subscript_access':
+            name, key_expr, element_type = lhs[1], lhs[2], lhs[3]
+            symbol = self.symbol_table.lookup_symbol(name)
+
+            if symbol and symbol.get('type') == 'array':
+                if symbol.get('is_dynamic'):
+                    set_func = f"d_array_{element_type.replace('KEYWORD_', '').lower()}_set"
+                    index = self._process_expression(key_expr)
+                    value = self._process_expression(expr)
+                    self.code.append(("PARAM", name))
+                    self.code.append(("PARAM", index))
+                    self.code.append(("PARAM", value))
+                    self.code.append(("CALL", set_func, 3, self._get_temp()))
+                else:
+                    index = self._process_expression(key_expr)
+                    value = self._process_expression(expr)
+                    self.code.append(("STORE_ARRAY", name, index, value))
+            elif symbol and symbol.get('type') == 'KEYWORD_DICT':
+                key = self._process_expression(key_expr)
+                value = self._process_expression(expr)
+                value_type = self._get_value_type(expr)
+
+                new_func = f"new_{value_type.replace('KEYWORD_', '').lower()}"
+
+                value_var = self._get_temp()
+                self.code.append(("PARAM", value))
+                self.code.append(("CALL", new_func, 1, value_var))
+
+                self.code.append(("PARAM", name))
+                self.code.append(("PARAM", key))
+                self.code.append(("PARAM", value_var))
+                self.code.append(("CALL", "dict_set", 3, self._get_temp()))
+
         else:
             # Regular variable assignment
             expr_result = self._process_expression(expr)
