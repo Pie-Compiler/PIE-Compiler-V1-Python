@@ -349,8 +349,8 @@ class LLVMCodeGenerator(Visitor):
                     pass
         
         # For function calls and other expressions, we'll need more sophisticated handling
-        # For now, return a default value
-        return ir.Constant(ir.IntType(64), 0)  # file type default
+        # For now, return a default value - use int32 as it's the most common
+        return ir.Constant(ir.IntType(32), 0)
 
     def visit_arraydeclaration(self, node):
         var_name = node.identifier
@@ -663,8 +663,22 @@ class LLVMCodeGenerator(Visitor):
     # visit_switchstatement and others would follow a similar pattern
     # of creating blocks and using branching instructions.
     def visit_systemoutput(self, node):
-        output_val = self._load_if_pointer(self.visit(node.expression))
         output_type = node.output_type.type_name.replace('KEYWORD_', '').lower()
+        
+        # Get the raw value first
+        raw_val = self.visit(node.expression)
+        
+        # For string output, we need to handle both string literals and string variables
+        if output_type == 'string':
+            # If it's a double pointer (string variable), load it to get i8*
+            if isinstance(raw_val.type, ir.PointerType) and isinstance(raw_val.type.pointee, ir.PointerType):
+                output_val = self.builder.load(raw_val)
+            else:
+                # It's already an i8* (string literal)
+                output_val = raw_val
+        else:
+            # For other types, load if it's a pointer
+            output_val = self._load_if_pointer(raw_val)
 
         func_name = f"output_{output_type}"
         output_func = self.module.get_global(func_name)

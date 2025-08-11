@@ -6,16 +6,20 @@ A compiler for the PIE programming language, supporting parsing, semantic analys
 
 ```
 .
-├── main.py              # Entry point for the compiler
-├── parser.py            # Parser for PIE language
-├── lexer.py             # Custom lexer implementation
-├── semanticAnalysis.py  # Semantic analysis phase
-├── ir_generator.py      # Intermediate representation (3-address code) generator
-├── llvmConverter.py     # Converts IR to LLVM IR
-├── runtime.c            # Runtime support functions (I/O, etc.)
-├── math_lib.c           # Math standard library
-├── file_lib.c           # File access standard library
-├── net_lib.c            # Network standard library
+├── src/
+│   ├── main.py              # Entry point for the compiler
+│   ├── frontend/
+│   │   ├── lexer.py         # Custom lexer implementation
+│   │   ├── parser.py        # Parser for PIE language
+│   │   ├── ast.py           # Abstract syntax tree nodes
+│   │   └── semanticAnalysis.py # Semantic analysis phase
+│   ├── backend/
+│   │   └── llvm_generator.py # LLVM IR generation
+│   └── runtime/
+│       ├── runtime.c        # Runtime support functions (I/O, etc.)
+│       ├── math_lib.c       # Math standard library
+│       ├── file_lib.c       # File access standard library
+│       └── net_lib.c        # Network standard library
 ├── test*.pie            # Sample PIE programs
 ├── output.ir            # Generated IR code
 ├── output.ll            # Generated LLVM IR code
@@ -23,19 +27,102 @@ A compiler for the PIE programming language, supporting parsing, semantic analys
 └── ...
 ```
 
-## Features
+## Language Features
 
 ### 1. Basic Language Structure
 
-PIE is a C-like language. All executable statements must be inside a function. The program execution starts from the `main` function.
+PIE is a C-like language that supports both global statements and user-defined functions. You can write programs in two ways:
 
-- **Data Types**: `int`, `float`, `string`, `char`, `boolean`, `file`, `socket`, `dict`.
-- **Control Flow**: `if/else`, `for`, `while`, `do...while`.
-- **Comments**: `// single line` and `/* multi-line */`.
+1. **Global statements only**: Write your code directly at the top level. The compiler will automatically wrap these statements in a `main()` function.
+2. **Explicit main function**: Define your own `main()` function if you prefer traditional C-style structure.
 
-### 2. User-Defined Functions
+**Data Types:**
+- `int` - 32-bit signed integers
+- `float` - Double-precision floating point numbers  
+- `char` - Single characters
+- `string` - Null-terminated character strings
+- `boolean` (or `bool`) - Boolean values (`true`/`false`)
+- `file` - File handles for I/O operations
+- `socket` - Network socket handles
+- `dict` - Hash map dictionaries with string keys
 
-Functions can be defined with type-safe arguments and return types.
+**Comments:**
+- Single line: `// comment text`
+- Multi-line: `/* comment text */`
+
+### 2. Operators
+
+**Arithmetic:** `+`, `-`, `*`, `/`, `%`  
+**Comparison:** `==`, `!=`, `<`, `>`, `<=`, `>=`  
+**Logical:** `&&` (and), `||` (or)  
+**Assignment:** `=`  
+**String concatenation:** `+` (for strings)
+
+### 3. Control Flow Statements
+
+**Conditional Statements:**
+```pie
+if (condition) {
+    // statements
+} else {
+    // statements
+}
+```
+
+**Loops:**
+```pie
+// For loop
+for (initialization; condition; update) {
+    // statements
+}
+
+// While loop  
+while (condition) {
+    // statements
+}
+```
+
+**Control keywords:** `break`, `continue`, `return`
+
+### 4. Variable Declarations
+
+**Basic declarations:**
+```pie
+int x;              // Declaration only
+int y = 5;          // Declaration with initialization
+float pi = 3.14159; // Float initialization
+char grade = 'A';   // Character initialization
+string name = "Alice"; // String initialization
+boolean isValid = true; // Boolean initialization
+```
+
+**Global variables:**
+Variables declared outside functions are global and initialized at program startup.
+
+### 5. Arrays
+
+**Static Arrays:**
+```pie
+// Declaration with size
+int numbers[10];
+
+// Declaration with initializer list (size inferred)
+string names[] = {"Alice", "Bob", "Charlie"};
+
+// Array access
+numbers[0] = 42;
+string first = names[0];
+```
+
+**Dynamic Arrays:**
+```pie
+int[] dynamicArray = {1, 2, 3, 4, 5};
+// Dynamic arrays use runtime library functions for manipulation
+```
+
+### 6. User-Defined Functions
+
+Functions can be defined with type-safe parameters and return types.
 
 **Syntax:**
 ```pie
@@ -50,135 +137,248 @@ int add(int a, int b) {
     return a + b;
 }
 
+float calculateAverage(int total, int count) {
+    if (count == 0) {
+        return 0.0;
+    }
+    return (float)total / count;
+}
+```
+
+### 7. Program Entry Point
+
+PIE programs have flexible entry points:
+
+- **Automatic main generation**: If you don't define a `main()` function, the compiler automatically wraps all global statements in a `main()` function that returns 0.
+- **Explicit main function**: You can define your own `main()` function for more control over program structure and return values.
+- **Mixed approach**: You can have both global variables/statements and a `main()` function. Global statements will be executed before `main()` is called.
+
+**Examples:**
+```pie
+// Option 1: Global statements only (main auto-generated)
+string name = "World";
+output("Hello, ", string);
+output(name, string);
+
+// Option 2: Explicit main function
 int main() {
-    int result;
-    result = add(5, 3);
-    output(result, int); // Outputs: 8
+    output("Hello, World!", string);
     return 0;
 }
 ```
 
-### 3. Arrays
+### 8. Dictionaries
 
-#### Static Arrays
-One-dimensional static arrays with a fixed size are supported.
-
-**Syntax:**
-```pie
-// Declaration with size
-<type> <array_name>[<size>];
-
-// Declaration with initializer list (size is inferred)
-<type> <array_name>[] = {<value1>, <value2>, ...};
-```
-
-**Example:**
-```pie
-int main() {
-    int numbers[3];
-    numbers[0] = 10;
-
-    string names[] = {"Alice", "Bob", "Charlie"};
-    output(names[1], string); // Outputs: Bob
-    return 0;
-}
-```
-
-#### Dynamic Arrays
-PIE also supports dynamic arrays which can grow or shrink in size.
-
-**Syntax:**
-```pie
-<type>[] <array_name>;
-<type>[] <array_name> = {<value1>, <value2>, ...};
-```
-
-**Example:**
-```pie
-int main() {
-    int[] my_arr = {10, 20, 30};
-    // Dynamic arrays are manipulated using functions from the standard library
-    // (e.g., d_array_int_append, d_array_int_get).
-    return 0;
-}
-```
-
-### 4. Dictionaries
 PIE supports dictionaries (hash maps) with string keys.
 
 **Syntax:**
 ```pie
-dict <dict_name> = dict_create();
+dict myDict = dict_create();
+dict_set(myDict, "name", new_string("Jules"));
+dict_set(myDict, "age", new_int(30));
+
+string name = dict_get_string(myDict, "name");
+int age = dict_get_int(myDict, "age");
+```
+
+### 9. String Operations
+
+**String concatenation:**
+```pie
+string firstName = "John";
+string lastName = "Doe";
+string fullName = firstName + " " + lastName;
+output(fullName, string); // Outputs: John Doe
+```
+
+### 10. Standard Library
+
+PIE includes a comprehensive standard library for common operations.
+
+#### System I/O Functions
+```pie
+// Input functions - read values from user
+input(variable, type);    // Reads input and stores in variable
+
+// Output functions - print values to console  
+output(value, type);         // Basic output
+output(value, float, precision); // Float output with precision control
+
+// Program control
+exit();                      // Exit the program
 ```
 
 **Example:**
 ```pie
-int main() {
-    dict my_dict = dict_create();
-    dict_set(my_dict, "name", new_string("Jules"));
-    dict_set(my_dict, "age", new_int(30));
+int age;
+string name;
 
-    string name = dict_get_string(my_dict, "name");
-    int age = dict_get_int(my_dict, "age");
+output("Enter your name: ", string);
+input(name, string);
+output("Enter your age: ", string);  
+input(age, int);
 
-    output(name, string); // Outputs: Jules
-    output(age, int);     // Outputs: 30
-    return 0;
-}
+output("Hello ", string);
+output(name, string);
+output("! You are ", string);
+output(age, int);
+output(" years old.", string);
 ```
 
-### 5. String Concatenation
-
-Strings can be concatenated using the `+` operator.
+#### Math Library Functions
+```pie
+float sqrt(float x);          // Square root
+float pow(float base, float exp); // Power function  
+float sin(float x);           // Sine function
+float cos(float x);           // Cosine function
+float floor(float x);         // Floor function
+float ceil(float x);          // Ceiling function
+int rand();                   // Random number generator
+```
 
 **Example:**
 ```pie
-int main() {
-    string s1 = "hello";
-    string s2 = " world";
-    string s3 = s1 + s2;
-    output(s3, string); // Outputs: hello world
-    return 0;
-}
+float x = 16.0;
+float result = sqrt(x);       // result = 4.0
+float power = pow(2.0, 3.0);  // power = 8.0
 ```
 
-### 6. Standard Library
+#### File I/O Library
+```pie
+file file_open(string filename, string mode); // Open file
+void file_close(file handle);                 // Close file
+void file_write(file handle, string content); // Write to file
+string file_read_all(file handle);           // Read entire file
+string file_read_line(file handle);          // Read single line
+void file_flush(file handle);                // Flush file buffer
+```
 
-PIE includes a standard library for common operations.
+**Example:**
+```pie
+file myFile = file_open("data.txt", "w");
+file_write(myFile, "Hello, World!");
+file_close(myFile);
 
-#### System I/O
-- `input(variable, type)`: Reads input from the user.
-- `output(value, type)`: Prints a value to the console.
-- `exit()`: Exits the program.
+file readFile = file_open("data.txt", "r");
+string content = file_read_all(readFile);
+output(content, string);
+file_close(readFile);
+```
 
-#### Math Library
-- `float sqrt(float x)`
-- `float pow(float base, float exp)`
-- `float sin(float x)`
-- `float cos(float x)`
-- `float floor(float x)`
-- `float ceil(float x)`
-- `int rand()`
-
-#### File Access Library
-- `file file_open(string filename, string mode)`
-- `void file_close(file file_handle)`
-- `void file_write(file file_handle, string content)`
-- `void file_flush(file file_handle)`
-- `void file_read(file file_handle, string buffer, int size)`
-
-#### String Utilities
-- `int strlen(string s)`
-- `int strcmp(string s1, string s2)`
-- `string strcpy(string dest, string src)`
-- `string strcat(string dest, string src)`
+#### String Utility Functions
+```pie
+int strlen(string s);                    // Get string length
+int strcmp(string s1, string s2);       // Compare strings
+string strcpy(string dest, string src); // Copy string
+string strcat(string dest, string src); // Concatenate strings
+```
 
 #### Network Library
-- `socket tcp_socket()`
-- `int tcp_connect(socket sockfd, string host, int port)`
-- `int tcp_send(socket sockfd, string data)`
-- `int tcp_recv(socket sockfd, string buffer, int size)`
-- `void tcp_close(socket sockfd)`
+```pie
+socket tcp_socket();                           // Create TCP socket
+int tcp_connect(socket sock, string host, int port); // Connect to host
+int tcp_send(socket sock, string data);       // Send data
+int tcp_recv(socket sock, string buffer, int size);  // Receive data
+void tcp_close(socket sock);                  // Close socket
+```
+
+### 11. Example Programs
+
+#### Simple Global Program (No explicit main function needed)
+```pie
+// The compiler automatically wraps these statements in main()
+int n;
+float total = 0.0;
+float avg;
+char grade;
+
+output("Enter number of scores: ", string);
+input(n, int);
+
+for (int i = 0; i < n; i = i + 1) {
+    int score;
+    output("Enter score: ", string);
+    input(score, int);
+    total = total + score;
+}
+
+avg = total / n;
+
+if (avg >= 90.0) {
+    grade = 'A';
+} else if (avg >= 80.0) {
+    grade = 'B'; 
+} else if (avg >= 70.0) {
+    grade = 'C';
+} else if (avg >= 60.0) {
+    grade = 'D';
+} else {
+    grade = 'F';
+}
+
+output("Average: ", string);
+output(avg, float, 2);
+output("Grade: ", string);
+output(grade, char);
+```
+
+#### Traditional C-style Program with Explicit Main Function
+```pie
+int main() {
+    string message = "Hello from PIE!";
+    output(message, string);
+    
+    int x = 10;
+    int y = 20;
+    int result = x + y;
+    
+    output("The sum is: ", string);
+    output(result, int);
+    
+    return 0;
+}
+```
+
+#### Program with Functions and Global Variables
+```pie
+// Global variables
+string appName = "Calculator";
+int version = 1;
+
+// Function definition
+int add(int a, int b) {
+    return a + b;
+}
+
+float divide(float a, float b) {
+    if (b == 0.0) {
+        output("Error: Division by zero!", string);
+        return 0.0;
+    }
+    return a / b;
+}
+
+// Main program logic (executed automatically)
+output("Welcome to ", string);
+output(appName, string);
+output(" v", string);
+output(version, int);
+
+int x = 15;
+int y = 25;
+int sum = add(x, y);
+
+output("Sum of ", string);
+output(x, int);
+output(" and ", string); 
+output(y, int);
+output(" is ", string);
+output(sum, int);
+
+float result = divide(10.0, 3.0);
+output("10.0 / 3.0 = ", string);
+output(result, float, 3);
+```
 
 
 ## How to Run the Compiler
