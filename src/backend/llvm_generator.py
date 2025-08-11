@@ -404,10 +404,13 @@ class LLVMCodeGenerator(Visitor):
 
     def _load_if_pointer(self, value):
         """Loads a value if it's a pointer, otherwise returns the value directly."""
-        # Don't load string constants - they should remain as pointers
         if isinstance(value.type, ir.PointerType):
-            # Check if it's a string pointer (i8*) - don't load it
-            if value.type.pointee == ir.IntType(8):
+            # Check if it's a string constant/literal - don't load it
+            if (value.type.pointee == ir.IntType(8) and 
+                hasattr(value, 'name') and 
+                (value.name.startswith('.str') or 
+                 str(value).startswith('bitcast') or
+                 str(value).startswith('getelementptr'))):
                 return value
             # For other pointer types (variables), load the value
             return self.builder.load(value)
