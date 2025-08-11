@@ -149,7 +149,89 @@ class SemanticAnalyzer(Visitor):
         self.symbol_table.exit_scope()
         return None
 
+    def visit_array_function_call(self, node):
+        func_name = node.name
+        args = node.args
+
+        if not args:
+            self.add_error(f"Array function '{func_name}' called with no arguments.")
+            return None
+
+        # First argument must be an identifier pointing to an array
+        array_arg_node = args[0]
+        if not isinstance(array_arg_node, Identifier):
+            self.add_error(f"First argument to '{func_name}' must be an array variable.")
+            return None
+
+        array_name = array_arg_node.name
+        array_symbol = self.symbol_table.lookup_symbol(array_name)
+        if not array_symbol or array_symbol.get('type') != 'array':
+            self.add_error(f"'{array_name}' is not an array.")
+            return None
+
+        element_type = array_symbol.get('element_type')
+        is_dynamic = array_symbol.get('is_dynamic')
+
+        # Now, handle each function
+        if func_name == 'arr_push':
+            if not is_dynamic:
+                self.add_error(f"'arr_push' can only be used on dynamic arrays.")
+            if len(args) != 2:
+                self.add_error(f"'arr_push' expects 2 arguments, got {len(args)}.")
+                return None
+            value_type = self.visit(args[1])
+            if not self.type_checker.is_compatible(element_type, value_type):
+                self.add_error(f"Type mismatch in 'arr_push'. Cannot push {value_type} to an array of {element_type}.")
+            return 'void' # arr_push returns void
+
+        elif func_name == 'arr_pop':
+            if not is_dynamic:
+                self.add_error(f"'arr_pop' can only be used on dynamic arrays.")
+            if len(args) != 1:
+                self.add_error(f"'arr_pop' expects 1 argument, got {len(args)}.")
+            return element_type # arr_pop returns a value of the element type
+
+        elif func_name == 'arr_size':
+            if len(args) != 1:
+                self.add_error(f"'arr_size' expects 1 argument, got {len(args)}.")
+            return 'KEYWORD_INT'
+
+        elif func_name == 'arr_contains':
+            if len(args) != 2:
+                self.add_error(f"'arr_contains' expects 2 arguments, got {len(args)}.")
+                return None
+            value_type = self.visit(args[1])
+            if not self.type_checker.is_compatible(element_type, value_type):
+                self.add_error(f"Type mismatch in 'arr_contains'. Cannot check for {value_type} in an array of {element_type}.")
+            return 'KEYWORD_BOOL'
+
+        elif func_name == 'arr_indexof':
+            if len(args) != 2:
+                self.add_error(f"'arr_indexof' expects 2 arguments, got {len(args)}.")
+                return None
+            value_type = self.visit(args[1])
+            if not self.type_checker.is_compatible(element_type, value_type):
+                self.add_error(f"Type mismatch in 'arr_indexof'. Cannot find index of {value_type} in an array of {element_type}.")
+            return 'KEYWORD_INT'
+
+        elif func_name == 'arr_avg':
+            if element_type not in ('KEYWORD_INT', 'KEYWORD_FLOAT'):
+                self.add_error(f"'arr_avg' can only be used on int or float arrays.")
+            if len(args) not in [1, 2]:
+                self.add_error(f"'arr_avg' expects 1 or 2 arguments, got {len(args)}.")
+                return None
+            if len(args) == 2:
+                precision_type = self.visit(args[1])
+                if precision_type != 'KEYWORD_INT':
+                    self.add_error(f"Precision for 'arr_avg' must be an integer.")
+            return 'KEYWORD_FLOAT'
+
+        self.add_error(f"Unknown array function '{func_name}'")
+        return None
+
     def visit_functioncall(self, node):
+        if node.name.startswith('arr_'):
+            return self.visit_array_function_call(node)
         function_symbol = self.symbol_table.lookup_function(node.name)
         if not function_symbol:
             # Could be a system call, handle separately
@@ -203,6 +285,21 @@ class SemanticAnalyzer(Visitor):
 
         if not left_type or not right_type:
             return None
+
+        if op_token_name == 'PLUS' and left_type == 'array' and right_type == 'array':
+            if isinstance(node.left, Identifier) and isinstance(node.right, Identifier):
+                left_symbol = self.symbol_table.lookup_symbol(node.left.name)
+                right_symbol = self.symbol_table.lookup_symbol(node.right.name)
+                if left_symbol.get('element_type') == right_symbol.get('element_type'):
+                    node.result_type = 'array'
+                    node.element_type = left_symbol.get('element_type')
+                    return 'array'
+                else:
+                    self.add_error("Cannot concatenate arrays of different element types.")
+                    return None
+            else:
+                self.add_error("Array concatenation is only supported between array variables.")
+                return None
 
         result_type = self.type_checker.check_binary_op(op_token_name, left_type, right_type)
         if not result_type:
@@ -378,6 +475,12 @@ class SemanticAnalyzer(Visitor):
         Override generic_visit to traverse children for nodes that don't need
         specific logic but contain other nodes.
         """
+        if isinstance(node, list):
+            for item in node:
+                if hasattr(item, 'accept'):
+                    self.visit(item)
+            return None
+
         # This is a simple generic visitor. A more robust one would inspect
         # the node's attributes to find visitable children.
         for attr, value in vars(node).items():

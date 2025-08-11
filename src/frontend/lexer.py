@@ -257,7 +257,8 @@ def build_master_nfa():
         "bool": "KEYWORD_BOOL",
         "boolean": "KEYWORD_BOOL",  # Add this line
         "true": "KEYWORD_TRUE",
-        "false": "KEYWORD_FALSE"
+        "false": "KEYWORD_FALSE",
+        "array": "KEYWORD_ARRAY"
     }
     for word, token_name in keywords.items():
         nfa_start, nfa_end = build_literal_nfa(word)
@@ -364,6 +365,12 @@ def build_master_nfa():
         "input": "SYSTEM_INPUT",
         "output": "SYSTEM_OUTPUT",
         "exit": "SYSTEM_EXIT",
+        "arr_push": "SYSTEM_ARR_PUSH",
+        "arr_pop": "SYSTEM_ARR_POP",
+        "arr_size": "SYSTEM_ARR_SIZE",
+        "arr_contains": "SYSTEM_ARR_CONTAINS",
+        "arr_indexof": "SYSTEM_ARR_INDEXOF",
+        "arr_avg": "SYSTEM_ARR_AVG",
     }
     for func, token_name in system_functions.items():
         nfa_start, nfa_end = build_literal_nfa(func)

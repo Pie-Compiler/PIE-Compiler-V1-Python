@@ -68,6 +68,7 @@ def main():
 
     try:
         ast = parser.parse(input_program)
+        print_ast(ast)
         print("Parsing successful!")
 
         analyzer = SemanticAnalyzer(parser.symbol_table)

@@ -20,7 +20,9 @@ class Parser:
             'SEMICOLON', 'COMMA', 'DOT', 'COLON',
             'PLUS', 'MINUS', 'MUL', 'DIV', 'MOD',
             'GT', 'LT', 'GEQ', 'LEQ', 'EQ', 'NEQ', 'AND', 'OR', 'ASSIGN',
-            'SYSTEM_INPUT', 'SYSTEM_OUTPUT', 'SYSTEM_EXIT', 'COMMENT'
+            'SYSTEM_INPUT', 'SYSTEM_OUTPUT', 'SYSTEM_EXIT', 'COMMENT',
+            'KEYWORD_ARRAY',
+            'SYSTEM_ARR_PUSH', 'SYSTEM_ARR_POP', 'SYSTEM_ARR_SIZE', 'SYSTEM_ARR_CONTAINS', 'SYSTEM_ARR_INDEXOF', 'SYSTEM_ARR_AVG'
         ]
         
         self.precedence = (
@@ -170,6 +172,24 @@ class Parser:
                 params=info['params']
             )
 
+        array_functions = {
+            "arr_push": {"return_type": "void", "params": [("array", "arr"), ("any", "value")]},
+            "arr_pop": {"return_type": "any", "params": [("array", "arr")]},
+            "arr_size": {"return_type": "int", "params": [("array", "arr")]},
+            "arr_contains": {"return_type": "bool", "params": [("array", "arr"), ("any", "value")]},
+            "arr_indexof": {"return_type": "int", "params": [("array", "arr"), ("any", "value")]},
+            "arr_avg": {"return_type": "float", "params": [("array", "arr"), ("int", "precision")]},
+        }
+        for name, info in array_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
     def setup_lexer(self):
         """Create and configure the lexer instance."""
         nfa_start = build_master_nfa()
@@ -290,6 +310,7 @@ class Parser:
                     | break_statement
                     | return_statement
                     | function_call_statement
+                    | array_function_call_statement
                     | block_statement
                     | function_definition'''
         p[0] = p[1]
@@ -326,15 +347,27 @@ class Parser:
         '''declaration_statement : type_specifier IDENTIFIER SEMICOLON
                                 | type_specifier IDENTIFIER ASSIGN expression SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON'''
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON'''
         if len(p) == 4:  # type ID ;
             p[0] = Declaration(p[1], p[2])
+        elif len(p) == 5: # type ID [ ] ;
+            p[0] = ArrayDeclaration(p[1], p[2], is_dynamic=True)
         elif len(p) == 6 and p[3] == '=':  # type ID = expr ;
             p[0] = Declaration(p[1], p[2], p[4])
         elif len(p) == 7:  # type ID [ expr ] ;
             p[0] = ArrayDeclaration(p[1], p[2], size=p[4])
-        elif len(p) == 8:  # type ID [ ] = init_list ;
-            p[0] = ArrayDeclaration(p[1], p[2], initializer=p[6], is_dynamic=True)
+        elif len(p) == 8:  # type ID [ ] = init_list or expression ;
+            # This is tricky because expression can be an initializer list.
+            # We rely on the fact that initializer_list is not in expression anymore
+            if isinstance(p[6], InitializerList):
+                p[0] = ArrayDeclaration(p[1], p[2], initializer=p[6], is_dynamic=True)
+            else:
+                p[0] = ArrayDeclaration(p[1], p[2], initializer=p[6], is_dynamic=True)
+        elif len(p) == 9:
+            p[0] = ArrayDeclaration(p[1], p[2], size=p[4], initializer=p[7])
     
     def p_type_specifier(self, p):
         '''type_specifier : primitive_type
@@ -350,7 +383,8 @@ class Parser:
                           | KEYWORD_BOOL
                           | KEYWORD_FILE
                           | KEYWORD_SOCKET
-                          | KEYWORD_DICT'''
+                          | KEYWORD_DICT
+                          | KEYWORD_ARRAY'''
         p[0] = TypeSpecifier(p[1])
 
     def p_array_type(self, p):
@@ -429,6 +463,35 @@ class Parser:
     def p_function_call_statement(self, p):
         '''function_call_statement : function_call SEMICOLON'''
         p[0] = FunctionCallStatement(p[1])
+
+    def p_array_function_call_statement(self, p):
+        '''array_function_call_statement : array_function_call SEMICOLON'''
+        p[0] = FunctionCallStatement(p[1])
+
+    def p_array_function_call(self, p):
+        '''array_function_call : SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
+                               | SYSTEM_ARR_POP LPAREN expression RPAREN
+                               | SYSTEM_ARR_SIZE LPAREN expression RPAREN
+                               | SYSTEM_ARR_CONTAINS LPAREN expression COMMA expression RPAREN
+                               | SYSTEM_ARR_INDEXOF LPAREN expression COMMA expression RPAREN
+                               | SYSTEM_ARR_AVG LPAREN expression RPAREN
+                               | SYSTEM_ARR_AVG LPAREN expression COMMA expression RPAREN'''
+        slice_type = p.slice[1].type
+        if slice_type == 'SYSTEM_ARR_PUSH':
+            p[0] = FunctionCall('arr_push', [p[3], p[5]])
+        elif slice_type == 'SYSTEM_ARR_POP':
+            p[0] = FunctionCall('arr_pop', [p[3]])
+        elif slice_type == 'SYSTEM_ARR_SIZE':
+            p[0] = FunctionCall('arr_size', [p[3]])
+        elif slice_type == 'SYSTEM_ARR_CONTAINS':
+            p[0] = FunctionCall('arr_contains', [p[3], p[5]])
+        elif slice_type == 'SYSTEM_ARR_INDEXOF':
+            p[0] = FunctionCall('arr_indexof', [p[3], p[5]])
+        elif slice_type == 'SYSTEM_ARR_AVG':
+            if len(p) == 5:
+                p[0] = FunctionCall('arr_avg', [p[3]])
+            else:
+                p[0] = FunctionCall('arr_avg', [p[3], p[5]])
     
     def p_function_call(self, p):
         '''function_call : IDENTIFIER LPAREN argument_list RPAREN
@@ -466,7 +529,7 @@ class Parser:
             p[0] = Block(p[2])
     
     def p_initializer_list(self, p):
-        '''initializer_list : LBRACE expression_list_opt RBRACE'''
+        '''initializer_list : LBRACKET expression_list_opt RBRACKET'''
         p[0] = InitializerList(p[2])
 
     def p_expression_list_opt(self, p):
@@ -486,8 +549,7 @@ class Parser:
             p[0] = p[1] + [p[3]]
 
     def p_expression(self, p):
-        '''expression : logical_expression
-                      | initializer_list'''
+        '''expression : logical_expression'''
         p[0] = p[1]
     
     def p_logical_expression(self, p):

@@ -50,6 +50,22 @@ class LLVMCodeGenerator(Visitor):
         )
         self.d_array_string_type = d_array_string_struct.as_pointer()
 
+        d_array_float_struct = self.module.context.get_identified_type("DArrayFloat")
+        d_array_float_struct.set_body(
+            ir.DoubleType().as_pointer(), # data
+            ir.IntType(64), # size
+            ir.IntType(64)  # capacity
+        )
+        self.d_array_float_type = d_array_float_struct.as_pointer()
+
+        d_array_char_struct = self.module.context.get_identified_type("DArrayChar")
+        d_array_char_struct.set_body(
+            ir.IntType(8).as_pointer(), # data
+            ir.IntType(64), # size
+            ir.IntType(64)  # capacity
+        )
+        self.d_array_char_type = d_array_char_struct.as_pointer()
+
         dict_value_struct = self.module.context.get_identified_type("DictValue")
         dict_struct = self.module.context.get_identified_type("Dictionary")
         dict_value_struct.set_body(
@@ -88,6 +104,10 @@ class LLVMCodeGenerator(Visitor):
             return self.d_array_int_type
         elif type_str == 'd_array_string':
             return self.d_array_string_type
+        elif type_str == 'd_array_float':
+            return self.d_array_float_type
+        elif type_str == 'd_array_char':
+            return self.d_array_char_type
         elif type_str == 'dict':
             return self.dict_type
         elif type_str == 'void*':
@@ -147,6 +167,58 @@ class LLVMCodeGenerator(Visitor):
 
         # Dictionary, etc. would be declared here too...
         # (Keeping it concise for this example)
+
+        # Dynamic array functions
+        int_array_ptr = self.d_array_int_type
+        string_array_ptr = self.d_array_string_type
+        float_array_ptr = self.d_array_float_type
+        int_type = self.get_llvm_type('int')
+        string_type = self.get_llvm_type('string')
+        float_type = self.get_llvm_type('float')
+        bool_type = self.get_llvm_type('boolean')
+
+        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr]), name="d_array_int_pop")
+        ir.Function(self.module, ir.FunctionType(bool_type, [int_array_ptr, int_type]), name="d_array_int_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr, int_type]), name="d_array_int_indexof")
+        ir.Function(self.module, ir.FunctionType(int_array_ptr, [int_array_ptr, int_array_ptr]), name="d_array_int_concat")
+        ir.Function(self.module, ir.FunctionType(float_type, [int_array_ptr]), name="d_array_int_avg")
+
+        ir.Function(self.module, ir.FunctionType(string_type, [string_array_ptr]), name="d_array_string_pop")
+        ir.Function(self.module, ir.FunctionType(bool_type, [string_array_ptr, string_type]), name="d_array_string_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_array_ptr, string_type]), name="d_array_string_indexof")
+        ir.Function(self.module, ir.FunctionType(string_array_ptr, [string_array_ptr, string_array_ptr]), name="d_array_string_concat")
+
+        ir.Function(self.module, ir.FunctionType(int_array_ptr, []), name="d_array_int_create")
+        ir.Function(self.module, ir.FunctionType(string_array_ptr, []), name="d_array_string_create")
+        ir.Function(self.module, ir.FunctionType(float_array_ptr, []), name="d_array_float_create")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, float_type]), name="d_array_float_append")
+        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr, int_type]), name="d_array_float_get")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, int_type, float_type]), name="d_array_float_set")
+        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr]), name="d_array_float_size")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr]), name="d_array_float_free")
+        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr]), name="d_array_float_pop")
+        ir.Function(self.module, ir.FunctionType(bool_type, [float_array_ptr, float_type]), name="d_array_float_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr, float_type]), name="d_array_float_indexof")
+        ir.Function(self.module, ir.FunctionType(float_array_ptr, [float_array_ptr, float_array_ptr]), name="d_array_float_concat")
+        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr]), name="d_array_float_avg")
+
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr]), name="print_int_array")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr]), name="print_string_array")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr]), name="print_float_array")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.d_array_char_type]), name="print_char_array")
+
+        char_array_ptr = self.d_array_char_type
+        char_type = self.get_llvm_type('char')
+        ir.Function(self.module, ir.FunctionType(char_array_ptr, []), name="d_array_char_create")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr, char_type]), name="d_array_char_append")
+        ir.Function(self.module, ir.FunctionType(char_type, [char_array_ptr, int_type]), name="d_array_char_get")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr, int_type, char_type]), name="d_array_char_set")
+        ir.Function(self.module, ir.FunctionType(int_type, [char_array_ptr]), name="d_array_char_size")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr]), name="d_array_char_free")
+        ir.Function(self.module, ir.FunctionType(char_type, [char_array_ptr]), name="d_array_char_pop")
+        ir.Function(self.module, ir.FunctionType(bool_type, [char_array_ptr, char_type]), name="d_array_char_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [char_array_ptr, char_type]), name="d_array_char_indexof")
+        ir.Function(self.module, ir.FunctionType(char_array_ptr, [char_array_ptr, char_array_ptr]), name="d_array_char_concat")
 
 
     def generate(self, ast):
@@ -357,16 +429,26 @@ class LLVMCodeGenerator(Visitor):
         element_type = self.get_llvm_type(node.var_type.type_name)
 
         if node.is_dynamic:
-            # Dynamic arrays are pointers to a struct. We just allocate the pointer.
-            # The actual struct is created by a runtime function call.
-            array_ptr_type = self.get_llvm_type(f'd_array_{node.var_type.type_name.lower()}')
+            element_type_str = node.var_type.type_name.replace('KEYWORD_', '').lower()
+            array_ptr_type = self.get_llvm_type(f'd_array_{element_type_str}')
+
             ptr = self.builder.alloca(array_ptr_type, name=var_name)
             self.llvm_var_table[var_name] = ptr
-            # Initialization of dynamic arrays is handled by function calls
+
+            # Call the create function to get a new dynamic array struct
+            create_func_name = f"d_array_{element_type_str}_create"
+            create_func = self.module.get_global(create_func_name)
+            new_array_ptr = self.builder.call(create_func, [])
+            self.builder.store(new_array_ptr, ptr)
+
             if node.initializer:
-                # This would typically involve calling an `array_create` and then `array_append` for each element.
-                # This logic will be in the visit_functioncall for those specific functions.
-                pass # For now, assume initialization is handled elsewhere
+                append_func_name = f"d_array_{element_type_str}_append"
+                append_func = self.module.get_global(append_func_name)
+                # Load the pointer to the struct to pass to append function
+                array_struct_ptr = self.builder.load(ptr)
+                for val_node in node.initializer.values:
+                    val = self._load_if_pointer(self.visit(val_node))
+                    self.builder.call(append_func, [array_struct_ptr, val])
         else:
             # Static arrays
             size = int(node.size.value) # Assumes size is a primary int literal
@@ -423,15 +505,27 @@ class LLVMCodeGenerator(Visitor):
         lhs = self._load_if_pointer(self.visit(node.left))
         rhs = self._load_if_pointer(self.visit(node.right))
 
-        # String concatenation check first
+        # String or Array concatenation check first
         if node.op == '+':
-            # Check if both operands are string pointers (i8*)
+            # Check for string concatenation
             if (isinstance(lhs.type, ir.PointerType) and 
                 isinstance(rhs.type, ir.PointerType) and
                 lhs.type.pointee == ir.IntType(8) and 
                 rhs.type.pointee == ir.IntType(8)):
                 concat_func = self.module.get_global("concat_strings")
                 return self.builder.call(concat_func, [lhs, rhs], 'concat_tmp')
+
+            # Check for array concatenation
+            if hasattr(node, 'result_type') and node.result_type == 'array':
+                element_type = node.element_type.replace('KEYWORD_', '').lower()
+                func_name = f"d_array_{element_type}_concat"
+                concat_func = self.module.get_global(func_name)
+
+                # We need the pointers to the array structs, not the loaded values
+                lhs_ptr = self.builder.load(self.visit(node.left))
+                rhs_ptr = self.builder.load(self.visit(node.right))
+
+                return self.builder.call(concat_func, [lhs_ptr, rhs_ptr], 'concat_array_tmp')
 
         # Type promotion for float operations
         if isinstance(lhs.type, ir.DoubleType) or isinstance(rhs.type, ir.DoubleType):
@@ -551,7 +645,48 @@ class LLVMCodeGenerator(Visitor):
     def visit_functioncallstatement(self, node):
         self.visit(node.function_call)
 
+    def visit_array_function_call(self, node):
+        func_name = node.name
+        args = node.args
+
+        array_node = args[0]
+        # This is a pointer to the stack variable holding the array struct pointer
+        array_var_ptr = self.visit(array_node)
+        # So we load it to get the actual pointer to the struct
+        array_struct_ptr = self.builder.load(array_var_ptr)
+
+        array_name = array_node.name # Assumes first arg is an Identifier
+        symbol = self.symbol_table.lookup_symbol(array_name)
+        element_type = symbol['element_type'].replace('KEYWORD_', '').lower()
+
+        map_to_c = {
+            'arr_push': 'append',
+            'arr_pop': 'pop',
+            'arr_size': 'size',
+            'arr_contains': 'contains',
+            'arr_indexof': 'indexof',
+            'arr_avg': 'avg'
+        }
+
+        # arr_push is special, it's called append in C
+        c_func_suffix = map_to_c.get(func_name)
+        if not c_func_suffix:
+            raise Exception(f"Unknown array function mapping for: {func_name}")
+
+        c_func_name = f"d_array_{element_type}_{c_func_suffix}"
+        c_func = self.module.get_global(c_func_name)
+
+        call_args = [array_struct_ptr]
+        if len(args) > 1:
+            for arg_node in args[1:]:
+                call_args.append(self._load_if_pointer(self.visit(arg_node)))
+
+        return self.builder.call(c_func, call_args, f'{func_name}_call')
+
     def visit_functioncall(self, node):
+        if node.name.startswith('arr_'):
+            return self.visit_array_function_call(node)
+
         func = self.module.get_global(node.name)
         if func is None:
             raise Exception(f"Unknown function referenced: {node.name}")
@@ -664,7 +799,21 @@ class LLVMCodeGenerator(Visitor):
     # of creating blocks and using branching instructions.
     def visit_systemoutput(self, node):
         output_type = node.output_type.type_name.replace('KEYWORD_', '').lower()
-        
+
+        if output_type == 'array':
+            array_node = node.expression
+            array_var_ptr = self.visit(array_node)
+            array_struct_ptr = self.builder.load(array_var_ptr)
+
+            array_name = array_node.name
+            symbol = self.symbol_table.lookup_symbol(array_name)
+            element_type = symbol['element_type'].replace('KEYWORD_', '').lower()
+
+            func_name = f"print_{element_type}_array"
+            print_func = self.module.get_global(func_name)
+            self.builder.call(print_func, [array_struct_ptr])
+            return
+
         # Get the raw value first
         raw_val = self.visit(node.expression)
         
