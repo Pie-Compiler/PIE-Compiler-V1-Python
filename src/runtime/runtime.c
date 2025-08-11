@@ -26,17 +26,26 @@ void input_int(int *ptr) {
 }
 
 // Input function for string
-void input_string(char *ptr) {
+void input_string(char **ptr) {
+    // Allocate a buffer for the input
+    char *buffer = (char*)malloc(256);
+    if (!buffer) {
+        *ptr = NULL;
+        return;
+    }
+    
     // Read a line of input (up to 255 characters)
-    if (fgets(ptr, 255, stdin) != NULL) {
+    if (fgets(buffer, 256, stdin) != NULL) {
         // Remove the trailing newline if present
-        size_t len = strlen(ptr);
-        if (len > 0 && ptr[len-1] == '\n') {
-            ptr[len-1] = '\0';
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len-1] == '\n') {
+            buffer[len-1] = '\0';
         }
+        *ptr = buffer;
     } else {
         // Error or EOF, set to empty string
-        ptr[0] = '\0';
+        strcpy(buffer, "");
+        *ptr = buffer;
     }
 }
 

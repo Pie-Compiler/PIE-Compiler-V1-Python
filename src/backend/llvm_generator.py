@@ -1,6 +1,7 @@
 import llvmlite.ir as ir
 import llvmlite.binding as llvm
 from frontend.visitor import Visitor
+from frontend.ast import Declaration, FunctionDefinition, FunctionCall
 
 class LLVMCodeGenerator(Visitor):
     def __init__(self, symbol_table, debug=True):
@@ -14,6 +15,8 @@ class LLVMCodeGenerator(Visitor):
         # This table will map variable names to their LLVM pointer values
         self.llvm_var_table = {}
         self.global_strings = {}
+        # Track global variables
+        self.global_vars = {}
 
         # Define custom types (structs)
         self._define_structs()
@@ -104,7 +107,7 @@ class LLVMCodeGenerator(Visitor):
         # System I/O
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int').as_pointer()]), name="input_int")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float').as_pointer()]), name="input_float")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="input_string")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string').as_pointer()]), name="input_string")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char').as_pointer()]), name="input_char")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int')]), name="output_int")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('string')]), name="output_string")
@@ -131,14 +134,74 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcpy")
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcat")
 
-        # File Library, Network, Dictionary, etc. would be declared here too...
+        # File I/O Library
+        file_type = self.get_llvm_type('file')
+        ir.Function(self.module, ir.FunctionType(file_type, [string_type, string_type]), name="file_open")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_close")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type]), name="file_write")
+        ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_all")
+        ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_line")
+
+        # Network Library (if needed)
+        # ir.Function(self.module, ir.FunctionType(...), name="...")
+
+        # Dictionary, etc. would be declared here too...
         # (Keeping it concise for this example)
 
 
     def generate(self, ast):
         """Generate LLVM IR from the AST."""
-        self.visit(ast)
+        # First pass: declare global variables and function definitions only
+        for stmt in ast.statements:
+            if isinstance(stmt, (Declaration, FunctionDefinition)):
+                self.visit(stmt)
+        
+        # Create a main function to wrap global statements if needed
+        self._create_main_function_if_needed(ast)
+        
         return self.finalize()
+
+    def _create_main_function_if_needed(self, ast):
+        """Create a main function wrapper for global statements if no main function exists."""
+        # Check if there's already a main function
+        main_func = None
+        try:
+            main_func = self.module.get_global("main")
+        except KeyError:
+            pass
+            
+        if main_func is None:
+            # Create main function
+            main_type = ir.FunctionType(ir.IntType(32), [])
+            main_func = ir.Function(self.module, main_type, name="main")
+            
+            # Create entry block
+            entry_block = main_func.append_basic_block(name='entry')
+            self.builder = ir.IRBuilder(entry_block)
+            self.current_function = main_func
+            
+            # First, handle global variable initializations that involve function calls
+            for stmt in ast.statements:
+                if isinstance(stmt, Declaration) and stmt.initializer:
+                    # Check if initializer is a function call
+                    if isinstance(stmt.initializer, FunctionCall):  # FunctionCall
+                        var_name = stmt.identifier
+                        if var_name in self.global_vars:
+                            # Evaluate the function call and store in the global variable
+                            init_val = self.visit(stmt.initializer)
+                            self.builder.store(init_val, self.global_vars[var_name])
+            
+            # Then visit all non-declaration, non-function-definition statements
+            for stmt in ast.statements:
+                if not isinstance(stmt, (Declaration, FunctionDefinition)):
+                    self.visit(stmt)
+            
+            # Return 0 from main
+            if not self.builder.block.is_terminated:
+                self.builder.ret(ir.Constant(ir.IntType(32), 0))
+            
+            self.current_function = None
+            self.builder = None
 
     def finalize(self):
         """Finalize the LLVM module and return the parsed module object."""
@@ -161,10 +224,9 @@ class LLVMCodeGenerator(Visitor):
     # --- Visitor Methods ---
 
     def visit_program(self, node):
-        # In a real compiler, you might have global variable processing here.
-        # For PIE, all code is in functions, so we just visit the statements.
-        for stmt in node.statements:
-            self.visit(stmt)
+        # This method is called from the old code path, but we handle program generation differently now
+        # Just pass through to avoid issues
+        pass
 
     def visit_block(self, node):
         # Each block has its own symbol table scope, managed by the semantic analyzer.
@@ -219,14 +281,76 @@ class LLVMCodeGenerator(Visitor):
         var_name = node.identifier
         var_type = self.get_llvm_type(node.var_type.type_name)
 
-        # Allocate memory on the stack for the variable
-        ptr = self.builder.alloca(var_type, name=var_name)
-        self.llvm_var_table[var_name] = ptr
+        if self.builder is None:
+            # Global variable declaration
+            if node.initializer:
+                # For global variables, we need to evaluate the initializer to get a constant
+                init_val = self._evaluate_constant_expression(node.initializer)
+                initializer = init_val
+            else:
+                # Default initialization
+                if isinstance(var_type, ir.IntType):
+                    initializer = ir.Constant(var_type, 0)
+                elif isinstance(var_type, ir.DoubleType):
+                    initializer = ir.Constant(var_type, 0.0)
+                elif isinstance(var_type, ir.PointerType):
+                    initializer = ir.Constant(var_type, None)
+                else:
+                    initializer = ir.Constant(var_type, 0)
 
-        # If there's an initializer, visit it and store its value
-        if node.initializer:
-            init_val = self.visit(node.initializer)
-            self.builder.store(init_val, ptr)
+            # Create global variable
+            global_var = ir.GlobalVariable(self.module, var_type, name=var_name)
+            global_var.initializer = initializer
+            global_var.linkage = 'internal'
+            
+            # Store reference for later use
+            self.global_vars[var_name] = global_var
+            self.llvm_var_table[var_name] = global_var
+        else:
+            # Local variable declaration (inside a function)
+            ptr = self.builder.alloca(var_type, name=var_name)
+            self.llvm_var_table[var_name] = ptr
+
+            # If there's an initializer, visit it and store its value
+            if node.initializer:
+                init_val = self.visit(node.initializer)
+                self.builder.store(init_val, ptr)
+
+    def _evaluate_constant_expression(self, node):
+        """Evaluate an expression at compile time to get a constant value."""
+        if hasattr(node, 'value'):  # Primary node
+            val = node.value
+            if isinstance(val, str):
+                if val.isdigit() or (val.startswith('-') and val[1:].isdigit()):
+                    return ir.Constant(ir.IntType(32), int(val))
+                if val.startswith('"') and val.endswith('"'):
+                    # For string literals in global context, create the global string
+                    str_val = val[1:-1].replace('\\n', '\n') + '\0'
+                    if str_val in self.global_strings:
+                        return self.global_strings[str_val]
+                    
+                    c_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_val)), bytearray(str_val.encode("utf8")))
+                    global_var = ir.GlobalVariable(self.module, c_str.type, name=f".str{len(self.global_strings)}")
+                    global_var.initializer = c_str
+                    global_var.global_constant = True
+                    global_var.linkage = 'internal'
+                    # Return the address of the global string
+                    ptr = global_var.gep([ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                    self.global_strings[str_val] = ptr
+                    return ptr
+                if val == 'true':
+                    return ir.Constant(ir.IntType(1), 1)
+                if val == 'false':
+                    return ir.Constant(ir.IntType(1), 0)
+                try:
+                    if '.' in val:
+                        return ir.Constant(ir.DoubleType(), float(val))
+                except ValueError:
+                    pass
+        
+        # For function calls and other expressions, we'll need more sophisticated handling
+        # For now, return a default value
+        return ir.Constant(ir.IntType(64), 0)  # file type default
 
     def visit_arraydeclaration(self, node):
         var_name = node.identifier
@@ -263,9 +387,10 @@ class LLVMCodeGenerator(Visitor):
         value_to_store = self.visit(node.rhs)
 
         # Before storing, we might need to cast the value to the pointer's element type
-        if ptr.type.pointee != value_to_store.type:
-             if isinstance(ptr.type.pointee, ir.DoubleType) and isinstance(value_to_store.type, ir.IntType):
-                 value_to_store = self.builder.sitofp(value_to_store, ptr.type.pointee)
+        target_type = ptr.type.pointee if hasattr(ptr.type, 'pointee') else ptr.type.pointed_type
+        if target_type != value_to_store.type:
+             if isinstance(target_type, ir.DoubleType) and isinstance(value_to_store.type, ir.IntType):
+                 value_to_store = self.builder.sitofp(value_to_store, target_type)
              # Add other casting logic as needed
 
         self.builder.store(value_to_store, ptr)
@@ -279,7 +404,12 @@ class LLVMCodeGenerator(Visitor):
 
     def _load_if_pointer(self, value):
         """Loads a value if it's a pointer, otherwise returns the value directly."""
+        # Don't load string constants - they should remain as pointers
         if isinstance(value.type, ir.PointerType):
+            # Check if it's a string pointer (i8*) - don't load it
+            if value.type.pointee == ir.IntType(8):
+                return value
+            # For other pointer types (variables), load the value
             return self.builder.load(value)
         return value
 
@@ -289,6 +419,16 @@ class LLVMCodeGenerator(Visitor):
         # pointer (l-value), so we must load it.
         lhs = self._load_if_pointer(self.visit(node.left))
         rhs = self._load_if_pointer(self.visit(node.right))
+
+        # String concatenation check first
+        if node.op == '+':
+            # Check if both operands are string pointers (i8*)
+            if (isinstance(lhs.type, ir.PointerType) and 
+                isinstance(rhs.type, ir.PointerType) and
+                lhs.type.pointee == ir.IntType(8) and 
+                rhs.type.pointee == ir.IntType(8)):
+                concat_func = self.module.get_global("concat_strings")
+                return self.builder.call(concat_func, [lhs, rhs], 'concat_tmp')
 
         # Type promotion for float operations
         if isinstance(lhs.type, ir.DoubleType) or isinstance(rhs.type, ir.DoubleType):
@@ -312,10 +452,19 @@ class LLVMCodeGenerator(Visitor):
             if node.op in op_map:
                 return op_map[node.op](lhs, rhs, 'i_tmp')
 
-            # Relational ops for integers
-            op_map_rel = {'<': 'slt', '>': 'sgt', '<=': 'sle', '>=': 'sge', '==': 'eq', '!=': 'ne'}
-            if node.op in op_map_rel:
-                return self.builder.icmp_signed(op_map_rel[node.op], lhs, rhs, 'i_cmp_tmp')
+            # Relational ops for integers - use correct LLVM comparison ops
+            if node.op == '<':
+                return self.builder.icmp_signed('<', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '>':
+                return self.builder.icmp_signed('>', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '<=':
+                return self.builder.icmp_signed('<=', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '>=':
+                return self.builder.icmp_signed('>=', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '==':
+                return self.builder.icmp_signed('==', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '!=':
+                return self.builder.icmp_signed('!=', lhs, rhs, 'i_cmp_tmp')
 
             # Logical operators (assuming boolean i1 type from relational ops)
             if node.op == '&&':
@@ -323,13 +472,10 @@ class LLVMCodeGenerator(Visitor):
             if node.op == '||':
                 return self.builder.or_(lhs, rhs, 'or_tmp')
 
-        # String concatenation
-        elif isinstance(lhs.type, ir.PointerType) and isinstance(rhs.type, ir.PointerType):
-             if node.op == '+':
-                 concat_func = self.module.get_global("concat_strings")
-                 return self.builder.call(concat_func, [lhs, rhs], 'concat_tmp')
-
-        raise Exception(f"Unknown or incompatible types for binary operator '{node.op}': {lhs.type} and {rhs.type}")
+        # Debug output for type mismatch
+        lhs_type_info = f"{lhs.type} (pointee: {lhs.type.pointee if isinstance(lhs.type, ir.PointerType) else 'N/A'})"
+        rhs_type_info = f"{rhs.type} (pointee: {rhs.type.pointee if isinstance(rhs.type, ir.PointerType) else 'N/A'})"
+        raise Exception(f"Unknown or incompatible types for binary operator '{node.op}': {lhs_type_info} and {rhs_type_info}")
 
     def visit_unaryop(self, node):
         operand_val = self._load_if_pointer(self.visit(node.operand))
@@ -343,15 +489,22 @@ class LLVMCodeGenerator(Visitor):
     def visit_primary(self, node):
         val = node.value
         if isinstance(val, str):
+            # Check for integer literals first
             if val.isdigit() or (val.startswith('-') and val[1:].isdigit()):
                 return ir.Constant(ir.IntType(32), int(val))
-            if '.' in val:
-                return ir.Constant(ir.DoubleType(), float(val))
+            # Check for float literals
+            try:
+                if '.' in val and not val.startswith('"'):
+                    return ir.Constant(ir.DoubleType(), float(val))
+            except ValueError:
+                pass
+            # Boolean literals
             if val == 'true':
                 return ir.Constant(ir.IntType(1), 1)
             if val == 'false':
                 return ir.Constant(ir.IntType(1), 0)
-            if val.startswith('"'):
+            # String literals
+            if val.startswith('"') and val.endswith('"'):
                 str_val = val[1:-1].replace('\\n', '\n') + '\0'
                 if str_val in self.global_strings:
                     ptr = self.global_strings[str_val]
@@ -361,10 +514,18 @@ class LLVMCodeGenerator(Visitor):
                     global_var.initializer = c_str
                     global_var.global_constant = True
                     global_var.linkage = 'internal'
-                    ptr = self.builder.bitcast(global_var, ir.IntType(8).as_pointer())
+                    
+                    if self.builder:
+                        # We have a builder, so we can create a bitcast
+                        ptr = self.builder.bitcast(global_var, ir.IntType(8).as_pointer())
+                    else:
+                        # No builder, return a GEP to get the pointer
+                        ptr = global_var.gep([ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                    
                     self.global_strings[str_val] = ptr
                 return ptr
-            if val.startswith("'"):
+            # Character literals
+            if val.startswith("'") and val.endswith("'") and len(val) == 3:
                 return ir.Constant(ir.IntType(8), ord(val[1]))
         raise Exception(f"Unknown primary value: {val}")
 
@@ -372,7 +533,10 @@ class LLVMCodeGenerator(Visitor):
         # An identifier can be an l-value (its pointer) or an r-value (its loaded value).
         # The calling context (e.g., visit_assignment vs. visit_binaryop) determines
         # whether to load the value. Here, we return the pointer.
-        return self.llvm_var_table[node.name]
+        if node.name in self.llvm_var_table:
+            return self.llvm_var_table[node.name]
+        else:
+            raise Exception(f"Unknown variable referenced: {node.name}")
 
     def visit_subscriptaccess(self, node):
         # A subscript access is an l-value, so it should return a pointer.
