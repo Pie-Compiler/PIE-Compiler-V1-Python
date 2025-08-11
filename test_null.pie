@@ -1,6 +1,0 @@
-int main() {
-  string s = null;
-  file f = null;
-  // We can't really test if they are null, but this will test the assignment.
-  return 0;
-}

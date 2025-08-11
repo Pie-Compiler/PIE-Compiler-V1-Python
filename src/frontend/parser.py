@@ -1,9 +1,11 @@
 # Parser using PLY (Python Lex-Yacc)
-import yacc as yacc
-from lexer import Lexer, build_master_nfa, nfa_to_dfa, epsilon_closure
-from lex import LexToken  # Import LexToken from the correct module
-from plyAdapter import PLYLexerAdapter  # Import the adapter for PLY
-from symbol_table import SymbolTable  # Import the symbol table class
+from ply import yacc
+from frontend.lexer import Lexer, build_master_nfa, nfa_to_dfa, epsilon_closure
+from ply.lex import LexToken  # Import LexToken from the correct module
+from frontend.plyAdapter import PLYLexerAdapter  # Import the adapter for PLY
+from frontend.symbol_table import SymbolTable  # Import the symbol table class
+from frontend.ast import * # Import all the AST node classes
+
 # Parser class that integrates with our lexer
 class Parser:
     def __init__(self):
@@ -239,7 +241,7 @@ class Parser:
     
     def p_program(self, p):
         '''program : statement_list'''
-        p[0] = ('program', p[1])
+        p[0] = Program(p[1])
 
     def p_function_definition(self, p):
         '''function_definition : type_specifier IDENTIFIER LPAREN params RPAREN block_statement'''
@@ -247,7 +249,7 @@ class Parser:
         return_type = p[1]
         params = p[4]
         body = p[6]
-        p[0] = ('function_definition', return_type, function_name, params, body)
+        p[0] = FunctionDefinition(return_type, function_name, params, body)
 
     def p_params(self, p):
         '''params : param_list
@@ -267,7 +269,7 @@ class Parser:
 
     def p_param(self, p):
         '''param : type_specifier IDENTIFIER'''
-        p[0] = (p[1], p[2])
+        p[0] = Parameter(p[1], p[2])
     
     def p_statement_list(self, p):
         '''statement_list : statement
@@ -294,11 +296,11 @@ class Parser:
 
     def p_do_while_statement(self, p):
         '''do_while_statement : KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON'''
-        p[0] = ('do_while', p[2], p[5])
+        p[0] = DoWhileStatement(p[2], p[5])
 
     def p_switch_statement(self, p):
         '''switch_statement : KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE'''
-        p[0] = ('switch', p[3], p[6])
+        p[0] = SwitchStatement(p[3], p[6])
 
     def p_case_list(self, p):
         '''case_list : case_clause
@@ -312,27 +314,27 @@ class Parser:
         '''case_clause : KEYWORD_CASE expression COLON statement_list
                        | KEYWORD_DEFAULT COLON statement_list'''
         if len(p) == 5:
-            p[0] = ('case', p[2], p[4])
+            p[0] = CaseClause(p[2], p[4])
         else:
-            p[0] = ('default', p[3])
+            p[0] = CaseClause('default', p[3])
 
     def p_break_statement(self, p):
         '''break_statement : KEYWORD_BREAK SEMICOLON'''
-        p[0] = ('break',)
+        p[0] = BreakStatement()
     
     def p_declaration_statement(self, p):
         '''declaration_statement : type_specifier IDENTIFIER SEMICOLON
                                 | type_specifier IDENTIFIER ASSIGN expression SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON'''
-        if len(p) == 4: # type ID ;
-            p[0] = ('declaration', p[1], p[2], None)
-        elif len(p) == 6 and p[3] == '=': # type ID = expr ;
-            p[0] = ('declaration', p[1], p[2], p[4])
-        elif len(p) == 7: # type ID [ expr ] ;
-            p[0] = ('array_declaration', p[1], p[2], p[4], None)
-        elif len(p) == 8: # type ID [ ] = init_list ;
-            p[0] = ('array_declaration', p[1], p[2], None, p[6])
+        if len(p) == 4:  # type ID ;
+            p[0] = Declaration(p[1], p[2])
+        elif len(p) == 6 and p[3] == '=':  # type ID = expr ;
+            p[0] = Declaration(p[1], p[2], p[4])
+        elif len(p) == 7:  # type ID [ expr ] ;
+            p[0] = ArrayDeclaration(p[1], p[2], size=p[4])
+        elif len(p) == 8:  # type ID [ ] = init_list ;
+            p[0] = ArrayDeclaration(p[1], p[2], initializer=p[6], is_dynamic=True)
     
     def p_type_specifier(self, p):
         '''type_specifier : primitive_type
@@ -349,40 +351,43 @@ class Parser:
                           | KEYWORD_FILE
                           | KEYWORD_SOCKET
                           | KEYWORD_DICT'''
-        p[0] = p[1]
+        p[0] = TypeSpecifier(p[1])
 
     def p_array_type(self, p):
         '''array_type : primitive_type LBRACKET RBRACKET'''
-        p[0] = ('array_type', p[1])
+        p[0] = TypeSpecifier(p[1].type_name, is_array=True)
     
     def p_assignment_statement(self, p):
         '''assignment_statement : left_hand_side ASSIGN expression SEMICOLON'''
-        p[0] = ('assignment', p[1], p[3])
+        p[0] = Assignment(p[1], p[3])
     
     def p_left_hand_side(self, p):
         '''left_hand_side : IDENTIFIER
                          | subscript_access'''
-        p[0] = p[1]
+        if isinstance(p[1], str):
+            p[0] = Identifier(p[1])
+        else:
+            p[0] = p[1]
 
     def p_assignment_statement_no_semi(self, p):
         '''assignment_statement_no_semi : left_hand_side ASSIGN expression'''
-        p[0] = ('assignment', p[1], p[3])
+        p[0] = Assignment(p[1], p[3])
     
     def p_if_statement(self, p):
         '''if_statement : KEYWORD_IF LPAREN expression RPAREN statement %prec LOWER_THAN_ELSE
                         | KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement'''
         if len(p) == 6:
-            p[0] = ('if', p[3], p[5], None)
+            p[0] = IfStatement(p[3], p[5])
         else:
-            p[0] = ('if', p[3], p[5], p[7])
+            p[0] = IfStatement(p[3], p[5], p[7])
     
     def p_while_statement(self, p):
         '''while_statement : KEYWORD_WHILE LPAREN expression RPAREN statement'''
-        p[0] = ('while', p[3], p[5])
+        p[0] = WhileStatement(p[3], p[5])
     
     def p_for_statement(self, p):
         '''for_statement : KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement'''
-        p[0] = ('for', p[3], p[4], p[6], p[8])
+        p[0] = ForStatement(p[3], p[4], p[6], p[8])
 
     def p_for_init(self, p):
         '''for_init : assignment_statement_no_semi SEMICOLON
@@ -417,15 +422,14 @@ class Parser:
         '''return_statement : KEYWORD_RETURN SEMICOLON
                            | KEYWORD_RETURN expression SEMICOLON'''
         if len(p) == 3:
-            p[0] = ('return', None)
+            p[0] = ReturnStatement()
         else:
-            p[0] = ('return', p[2])
+            p[0] = ReturnStatement(p[2])
     
     def p_function_call_statement(self, p):
         '''function_call_statement : function_call SEMICOLON'''
-        p[0] = p[1]
+        p[0] = FunctionCallStatement(p[1])
     
-    # Add KEYWORD_EXIT to function call rule
     def p_function_call(self, p):
         '''function_call : IDENTIFIER LPAREN argument_list RPAREN
                         | IDENTIFIER LPAREN RPAREN
@@ -433,23 +437,17 @@ class Parser:
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
                         | KEYWORD_EXIT LPAREN RPAREN'''
-
         slice_type = p.slice[1].type
-
         if slice_type == 'SYSTEM_INPUT':
-            p[0] = ('system_input', p[3], p[5])
+            p[0] = SystemInput(Identifier(p[3]), p[5])
         elif slice_type == 'SYSTEM_OUTPUT':
-            if len(p) == 7:
-                p[0] = ('system_output', p[3], p[5], None)
-            else:
-                p[0] = ('system_output', p[3], p[5], p[7])
+            precision = p[7] if len(p) > 7 else None
+            p[0] = SystemOutput(p[3], p[5], precision)
         elif slice_type == 'KEYWORD_EXIT':
-            p[0] = ('system_exit',)
+            p[0] = SystemExit()
         elif slice_type == 'IDENTIFIER':
-            if len(p) == 4: # IDENTIFIER LPAREN RPAREN
-                p[0] = ('function_call', p[1], [])
-            else: # IDENTIFIER LPAREN argument_list RPAREN
-                p[0] = ('function_call', p[1], p[3])
+            args = p[3] if len(p) == 5 else []
+            p[0] = FunctionCall(p[1], args)
     
     def p_argument_list(self, p):
         '''argument_list : expression
@@ -463,13 +461,13 @@ class Parser:
         '''block_statement : LBRACE RBRACE
                           | LBRACE statement_list RBRACE'''
         if len(p) == 3:
-            p[0] = ('block', [])
+            p[0] = Block([])
         else:
-            p[0] = ('block', p[2])
+            p[0] = Block(p[2])
     
     def p_initializer_list(self, p):
         '''initializer_list : LBRACE expression_list_opt RBRACE'''
-        p[0] = ('initializer_list', p[2])
+        p[0] = InitializerList(p[2])
 
     def p_expression_list_opt(self, p):
         '''expression_list_opt : expression_list
@@ -499,7 +497,7 @@ class Parser:
         if len(p) == 2:
             p[0] = p[1]
         else:
-            p[0] = ('binary_op', p[2], p[1], p[3])
+            p[0] = BinaryOp(p[2], p[1], p[3])
     
     def p_equality_expression(self, p):
         '''equality_expression : relational_expression
@@ -508,7 +506,7 @@ class Parser:
         if len(p) == 2:
             p[0] = p[1]
         else:
-            p[0] = ('binary_op', p[2], p[1], p[3])
+            p[0] = BinaryOp(p[2], p[1], p[3])
     
     def p_relational_expression(self, p):
         '''relational_expression : additive_expression
@@ -519,7 +517,7 @@ class Parser:
         if len(p) == 2:
             p[0] = p[1]
         else:
-            p[0] = ('binary_op', p[2], p[1], p[3])
+            p[0] = BinaryOp(p[2], p[1], p[3])
     
     def p_additive_expression(self, p):
         '''additive_expression : multiplicative_expression
@@ -528,7 +526,7 @@ class Parser:
         if len(p) == 2:
             p[0] = p[1]
         else:
-            p[0] = ('binary_op', p[2], p[1], p[3])
+            p[0] = BinaryOp(p[2], p[1], p[3])
     
     def p_multiplicative_expression(self, p):
         '''multiplicative_expression : unary_expression
@@ -538,7 +536,7 @@ class Parser:
         if len(p) == 2:
             p[0] = p[1]
         else:
-            p[0] = ('binary_op', p[2], p[1], p[3])
+            p[0] = BinaryOp(p[2], p[1], p[3])
     
     def p_unary_expression(self, p):
         '''unary_expression : primary_expression
@@ -546,7 +544,7 @@ class Parser:
         if len(p) == 2:
             p[0] = p[1]
         else:
-            p[0] = ('unary_op', p[1], p[2])
+            p[0] = UnaryOp(p[1], p[2])
     
     def p_primary_expression(self, p):
         '''primary_expression : IDENTIFIER
@@ -561,17 +559,21 @@ class Parser:
                              | function_call
                              | subscript_access
                              | dictionary_literal'''
-        if len(p) == 2:
-            if isinstance(p[1], tuple) and (p[1][0] in ['function_call', 'subscript_access', 'dictionary_literal']):
-                p[0] = p[1]
-            else:
-                p[0] = ('primary', p[1])
-        else:
+        if len(p) == 4: # Parenthesized expression
             p[0] = p[2]
+        elif isinstance(p[1], Node): # Already a node (function_call, etc.)
+            p[0] = p[1]
+        else:
+            # Check if it's an identifier token or a literal token
+            if p.slice[1].type == 'IDENTIFIER':
+                p[0] = Identifier(p[1])
+            else: # It's a literal
+                p[0] = Primary(p[1])
+
 
     def p_dictionary_literal(self, p):
         '''dictionary_literal : LBRACE key_value_list_opt RBRACE'''
-        p[0] = ('dictionary_literal', p[2])
+        p[0] = DictionaryLiteral(p[2])
 
     def p_key_value_list_opt(self, p):
         '''key_value_list_opt : key_value_list
@@ -591,11 +593,11 @@ class Parser:
 
     def p_key_value(self, p):
         '''key_value : expression COLON expression'''
-        p[0] = (p[1], p[3])
+        p[0] = (p[1], p[3]) # Keep as tuple for DictionaryLiteral
 
     def p_subscript_access(self, p):
         '''subscript_access : IDENTIFIER LBRACKET expression RBRACKET'''
-        p[0] = ('subscript_access', p[1], p[3])
+        p[0] = SubscriptAccess(p[1], p[3])
     
     def p_error(self, p):
         if p:
@@ -613,16 +615,25 @@ class Parser:
             print("Syntax error at EOF - unexpected end of input")
 
 def print_ast(node, indent=0):
+    """Pretty-prints the class-based AST."""
     indent_str = "  " * indent
-    if isinstance(node, tuple):
-        print(f"{indent_str}{node[0]}")
-        for i in range(1, len(node)):
-            if isinstance(node[i], (list, tuple)):
-                print_ast(node[i], indent + 1)
-            else:
-                print(f"{indent_str}  {node[i]}")
-    elif isinstance(node, list):
-        for item in node:
-            print_ast(item, indent)
-    else:
-        print(f"{indent_str}{node}")
+    if not isinstance(node, Node):
+        if isinstance(node, list):
+            for item in node:
+                print_ast(item, indent)
+        else:
+            print(f"{indent_str}{node}")
+        return
+
+    print(f"{indent_str}{node.__class__.__name__}")
+    for attr, value in node.__dict__.items():
+        if value is None:
+            continue
+        print(f"{indent_str}  {attr}:")
+        if isinstance(value, list):
+            for item in value:
+                print_ast(item, indent + 2)
+        elif isinstance(value, Node):
+            print_ast(value, indent + 2)
+        else:
+            print(f"{indent_str}    {value}")

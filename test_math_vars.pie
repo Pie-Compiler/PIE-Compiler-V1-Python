@@ -1,8 +1,0 @@
-int main() {
-  float x = 2.0;
-  float y = 3.0;
-  float z;
-  z = pow(x, y);
-  output(z, float);
-  return 0;
-}

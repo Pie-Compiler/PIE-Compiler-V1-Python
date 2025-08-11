@@ -1,5 +1,0 @@
-string name;
-output("Enter your name: ", string);
-input(name, string);
-output("Hello, ", string);
-output(name, string);

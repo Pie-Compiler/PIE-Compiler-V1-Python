@@ -1,6 +1,0 @@
-int main() {
-  file f;
-  f = file_open("test.txt", "w");
-  file_close(f);
-  return 0;
-}

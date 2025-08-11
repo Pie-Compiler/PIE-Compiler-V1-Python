@@ -1,6 +1,0 @@
-string str1="Hello";
-string str2="Hello";
-
-if(str1==str2){
-    output(str1,string);
-}
