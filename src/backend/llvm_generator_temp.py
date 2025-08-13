@@ -281,8 +281,6 @@ class LLVMCodeGenerator(Visitor):
                             self.builder.store(init_val, self.global_vars[var_name])
             # Initialize global dynamic arrays (create + optional initializer append)
             for name, element_type_str, init_nodes, is_dynamic in self.global_dynamic_arrays:
-                if self.debug:
-                    print(f"DEBUG: Processing global array '{name}' with element_type_str='{element_type_str}'")
                 if is_dynamic:
                     create_func = self.module.get_global(f"d_array_{element_type_str}_create")
                     new_array_ptr = self.builder.call(create_func, [])
@@ -291,20 +289,14 @@ class LLVMCodeGenerator(Visitor):
                         append_func = self.module.get_global(f"d_array_{element_type_str}_append")
                         array_struct_ptr = new_array_ptr
                         expected_elem_type = append_func.function_type.args[1]
-                        if self.debug:
-                            print(f"DEBUG: append_func: {append_func.name}, expected_elem_type: {expected_elem_type}")
                         for val_node in init_nodes:
                             raw_val = self.visit(val_node)
-                            if self.debug:
-                                print(f"DEBUG: Global dynamic array init - raw_val: {raw_val}, type: {raw_val.type}")
                             val = self._coerce_char_array_element(expected_elem_type, raw_val)
                             if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
                                 val = self.builder.sitofp(val, expected_elem_type)
                             # Final safety: if still pointer and expected int8, load
                             if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
                                 val = self.builder.load(val)
-                            if self.debug:
-                                print(f"DEBUG: About to call append with val: {val}, type: {val.type}, expected: {expected_elem_type}")
                             self.builder.call(append_func, [array_struct_ptr, val])
             # Then visit all non-declaration, non-function-definition statements
             for stmt in ast.statements:
@@ -709,21 +701,17 @@ class LLVMCodeGenerator(Visitor):
         raise Exception(f"Unsupported primary literal: {val}")
 
     def _coerce_char_array_element(self, expected_elem_type, raw_val):
-        """Fix array element coercion to handle all array types properly"""
-        # For char arrays: expecting i8, handle char literals and string pointers
-        if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8:
-            # If we have an i8 constant (char literal), return it directly
-            if isinstance(raw_val.type, ir.IntType) and raw_val.type.width == 8:
-                return raw_val
-            # If we have a string pointer, load the first character
-            elif isinstance(raw_val.type, ir.PointerType) and raw_val.type.pointee == ir.IntType(8):
-                return self.builder.load(raw_val)
+        """Fix char array element coercion to handle i8 constants properly"""
+        # If we're expecting i8 and we have an i8 constant (not pointer), return it directly
+        if (isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and
+            isinstance(raw_val.type, ir.IntType) and raw_val.type.width == 8):
+            return raw_val
         
-        # For string arrays: expecting i8*, return string pointers as-is
-        elif isinstance(expected_elem_type, ir.PointerType) and expected_elem_type.pointee == ir.IntType(8):
-            # If we have a string pointer, return it directly
+        # If expecting i8 and have pointer to a string literal, load first char
+        if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8:
             if isinstance(raw_val.type, ir.PointerType) and raw_val.type.pointee == ir.IntType(8):
-                return raw_val
+                # raw_val points to first char already (string literal decay). Load single byte.
+                return self.builder.load(raw_val)
         
         # Otherwise normal pointer load semantics
         return self._load_if_pointer(raw_val)
@@ -775,14 +763,7 @@ class LLVMCodeGenerator(Visitor):
         call_args = [array_struct_ptr]
         if func_name != 'arr_avg':
             for arg_node in args[1:]:
-                raw_arg_val = self.visit(arg_node)
-                # Handle char array coercion for functions that take element values
-                if base == 'char' and func_name in ['arr_contains', 'arr_indexof']:
-                    expected_elem_type = c_func.function_type.args[len(call_args)]
-                    arg_val = self._coerce_char_array_element(expected_elem_type, raw_arg_val)
-                else:
-                    arg_val = self._load_if_pointer(raw_arg_val)
-                call_args.append(arg_val)
+                call_args.append(self._load_if_pointer(self.visit(arg_node)))
         return self.builder.call(c_func, call_args, f'{func_name}_call')
 
     def visit_functioncall(self, node):
@@ -968,23 +949,17 @@ class LLVMCodeGenerator(Visitor):
     def visit_arraypush(self, node):
         array_ptr = self.visit(node.array)
         array_val = self.builder.load(array_ptr)
-        raw_value_val = self.visit(node.value)
+        value_val = self._load_if_pointer(self.visit(node.value))
         array_type = array_val.type
         if array_type == self.d_array_int_type:
             push_func = self.module.get_global("d_array_int_push")
-            value_val = self._load_if_pointer(raw_value_val)
         elif array_type == self.d_array_string_type:
             push_func = self.module.get_global("d_array_string_push")
-            # String arrays need the string pointer, not dereferenced
-            value_val = raw_value_val
         elif array_type == self.d_array_float_type:
             push_func = self.module.get_global("d_array_float_push")
-            value_val = self._load_if_pointer(raw_value_val)
         elif array_type == self.d_array_char_type:
             # use append as push alias for char
             push_func = self.module.get_global("d_array_char_append")
-            expected_elem_type = push_func.function_type.args[1]
-            value_val = self._coerce_char_array_element(expected_elem_type, raw_value_val)
         else:
             raise Exception(f"Unsupported array type for push: {array_type}")
         self.builder.call(push_func, [array_val, value_val])

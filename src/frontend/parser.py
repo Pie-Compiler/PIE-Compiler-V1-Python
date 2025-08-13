@@ -5,22 +5,23 @@ from ply.lex import LexToken  # Import LexToken from the correct module
 from frontend.plyAdapter import PLYLexerAdapter  # Import the adapter for PLY
 from frontend.symbol_table import SymbolTable  # Import the symbol table class
 from frontend.ast import * # Import all the AST node classes
+from frontend.types import canonicalize
 
 # Parser class that integrates with our lexer
 class Parser:
     def __init__(self):
         self.tokens = [
-            'IDENTIFIER', 'INT_LITERAL', 'FLOAT_LITERAL', 'STRING_LITERAL', 'CHAR_LITERAL',  # Added CHAR_LITERAL
+            'IDENTIFIER', 'INT_LITERAL', 'FLOAT_LITERAL', 'STRING_LITERAL', 'CHAR_LITERAL',
             'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE', 'KEYWORD_DO',
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
             'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_DICT',
-            'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 
-            'KEYWORD_NULL', 'KEYWORD_EXIT',
+            'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 'KEYWORD_NULL', 'KEYWORD_EXIT', 'KEYWORD_ARRAY',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
             'SEMICOLON', 'COMMA', 'DOT', 'COLON',
             'PLUS', 'MINUS', 'MUL', 'DIV', 'MOD',
             'GT', 'LT', 'GEQ', 'LEQ', 'EQ', 'NEQ', 'AND', 'OR', 'ASSIGN',
-            'SYSTEM_INPUT', 'SYSTEM_OUTPUT', 'SYSTEM_EXIT', 'COMMENT'
+            'SYSTEM_INPUT', 'SYSTEM_OUTPUT', 'SYSTEM_EXIT', 'COMMENT',
+            'SYSTEM_ARR_PUSH', 'SYSTEM_ARR_POP', 'SYSTEM_ARR_SIZE', 'SYSTEM_ARR_CONTAINS', 'SYSTEM_ARR_INDEXOF', 'SYSTEM_ARR_AVG'
         ]
         
         self.precedence = (
@@ -326,15 +327,27 @@ class Parser:
         '''declaration_statement : type_specifier IDENTIFIER SEMICOLON
                                 | type_specifier IDENTIFIER ASSIGN expression SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON'''
-        if len(p) == 4:  # type ID ;
+                                | type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON'''
+        # Simple variable decl
+        if len(p) == 4:
             p[0] = Declaration(p[1], p[2])
-        elif len(p) == 6 and p[3] == '=':  # type ID = expr ;
+        # Simple variable with initializer
+        elif len(p) == 6 and p[3] == '=':
             p[0] = Declaration(p[1], p[2], p[4])
-        elif len(p) == 7:  # type ID [ expr ] ;
+        # Static array with size, no initializer: type id [ expr ] ;
+        elif len(p) == 7 and p[3] == '[' and p[5] == ']':
             p[0] = ArrayDeclaration(p[1], p[2], size=p[4])
-        elif len(p) == 8:  # type ID [ ] = init_list ;
+        # Static array with size and initializer: type id [ expr ] = init ;
+        elif len(p) == 9 and p[3] == '[' and p[5] == ']' and p[6] == '=':
+            p[0] = ArrayDeclaration(p[1], p[2], size=p[4], initializer=p[7], is_dynamic=False)
+        # Dynamic array with initializer: type id [ ] = init ;
+        elif len(p) == 8 and p[3] == '[' and p[4] == ']' and p[5] == '=':
             p[0] = ArrayDeclaration(p[1], p[2], initializer=p[6], is_dynamic=True)
+        # Empty dynamic array: type id [ ] ;
+        elif len(p) == 6 and p[3] == '[' and p[4] == ']':
+            p[0] = ArrayDeclaration(p[1], p[2], initializer=None, is_dynamic=True)
     
     def p_type_specifier(self, p):
         '''type_specifier : primitive_type
@@ -350,11 +363,13 @@ class Parser:
                           | KEYWORD_BOOL
                           | KEYWORD_FILE
                           | KEYWORD_SOCKET
-                          | KEYWORD_DICT'''
-        p[0] = TypeSpecifier(p[1])
+                          | KEYWORD_DICT
+                          | KEYWORD_ARRAY'''
+        base = canonicalize(p[1])
+        p[0] = TypeSpecifier(base)
 
     def p_array_type(self, p):
-        '''array_type : primitive_type LBRACKET RBRACKET'''
+        'array_type : primitive_type LBRACKET RBRACKET'
         p[0] = TypeSpecifier(p[1].type_name, is_array=True)
     
     def p_assignment_statement(self, p):
@@ -436,15 +451,37 @@ class Parser:
                         | SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-                        | KEYWORD_EXIT LPAREN RPAREN'''
+                        | KEYWORD_EXIT LPAREN RPAREN
+                        | SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
+                        | SYSTEM_ARR_POP LPAREN expression RPAREN
+                        | SYSTEM_ARR_SIZE LPAREN expression RPAREN
+                        | SYSTEM_ARR_CONTAINS LPAREN expression COMMA expression RPAREN
+                        | SYSTEM_ARR_INDEXOF LPAREN expression COMMA expression RPAREN
+                        | SYSTEM_ARR_AVG LPAREN expression RPAREN
+                        | SYSTEM_ARR_AVG LPAREN expression COMMA expression RPAREN'''
         slice_type = p.slice[1].type
         if slice_type == 'SYSTEM_INPUT':
             p[0] = SystemInput(Identifier(p[3]), p[5])
         elif slice_type == 'SYSTEM_OUTPUT':
-            precision = p[7] if len(p) > 7 else None
+            precision = p[7] if len(p) > 7 and p.slice[-2].type != 'RPAREN' else None
             p[0] = SystemOutput(p[3], p[5], precision)
         elif slice_type == 'KEYWORD_EXIT':
             p[0] = SystemExit()
+        elif slice_type == 'SYSTEM_ARR_PUSH':
+            p[0] = ArrayPush(p[3], p[5])
+        elif slice_type == 'SYSTEM_ARR_POP':
+            p[0] = ArrayPop(p[3])
+        elif slice_type == 'SYSTEM_ARR_SIZE':
+            p[0] = ArraySize(p[3])
+        elif slice_type == 'SYSTEM_ARR_CONTAINS':
+            p[0] = ArrayContains(p[3], p[5])
+        elif slice_type == 'SYSTEM_ARR_INDEXOF':
+            p[0] = ArrayIndexOf(p[3], p[5])
+        elif slice_type == 'SYSTEM_ARR_AVG':
+            if len(p) == 5:
+                p[0] = ArrayAvg(p[3])
+            else:
+                p[0] = ArrayAvg(p[3], p[5])
         elif slice_type == 'IDENTIFIER':
             args = p[3] if len(p) == 5 else []
             p[0] = FunctionCall(p[1], args)
@@ -466,7 +503,7 @@ class Parser:
             p[0] = Block(p[2])
     
     def p_initializer_list(self, p):
-        '''initializer_list : LBRACE expression_list_opt RBRACE'''
+        'initializer_list : LBRACKET expression_list_opt RBRACKET'
         p[0] = InitializerList(p[2])
 
     def p_expression_list_opt(self, p):
@@ -602,17 +639,8 @@ class Parser:
     def p_error(self, p):
         if p:
             print(f"Syntax error at line {p.lineno}, token='{p.value}', type={p.type}")
-            print(f"Parser state: {p.parser.state}")
-            
-            # Print expected tokens
-            expected = []
-            for token_type in p.parser.action[p.parser.state]:
-                if token_type > 0:  # Skip EOF and error tokens
-                    expected.append(p.parser.symstack[token_type])
-            if expected:
-                print(f"Expected one of: {', '.join(expected)}")
         else:
-            print("Syntax error at EOF - unexpected end of input")
+            print("Syntax error at EOF")
 
 def print_ast(node, indent=0):
     """Pretty-prints the class-based AST."""

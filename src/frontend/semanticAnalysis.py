@@ -1,6 +1,7 @@
 from frontend.symbol_table import SymbolTable, TypeChecker
 from frontend.visitor import Visitor
 from frontend.ast import *
+from frontend.types import TypeInfo, canonicalize
 
 class SemanticAnalyzer(Visitor):
     def __init__(self, symbol_table):
@@ -47,35 +48,31 @@ class SemanticAnalyzer(Visitor):
         return None
 
     def visit_arraydeclaration(self, node):
-        element_type = node.var_type.type_name
+        element_type = canonicalize(node.var_type.type_name)
         if self.symbol_table.lookup_symbol_current_scope(node.identifier):
             self.add_error(f"Array '{node.identifier}' already defined in this scope.")
             return None
-
         size = None
         if node.size:
-            if isinstance(node.size, Primary) and isinstance(node.size.value, str) and node.size.value.isdigit():
+            if isinstance(node.size, Primary) and node.size.value.isdigit():
                 size = int(node.size.value)
             else:
                 self.add_error("Array size must be a constant integer.")
-
         if node.initializer:
             if not isinstance(node.initializer, InitializerList):
-                 self.add_error(f"Array '{node.identifier}' must be initialized with an initializer list.")
-                 return None
-
+                self.add_error(f"Array '{node.identifier}' must be initialized with an initializer list.")
+                return None
             init_list_exprs = node.initializer.values
-            if size is None:
+            if size is None and not node.is_dynamic:
                 size = len(init_list_exprs)
-            elif size < len(init_list_exprs):
+            if size is not None and not node.is_dynamic and size < len(init_list_exprs):
                 self.add_error(f"Too many initializers for array '{node.identifier}'")
-
             for expr in init_list_exprs:
                 expr_type = self.visit(expr)
                 if not self.type_checker.is_compatible(element_type, expr_type):
                     self.add_error(f"Type mismatch in initializer for array '{node.identifier}'. Expected {element_type}, got {expr_type}")
-
-        self.symbol_table.add_symbol(node.identifier, 'array', element_type=element_type, size=size, is_dynamic=node.is_dynamic)
+        ti = TypeInfo(base=element_type, is_dynamic=node.is_dynamic, is_array=not node.is_dynamic, size=size)
+        self.symbol_table.add_symbol(node.identifier, ti, is_initialized=True)
         return None
 
     def visit_initializerlist(self, node, expected_type=None):
@@ -95,29 +92,15 @@ class SemanticAnalyzer(Visitor):
         return 'KEYWORD_DICT'
 
     def visit_subscriptaccess(self, node):
-        symbol = self.symbol_table.lookup_symbol(node.name)
-        if not symbol:
-            self.add_error(f"Undefined variable: '{node.name}'")
+        arr_info = self.symbol_table.get_array_info(node.name)
+        if not arr_info:
+            self.add_error(f"Undefined array: '{node.name}'")
             return None
-
-        var_type = symbol.get('type')
-        if var_type == 'array':
-            key_type = self.visit(node.key)
-            if key_type != 'KEYWORD_INT':
-                self.add_error(f"Array index must be an integer, got {key_type}.")
-            element_type = symbol.get('element_type')
-            node.element_type = element_type # Annotate the node
-            return element_type
-        elif var_type == 'KEYWORD_DICT':
-            key_type = self.visit(node.key)
-            if key_type != 'KEYWORD_STRING':
-                self.add_error(f"Dictionary key must be a string, got {key_type}.")
-            # The value type is dynamic, so we can't know it at compile time.
-            node.element_type = 'void*' # Annotate the node
-            return 'void*'
-        else:
-            self.add_error(f"'{node.name}' is not a subscriptable type (array or dictionary).")
-            return None
+        key_type = self.visit(node.key)
+        if key_type != 'KEYWORD_INT':
+            self.add_error("Array index must be an integer.")
+        node.element_type = 'KEYWORD_' + arr_info.base.upper()
+        return node.element_type
 
     def visit_functiondefinition(self, node):
         if self.current_function:
@@ -152,80 +135,65 @@ class SemanticAnalyzer(Visitor):
     def visit_array_function_call(self, node):
         func_name = node.name
         args = node.args
-
         if not args:
             self.add_error(f"Array function '{func_name}' called with no arguments.")
             return None
-
-        # First argument must be an identifier pointing to an array
-        array_arg_node = args[0]
-        if not isinstance(array_arg_node, Identifier):
-            self.add_error(f"First argument to '{func_name}' must be an array variable.")
+        first = args[0]
+        if not isinstance(first, Identifier):
+            self.add_error(f"First argument to '{func_name}' must be an array identifier.")
             return None
-
-        array_name = array_arg_node.name
-        array_symbol = self.symbol_table.lookup_symbol(array_name)
-        if not array_symbol or array_symbol.get('type') != 'array':
-            self.add_error(f"'{array_name}' is not an array.")
+        arr_info = self.symbol_table.get_array_info(first.name)
+        if not arr_info:
+            self.add_error(f"'{first.name}' is not an array.")
             return None
-
-        element_type = array_symbol.get('element_type')
-        is_dynamic = array_symbol.get('is_dynamic')
-
-        # Now, handle each function
+        elem_kw = 'KEYWORD_' + arr_info.base.upper()
+        def check_val(idx):
+            return self.visit(args[idx])
         if func_name == 'arr_push':
-            if not is_dynamic:
-                self.add_error(f"'arr_push' can only be used on dynamic arrays.")
-            if len(args) != 2:
-                self.add_error(f"'arr_push' expects 2 arguments, got {len(args)}.")
+            if not arr_info.is_dynamic:
+                self.add_error("arr_push requires dynamic array.")
+            if len(args)!=2:
+                self.add_error("arr_push expects 2 args")
                 return None
-            value_type = self.visit(args[1])
-            if not self.type_checker.is_compatible(element_type, value_type):
-                self.add_error(f"Type mismatch in 'arr_push'. Cannot push {value_type} to an array of {element_type}.")
-            return 'void' # arr_push returns void
-
-        elif func_name == 'arr_pop':
-            if not is_dynamic:
-                self.add_error(f"'arr_pop' can only be used on dynamic arrays.")
-            if len(args) != 1:
-                self.add_error(f"'arr_pop' expects 1 argument, got {len(args)}.")
-            return element_type # arr_pop returns a value of the element type
-
-        elif func_name == 'arr_size':
-            if len(args) != 1:
-                self.add_error(f"'arr_size' expects 1 argument, got {len(args)}.")
+            vtype = check_val(1)
+            if not self.type_checker.is_compatible(elem_kw, vtype):
+                self.add_error(f"Type mismatch push {vtype} into {elem_kw}")
+            return 'void'
+        if func_name == 'arr_pop':
+            if not arr_info.is_dynamic:
+                self.add_error("arr_pop requires dynamic array.")
+            if len(args)!=1:
+                self.add_error("arr_pop expects 1 arg")
+            return elem_kw
+        if func_name == 'arr_size':
+            if len(args)!=1:
+                self.add_error("arr_size expects 1 arg")
             return 'KEYWORD_INT'
-
-        elif func_name == 'arr_contains':
-            if len(args) != 2:
-                self.add_error(f"'arr_contains' expects 2 arguments, got {len(args)}.")
+        if func_name == 'arr_contains':
+            if len(args)!=2:
+                self.add_error("arr_contains expects 2 args")
                 return None
-            value_type = self.visit(args[1])
-            if not self.type_checker.is_compatible(element_type, value_type):
-                self.add_error(f"Type mismatch in 'arr_contains'. Cannot check for {value_type} in an array of {element_type}.")
+            vtype = check_val(1)
+            if not self.type_checker.is_compatible(elem_kw, vtype):
+                self.add_error("arr_contains type mismatch")
             return 'KEYWORD_BOOL'
-
-        elif func_name == 'arr_indexof':
-            if len(args) != 2:
-                self.add_error(f"'arr_indexof' expects 2 arguments, got {len(args)}.")
+        if func_name == 'arr_indexof':
+            if len(args)!=2:
+                self.add_error("arr_indexof expects 2 args")
                 return None
-            value_type = self.visit(args[1])
-            if not self.type_checker.is_compatible(element_type, value_type):
-                self.add_error(f"Type mismatch in 'arr_indexof'. Cannot find index of {value_type} in an array of {element_type}.")
+            vtype = check_val(1)
+            if not self.type_checker.is_compatible(elem_kw, vtype):
+                self.add_error("arr_indexof type mismatch")
             return 'KEYWORD_INT'
-
-        elif func_name == 'arr_avg':
-            if element_type not in ('KEYWORD_INT', 'KEYWORD_FLOAT'):
-                self.add_error(f"'arr_avg' can only be used on int or float arrays.")
-            if len(args) not in [1, 2]:
-                self.add_error(f"'arr_avg' expects 1 or 2 arguments, got {len(args)}.")
+        if func_name == 'arr_avg':
+            if arr_info.base not in ('int','float'):
+                self.add_error("arr_avg only on int/float")
+            if len(args) not in (1,2):
+                self.add_error("arr_avg expects 1 or 2 args")
                 return None
-            if len(args) == 2:
-                precision_type = self.visit(args[1])
-                if precision_type != 'KEYWORD_INT':
-                    self.add_error(f"Precision for 'arr_avg' must be an integer.")
+            if len(args)==2 and self.visit(args[1])!='KEYWORD_INT':
+                self.add_error("arr_avg precision must be int")
             return 'KEYWORD_FLOAT'
-
         self.add_error(f"Unknown array function '{func_name}'")
         return None
 
@@ -432,16 +400,23 @@ class SemanticAnalyzer(Visitor):
     def visit_systemoutput(self, node):
         expr_type = self.visit(node.expression)
         expected_type_name = node.output_type.type_name
+        if expected_type_name == 'array':
+            # Allow printing dynamic arrays; semantic check ensures identifier is array
+            if not isinstance(node.expression, Identifier):
+                self.add_error('Output of array requires array identifier.')
+                return None
+            arr_info = self.symbol_table.get_array_info(node.expression.name)
+            if not arr_info:
+                self.add_error('Output expects an array variable.')
+            return None
         norm_expr_type = self.type_checker._normalize_type(expr_type)
         norm_expected_type = self.type_checker._normalize_type(expected_type_name)
-
         if norm_expr_type and norm_expr_type != norm_expected_type:
             self.add_error(f"Type mismatch in output: Expression is {expr_type}, but output type is {expected_type_name}")
-
         if node.precision:
             precision_type = self.visit(node.precision)
             if precision_type != 'KEYWORD_INT':
-                self.add_error("Output precision must be an integer.")
+                self.add_error('Output precision must be int')
         return None
 
     def visit_systeminput(self, node):

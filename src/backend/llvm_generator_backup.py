@@ -233,10 +233,6 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(int_type, [char_array_ptr, char_type]), name="d_array_char_indexof")
         ir.Function(self.module, ir.FunctionType(char_array_ptr, [char_array_ptr, char_array_ptr]), name="d_array_char_concat")
 
-    def _array_runtime_func(self, base_type, operation):
-        """Helper to get array runtime function names"""
-        func_name = f"d_array_{base_type}_{operation}"
-        return self.module.get_global(func_name)
 
     def generate(self, ast):
         """Generate LLVM IR from the AST."""
@@ -281,8 +277,6 @@ class LLVMCodeGenerator(Visitor):
                             self.builder.store(init_val, self.global_vars[var_name])
             # Initialize global dynamic arrays (create + optional initializer append)
             for name, element_type_str, init_nodes, is_dynamic in self.global_dynamic_arrays:
-                if self.debug:
-                    print(f"DEBUG: Processing global array '{name}' with element_type_str='{element_type_str}'")
                 if is_dynamic:
                     create_func = self.module.get_global(f"d_array_{element_type_str}_create")
                     new_array_ptr = self.builder.call(create_func, [])
@@ -291,20 +285,14 @@ class LLVMCodeGenerator(Visitor):
                         append_func = self.module.get_global(f"d_array_{element_type_str}_append")
                         array_struct_ptr = new_array_ptr
                         expected_elem_type = append_func.function_type.args[1]
-                        if self.debug:
-                            print(f"DEBUG: append_func: {append_func.name}, expected_elem_type: {expected_elem_type}")
                         for val_node in init_nodes:
                             raw_val = self.visit(val_node)
-                            if self.debug:
-                                print(f"DEBUG: Global dynamic array init - raw_val: {raw_val}, type: {raw_val.type}")
                             val = self._coerce_char_array_element(expected_elem_type, raw_val)
                             if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
                                 val = self.builder.sitofp(val, expected_elem_type)
                             # Final safety: if still pointer and expected int8, load
                             if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
                                 val = self.builder.load(val)
-                            if self.debug:
-                                print(f"DEBUG: About to call append with val: {val}, type: {val.type}, expected: {expected_elem_type}")
                             self.builder.call(append_func, [array_struct_ptr, val])
             # Then visit all non-declaration, non-function-definition statements
             for stmt in ast.statements:
@@ -475,7 +463,6 @@ class LLVMCodeGenerator(Visitor):
         is_dyn = ti.is_dynamic if ti else node.is_dynamic
         element_type_ir = self.get_llvm_type(node.var_type.type_name)
         is_global = self.builder is None
-        
         if is_dyn:
             array_ptr_type = self.get_llvm_type(f'd_array_{base}')
             if is_global:
@@ -709,24 +696,502 @@ class LLVMCodeGenerator(Visitor):
         raise Exception(f"Unsupported primary literal: {val}")
 
     def _coerce_char_array_element(self, expected_elem_type, raw_val):
-        """Fix array element coercion to handle all array types properly"""
-        # For char arrays: expecting i8, handle char literals and string pointers
+        # If expecting i8 and have pointer to a string literal, extract first char via GEP then load
         if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8:
-            # If we have an i8 constant (char literal), return it directly
-            if isinstance(raw_val.type, ir.IntType) and raw_val.type.width == 8:
-                return raw_val
-            # If we have a string pointer, load the first character
-            elif isinstance(raw_val.type, ir.PointerType) and raw_val.type.pointee == ir.IntType(8):
-                return self.builder.load(raw_val)
-        
-        # For string arrays: expecting i8*, return string pointers as-is
-        elif isinstance(expected_elem_type, ir.PointerType) and expected_elem_type.pointee == ir.IntType(8):
-            # If we have a string pointer, return it directly
             if isinstance(raw_val.type, ir.PointerType) and raw_val.type.pointee == ir.IntType(8):
-                return raw_val
-        
+                # raw_val points to first char already (string literal decay). Load single byte.
+                return self.builder.load(raw_val)
         # Otherwise normal pointer load semantics
         return self._load_if_pointer(raw_val)
+
+    def visit_arraydeclaration(self, node):
+        var_name = node.identifier
+        sym = self.symbol_table.lookup_symbol(var_name)
+        ti = sym.get('typeinfo') if sym else None
+        base = ti.base if ti else node.var_type.type_name.replace('KEYWORD_','').lower()
+        is_dyn = ti.is_dynamic if ti else node.is_dynamic
+        element_type_ir = self.get_llvm_type(node.var_type.type_name)
+        is_global = self.builder is None
+        if is_dyn:
+            array_ptr_type = self.get_llvm_type(f'd_array_{base}')
+            if is_global:
+                global_var = ir.GlobalVariable(self.module, array_ptr_type, name=var_name)
+                global_var.initializer = ir.Constant(array_ptr_type, None)
+                global_var.linkage = 'internal'
+                self.global_vars[var_name] = global_var
+                self.llvm_var_table[var_name] = global_var
+                init_nodes = node.initializer.values if node.initializer else []
+                self.global_dynamic_arrays.append((var_name, base, init_nodes, True))
+            else:
+                ptr = self.builder.alloca(array_ptr_type, name=var_name)
+                self.llvm_var_table[var_name] = ptr
+                create_func = self._array_runtime_func(base, 'create')
+                new_array_ptr = self.builder.call(create_func, [])
+                self.builder.store(new_array_ptr, ptr)
+                if node.initializer:
+                    append_func = self._array_runtime_func(base, 'append')
+                    array_struct_ptr = new_array_ptr
+                    expected_elem_type = append_func.function_type.args[1]
+                    for val_node in node.initializer.values:
+                        raw_val = self.visit(val_node)
+                        val = self._coerce_char_array_element(expected_elem_type, raw_val)
+                        if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
+                            val = self.builder.sitofp(val, expected_elem_type)
+                        if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
+                            val = self.builder.load(val)
+                        self.builder.call(append_func, [array_struct_ptr, val])
+        else:
+            size = int(node.size.value) if node.size else (len(node.initializer.values) if node.initializer else 0)
+            array_type = ir.ArrayType(element_type_ir, size)
+            if is_global:
+                zero_list = []
+                if node.initializer:
+                    init_vals = []
+                    for v in node.initializer.values:
+                        init_vals.append(self.visit(v))
+                    # Only support ints/floats/chars simple constants here
+                    while len(init_vals) < size:
+                        if isinstance(element_type_ir, ir.IntType):
+                            init_vals.append(ir.Constant(element_type_ir, 0))
+                        elif isinstance(element_type_ir, ir.DoubleType):
+                            init_vals.append(ir.Constant(element_type_ir, 0.0))
+                    initializer = ir.Constant(array_type, init_vals)
+                else:
+                    if isinstance(element_type_ir, ir.IntType):
+                        zero_list = [ir.Constant(element_type_ir, 0) for _ in range(size)]
+                    elif isinstance(element_type_ir, ir.DoubleType):
+                        zero_list = [ir.Constant(element_type_ir, 0.0) for _ in range(size)]
+                    initializer = ir.Constant(array_type, zero_list)
+                global_var = ir.GlobalVariable(self.module, array_type, name=var_name)
+                global_var.initializer = initializer
+                global_var.linkage = 'internal'
+                self.global_vars[var_name] = global_var
+                self.llvm_var_table[var_name] = global_var
+            else:
+                ptr = self.builder.alloca(array_type, name=var_name)
+                self.llvm_var_table[var_name] = ptr
+                if node.initializer:
+                    for i, v in enumerate(node.initializer.values):
+                        val = self.visit(v)
+                        index_ptr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32),0), ir.Constant(ir.IntType(32), i)])
+                        self.builder.store(val, index_ptr)
+
+    def visit_assignment(self, node):
+        if isinstance(node.lhs, SubscriptAccess):
+            sym = self.symbol_table.lookup_symbol(node.lhs.name)
+            ti = sym.get('typeinfo') if sym else None
+            if ti and ti.is_dynamic:
+                base = ti.base
+                array_var_ptr = self.llvm_var_table[node.lhs.name]
+                array_struct_ptr = self.builder.load(array_var_ptr)
+                index_val = self._load_if_pointer(self.visit(node.lhs.key))
+                value_val = self._load_if_pointer(self.visit(node.rhs))
+                set_func = self._array_runtime_func(base, 'set')
+                self.builder.call(set_func, [array_struct_ptr, index_val, value_val])
+                return
+        # Fallback
+        ptr = self.visit(node.lhs)
+        value_to_store = self.visit(node.rhs)
+        target_type = ptr.type.pointee if hasattr(ptr.type,'pointee') else ptr.type.pointed_type
+        if target_type != value_to_store.type and isinstance(target_type, ir.DoubleType) and isinstance(value_to_store.type, ir.IntType):
+            value_to_store = self.builder.sitofp(value_to_store, target_type)
+        self.builder.store(value_to_store, ptr)
+
+    def visit_returnstatement(self, node):
+        if node.value:
+            return_val = self.visit(node.value)
+            self.builder.ret(return_val)
+        else:
+            self.builder.ret_void()
+
+    def _load_if_pointer(self, value):
+        """Loads a value if it's a pointer, otherwise returns the value directly."""
+        if isinstance(value.type, ir.PointerType):
+            # Check if it's a string constant/literal - don't load it
+            if (value.type.pointee == ir.IntType(8) and 
+                hasattr(value, 'name') and 
+                (value.name.startswith('.str') or 
+                 str(value).startswith('bitcast') or
+                 str(value).startswith('getelementptr'))):
+                return value
+            # For other pointer types (variables), load the value
+            return self.builder.load(value)
+        return value
+
+    def visit_binaryop(self, node):
+        # Visiting an expression node should yield a value (r-value).
+        # If the operand is an identifier or subscript, visiting it will return a
+        # pointer (l-value), so we must load it.
+        lhs = self._load_if_pointer(self.visit(node.left))
+        rhs = self._load_if_pointer(self.visit(node.right))
+
+        # String or Array concatenation check first
+        if node.op == '+':
+            # Check for string concatenation
+            if (isinstance(lhs.type, ir.PointerType) and 
+                isinstance(rhs.type, ir.PointerType) and
+                lhs.type.pointee == ir.IntType(8) and 
+                rhs.type.pointee == ir.IntType(8)):
+                concat_func = self.module.get_global("concat_strings")
+                return self.builder.call(concat_func, [lhs, rhs], 'concat_tmp')
+
+            # Check for array concatenation
+            if hasattr(node, 'result_type') and node.result_type == 'array':
+                element_type = node.element_type.replace('KEYWORD_', '').lower()
+                func_name = f"d_array_{element_type}_concat"
+                concat_func = self.module.get_global(func_name)
+
+                # We need the pointers to the array structs, not the loaded values
+                lhs_ptr = self.builder.load(self.visit(node.left))
+                rhs_ptr = self.builder.load(self.visit(node.right))
+
+                return self.builder.call(concat_func, [lhs_ptr, rhs_ptr], 'concat_array_tmp')
+
+        # Type promotion for float operations
+        if isinstance(lhs.type, ir.DoubleType) or isinstance(rhs.type, ir.DoubleType):
+            if isinstance(lhs.type, ir.IntType):
+                lhs = self.builder.sitofp(lhs, ir.DoubleType())
+            if isinstance(rhs.type, ir.IntType):
+                rhs = self.builder.sitofp(rhs, ir.DoubleType())
+
+            op_map = {'+': self.builder.fadd, '-': self.builder.fsub, '*': self.builder.fmul, '/': self.builder.fdiv}
+            if node.op in op_map:
+                return op_map[node.op](lhs, rhs, 'f_tmp')
+
+            # Relational ops for floats
+            op_map_rel = {'<': 'olt', '>': 'ogt', '<=': 'ole', '>=': 'oge', '==': 'oeq', '!=': 'one'}
+            if node.op in op_map_rel:
+                return self.builder.fcmp_ordered(op_map_rel[node.op], lhs, rhs, 'f_cmp_tmp')
+
+        # Integer operations
+        elif isinstance(lhs.type, ir.IntType) and isinstance(rhs.type, ir.IntType):
+            op_map = {'+': self.builder.add, '-': self.builder.sub, '*': self.builder.mul, '/': self.builder.sdiv, '%': self.builder.srem}
+            if node.op in op_map:
+                return op_map[node.op](lhs, rhs, 'i_tmp')
+
+            # Relational ops for integers - use correct LLVM comparison ops
+            if node.op == '<':
+                return self.builder.icmp_signed('<', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '>':
+                return self.builder.icmp_signed('>', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '<=':
+                return self.builder.icmp_signed('<=', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '>=':
+                return self.builder.icmp_signed('>=', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '==':
+                return self.builder.icmp_signed('==', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '!=':
+                return self.builder.icmp_signed('!=', lhs, rhs, 'i_cmp_tmp')
+
+            # Logical operators (assuming boolean i1 type from relational ops)
+            if node.op == '&&':
+                return self.builder.and_(lhs, rhs, 'and_tmp')
+            if node.op == '||':
+                return self.builder.or_(lhs, rhs, 'or_tmp')
+
+        # Debug output for type mismatch
+        lhs_type_info = f"{lhs.type} (pointee: {lhs.type.pointee if isinstance(lhs.type, ir.PointerType) else 'N/A'})"
+        rhs_type_info = f"{rhs.type} (pointee: {rhs.type.pointee if isinstance(rhs.type, ir.PointerType) else 'N/A'})"
+        raise Exception(f"Unknown or incompatible types for binary operator '{node.op}': {lhs_type_info} and {rhs_type_info}")
+
+    def visit_unaryop(self, node):
+        operand_val = self._load_if_pointer(self.visit(node.operand))
+        if node.op == '-':
+            if isinstance(operand_val.type, ir.DoubleType):
+                return self.builder.fsub(ir.Constant(ir.DoubleType(), 0.0), operand_val, 'f_neg_tmp')
+            else:
+                return self.builder.sub(ir.Constant(operand_val.type, 0), operand_val, 'i_neg_tmp')
+        raise Exception(f"Unknown unary operator: {node.op}")
+
+    def visit_primary(self, node):
+        val = node.value
+        if isinstance(val, str):
+            if val.isdigit() or (val.startswith('-') and val[1:].isdigit()):
+                return ir.Constant(ir.IntType(32), int(val))
+            try:
+                if '.' in val and not val.startswith('"') and not val.startswith("'"):
+                    return ir.Constant(ir.DoubleType(), float(val))
+            except ValueError:
+                pass
+            if val == 'true':
+                return ir.Constant(ir.IntType(1), 1)
+            if val == 'false':
+                return ir.Constant(ir.IntType(1), 0)
+            if val.startswith("'") and val.endswith("'") and len(val) >= 3:
+                inner = val[1:-1]
+                if inner == '\\n':
+                    ch = '\n'
+                elif inner == '\\t':
+                    ch = '\t'
+                else:
+                    ch = inner[0]
+                return ir.Constant(ir.IntType(8), ord(ch))
+            if val.startswith('"') and val.endswith('"'):
+                str_val = val[1:-1].replace('\\n', '\n') + '\0'
+                if str_val in self.global_strings:
+                    ptr = self.global_strings[str_val]
+                else:
+                    c_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_val)), bytearray(str_val.encode("utf8")))
+                    global_var = ir.GlobalVariable(self.module, c_str.type, name=f".str{len(self.global_strings)}")
+                    global_var.initializer = c_str
+                    global_var.global_constant = True
+                    global_var.linkage = 'internal'
+                    if self.builder:
+                        ptr = self.builder.bitcast(global_var, ir.IntType(8).as_pointer())
+                    else:
+                        ptr = global_var.gep([ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                    self.global_strings[str_val] = ptr
+                return ptr
+        raise Exception(f"Unsupported primary literal: {val}")
+
+    def _coerce_char_array_element(self, expected_elem_type, raw_val):
+        # If expecting i8 and have pointer to a string literal, extract first char via GEP then load
+        if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8:
+            if isinstance(raw_val.type, ir.PointerType) and raw_val.type.pointee == ir.IntType(8):
+                # raw_val points to first char already (string literal decay). Load single byte.
+                return self.builder.load(raw_val)
+        # Otherwise normal pointer load semantics
+        return self._load_if_pointer(raw_val)
+
+    def visit_arraydeclaration(self, node):
+        var_name = node.identifier
+        sym = self.symbol_table.lookup_symbol(var_name)
+        ti = sym.get('typeinfo') if sym else None
+        base = ti.base if ti else node.var_type.type_name.replace('KEYWORD_','').lower()
+        is_dyn = ti.is_dynamic if ti else node.is_dynamic
+        element_type_ir = self.get_llvm_type(node.var_type.type_name)
+        is_global = self.builder is None
+        if is_dyn:
+            array_ptr_type = self.get_llvm_type(f'd_array_{base}')
+            if is_global:
+                global_var = ir.GlobalVariable(self.module, array_ptr_type, name=var_name)
+                global_var.initializer = ir.Constant(array_ptr_type, None)
+                global_var.linkage = 'internal'
+                self.global_vars[var_name] = global_var
+                self.llvm_var_table[var_name] = global_var
+                init_nodes = node.initializer.values if node.initializer else []
+                self.global_dynamic_arrays.append((var_name, base, init_nodes, True))
+            else:
+                ptr = self.builder.alloca(array_ptr_type, name=var_name)
+                self.llvm_var_table[var_name] = ptr
+                create_func = self._array_runtime_func(base, 'create')
+                new_array_ptr = self.builder.call(create_func, [])
+                self.builder.store(new_array_ptr, ptr)
+                if node.initializer:
+                    append_func = self._array_runtime_func(base, 'append')
+                    array_struct_ptr = new_array_ptr
+                    expected_elem_type = append_func.function_type.args[1]
+                    for val_node in node.initializer.values:
+                        raw_val = self.visit(val_node)
+                        val = self._coerce_char_array_element(expected_elem_type, raw_val)
+                        if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
+                            val = self.builder.sitofp(val, expected_elem_type)
+                        if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
+                            val = self.builder.load(val)
+                        self.builder.call(append_func, [array_struct_ptr, val])
+        else:
+            size = int(node.size.value) if node.size else (len(node.initializer.values) if node.initializer else 0)
+            array_type = ir.ArrayType(element_type_ir, size)
+            if is_global:
+                zero_list = []
+                if node.initializer:
+                    init_vals = []
+                    for v in node.initializer.values:
+                        init_vals.append(self.visit(v))
+                    # Only support ints/floats/chars simple constants here
+                    while len(init_vals) < size:
+                        if isinstance(element_type_ir, ir.IntType):
+                            init_vals.append(ir.Constant(element_type_ir, 0))
+                        elif isinstance(element_type_ir, ir.DoubleType):
+                            init_vals.append(ir.Constant(element_type_ir, 0.0))
+                    initializer = ir.Constant(array_type, init_vals)
+                else:
+                    if isinstance(element_type_ir, ir.IntType):
+                        zero_list = [ir.Constant(element_type_ir, 0) for _ in range(size)]
+                    elif isinstance(element_type_ir, ir.DoubleType):
+                        zero_list = [ir.Constant(element_type_ir, 0.0) for _ in range(size)]
+                    initializer = ir.Constant(array_type, zero_list)
+                global_var = ir.GlobalVariable(self.module, array_type, name=var_name)
+                global_var.initializer = initializer
+                global_var.linkage = 'internal'
+                self.global_vars[var_name] = global_var
+                self.llvm_var_table[var_name] = global_var
+            else:
+                ptr = self.builder.alloca(array_type, name=var_name)
+                self.llvm_var_table[var_name] = ptr
+                if node.initializer:
+                    for i, v in enumerate(node.initializer.values):
+                        val = self.visit(v)
+                        index_ptr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32),0), ir.Constant(ir.IntType(32), i)])
+                        self.builder.store(val, index_ptr)
+
+    def visit_assignment(self, node):
+        if isinstance(node.lhs, SubscriptAccess):
+            sym = self.symbol_table.lookup_symbol(node.lhs.name)
+            ti = sym.get('typeinfo') if sym else None
+            if ti and ti.is_dynamic:
+                base = ti.base
+                array_var_ptr = self.llvm_var_table[node.lhs.name]
+                array_struct_ptr = self.builder.load(array_var_ptr)
+                index_val = self._load_if_pointer(self.visit(node.lhs.key))
+                value_val = self._load_if_pointer(self.visit(node.rhs))
+                set_func = self._array_runtime_func(base, 'set')
+                self.builder.call(set_func, [array_struct_ptr, index_val, value_val])
+                return
+        # Fallback
+        ptr = self.visit(node.lhs)
+        value_to_store = self.visit(node.rhs)
+        target_type = ptr.type.pointee if hasattr(ptr.type,'pointee') else ptr.type.pointed_type
+        if target_type != value_to_store.type and isinstance(target_type, ir.DoubleType) and isinstance(value_to_store.type, ir.IntType):
+            value_to_store = self.builder.sitofp(value_to_store, target_type)
+        self.builder.store(value_to_store, ptr)
+
+    def visit_returnstatement(self, node):
+        if node.value:
+            return_val = self.visit(node.value)
+            self.builder.ret(return_val)
+        else:
+            self.builder.ret_void()
+
+    def _load_if_pointer(self, value):
+        """Loads a value if it's a pointer, otherwise returns the value directly."""
+        if isinstance(value.type, ir.PointerType):
+            # Check if it's a string constant/literal - don't load it
+            if (value.type.pointee == ir.IntType(8) and 
+                hasattr(value, 'name') and 
+                (value.name.startswith('.str') or 
+                 str(value).startswith('bitcast') or
+                 str(value).startswith('getelementptr'))):
+                return value
+            # For other pointer types (variables), load the value
+            return self.builder.load(value)
+        return value
+
+    def visit_binaryop(self, node):
+        # Visiting an expression node should yield a value (r-value).
+        # If the operand is an identifier or subscript, visiting it will return a
+        # pointer (l-value), so we must load it.
+        lhs = self._load_if_pointer(self.visit(node.left))
+        rhs = self._load_if_pointer(self.visit(node.right))
+
+        # String or Array concatenation check first
+        if node.op == '+':
+            # Check for string concatenation
+            if (isinstance(lhs.type, ir.PointerType) and 
+                isinstance(rhs.type, ir.PointerType) and
+                lhs.type.pointee == ir.IntType(8) and 
+                rhs.type.pointee == ir.IntType(8)):
+                concat_func = self.module.get_global("concat_strings")
+                return self.builder.call(concat_func, [lhs, rhs], 'concat_tmp')
+
+            # Check for array concatenation
+            if hasattr(node, 'result_type') and node.result_type == 'array':
+                element_type = node.element_type.replace('KEYWORD_', '').lower()
+                func_name = f"d_array_{element_type}_concat"
+                concat_func = self.module.get_global(func_name)
+
+                # We need the pointers to the array structs, not the loaded values
+                lhs_ptr = self.builder.load(self.visit(node.left))
+                rhs_ptr = self.builder.load(self.visit(node.right))
+
+                return self.builder.call(concat_func, [lhs_ptr, rhs_ptr], 'concat_array_tmp')
+
+        # Type promotion for float operations
+        if isinstance(lhs.type, ir.DoubleType) or isinstance(rhs.type, ir.DoubleType):
+            if isinstance(lhs.type, ir.IntType):
+                lhs = self.builder.sitofp(lhs, ir.DoubleType())
+            if isinstance(rhs.type, ir.IntType):
+                rhs = self.builder.sitofp(rhs, ir.DoubleType())
+
+            op_map = {'+': self.builder.fadd, '-': self.builder.fsub, '*': self.builder.fmul, '/': self.builder.fdiv}
+            if node.op in op_map:
+                return op_map[node.op](lhs, rhs, 'f_tmp')
+
+            # Relational ops for floats
+            op_map_rel = {'<': 'olt', '>': 'ogt', '<=': 'ole', '>=': 'oge', '==': 'oeq', '!=': 'one'}
+            if node.op in op_map_rel:
+                return self.builder.fcmp_ordered(op_map_rel[node.op], lhs, rhs, 'f_cmp_tmp')
+
+        # Integer operations
+        elif isinstance(lhs.type, ir.IntType) and isinstance(rhs.type, ir.IntType):
+            op_map = {'+': self.builder.add, '-': self.builder.sub, '*': self.builder.mul, '/': self.builder.sdiv, '%': self.builder.srem}
+            if node.op in op_map:
+                return op_map[node.op](lhs, rhs, 'i_tmp')
+
+            # Relational ops for integers - use correct LLVM comparison ops
+            if node.op == '<':
+                return self.builder.icmp_signed('<', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '>':
+                return self.builder.icmp_signed('>', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '<=':
+                return self.builder.icmp_signed('<=', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '>=':
+                return self.builder.icmp_signed('>=', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '==':
+                return self.builder.icmp_signed('==', lhs, rhs, 'i_cmp_tmp')
+            elif node.op == '!=':
+                return self.builder.icmp_signed('!=', lhs, rhs, 'i_cmp_tmp')
+
+            # Logical operators (assuming boolean i1 type from relational ops)
+            if node.op == '&&':
+                return self.builder.and_(lhs, rhs, 'and_tmp')
+            if node.op == '||':
+                return self.builder.or_(lhs, rhs, 'or_tmp')
+
+        # Debug output for type mismatch
+        lhs_type_info = f"{lhs.type} (pointee: {lhs.type.pointee if isinstance(lhs.type, ir.PointerType) else 'N/A'})"
+        rhs_type_info = f"{rhs.type} (pointee: {rhs.type.pointee if isinstance(rhs.type, ir.PointerType) else 'N/A'})"
+        raise Exception(f"Unknown or incompatible types for binary operator '{node.op}': {lhs_type_info} and {rhs_type_info}")
+
+    def visit_unaryop(self, node):
+        operand_val = self._load_if_pointer(self.visit(node.operand))
+        if node.op == '-':
+            if isinstance(operand_val.type, ir.DoubleType):
+                return self.builder.fsub(ir.Constant(ir.DoubleType(), 0.0), operand_val, 'f_neg_tmp')
+            else:
+                return self.builder.sub(ir.Constant(operand_val.type, 0), operand_val, 'i_neg_tmp')
+        raise Exception(f"Unknown unary operator: {node.op}")
+
+    def visit_primary(self, node):
+        val = node.value
+        if isinstance(val, str):
+            if val.isdigit() or (val.startswith('-') and val[1:].isdigit()):
+                return ir.Constant(ir.IntType(32), int(val))
+            try:
+                if '.' in val and not val.startswith('"') and not val.startswith("'"):
+                    return ir.Constant(ir.DoubleType(), float(val))
+            except ValueError:
+                pass
+            if val == 'true':
+                return ir.Constant(ir.IntType(1), 1)
+            if val == 'false':
+                return ir.Constant(ir.IntType(1), 0)
+            if val.startswith("'") and val.endswith("'") and len(val) >= 3:
+                inner = val[1:-1]
+                if inner == '\\n':
+                    ch = '\n'
+                elif inner == '\\t':
+                    ch = '\t'
+                else:
+                    ch = inner[0]
+                return ir.Constant(ir.IntType(8), ord(ch))
+            if val.startswith('"') and val.endswith('"'):
+                str_val = val[1:-1].replace('\\n', '\n') + '\0'
+                if str_val in self.global_strings:
+                    ptr = self.global_strings[str_val]
+                else:
+                    c_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_val)), bytearray(str_val.encode("utf8")))
+                    global_var = ir.GlobalVariable(self.module, c_str.type, name=f".str{len(self.global_strings)}")
+                    global_var.initializer = c_str
+                    global_var.global_constant = True
+                    global_var.linkage = 'internal'
+                    if self.builder:
+                        ptr = self.builder.bitcast(global_var, ir.IntType(8).as_pointer())
+                    else:
+                        ptr = global_var.gep([ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                    self.global_strings[str_val] = ptr
+                return ptr
+        raise Exception(f"Unsupported primary literal: {val}")
 
     def visit_identifier(self, node):
         # Return the pointer/value associated with an identifier.
@@ -775,14 +1240,7 @@ class LLVMCodeGenerator(Visitor):
         call_args = [array_struct_ptr]
         if func_name != 'arr_avg':
             for arg_node in args[1:]:
-                raw_arg_val = self.visit(arg_node)
-                # Handle char array coercion for functions that take element values
-                if base == 'char' and func_name in ['arr_contains', 'arr_indexof']:
-                    expected_elem_type = c_func.function_type.args[len(call_args)]
-                    arg_val = self._coerce_char_array_element(expected_elem_type, raw_arg_val)
-                else:
-                    arg_val = self._load_if_pointer(raw_arg_val)
-                call_args.append(arg_val)
+                call_args.append(self._load_if_pointer(self.visit(arg_node)))
         return self.builder.call(c_func, call_args, f'{func_name}_call')
 
     def visit_functioncall(self, node):
@@ -968,23 +1426,17 @@ class LLVMCodeGenerator(Visitor):
     def visit_arraypush(self, node):
         array_ptr = self.visit(node.array)
         array_val = self.builder.load(array_ptr)
-        raw_value_val = self.visit(node.value)
+        value_val = self._load_if_pointer(self.visit(node.value))
         array_type = array_val.type
         if array_type == self.d_array_int_type:
             push_func = self.module.get_global("d_array_int_push")
-            value_val = self._load_if_pointer(raw_value_val)
         elif array_type == self.d_array_string_type:
             push_func = self.module.get_global("d_array_string_push")
-            # String arrays need the string pointer, not dereferenced
-            value_val = raw_value_val
         elif array_type == self.d_array_float_type:
             push_func = self.module.get_global("d_array_float_push")
-            value_val = self._load_if_pointer(raw_value_val)
         elif array_type == self.d_array_char_type:
             # use append as push alias for char
             push_func = self.module.get_global("d_array_char_append")
-            expected_elem_type = push_func.function_type.args[1]
-            value_val = self._coerce_char_array_element(expected_elem_type, raw_value_val)
         else:
             raise Exception(f"Unsupported array type for push: {array_type}")
         self.builder.call(push_func, [array_val, value_val])

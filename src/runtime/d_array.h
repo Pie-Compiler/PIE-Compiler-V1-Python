@@ -11,6 +11,7 @@ typedef struct {
 
 DArrayInt* d_array_int_create();
 void d_array_int_append(DArrayInt* arr, int value);
+void d_array_int_push(DArrayInt* arr, int value);  // Alias for append
 int d_array_int_get(DArrayInt* arr, int index);
 void d_array_int_set(DArrayInt* arr, int index, int value);
 int d_array_int_size(DArrayInt* arr);
@@ -30,6 +31,7 @@ typedef struct {
 
 DArrayString* d_array_string_create();
 void d_array_string_append(DArrayString* arr, const char* value);
+void d_array_string_push(DArrayString* arr, const char* value);  // Alias for append
 char* d_array_string_get(DArrayString* arr, int index);
 void d_array_string_set(DArrayString* arr, int index, const char* value);
 int d_array_string_size(DArrayString* arr);
@@ -64,6 +66,7 @@ typedef struct {
 
 DArrayFloat* d_array_float_create();
 void d_array_float_append(DArrayFloat* arr, double value);
+void d_array_float_push(DArrayFloat* arr, double value);  // Alias for append
 double d_array_float_get(DArrayFloat* arr, int index);
 void d_array_float_set(DArrayFloat* arr, int index, double value);
 int d_array_float_size(DArrayFloat* arr);

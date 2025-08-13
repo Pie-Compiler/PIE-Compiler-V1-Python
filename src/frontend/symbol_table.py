@@ -1,3 +1,5 @@
+from frontend.types import TypeInfo, canonicalize
+
 # Symbol Table Implementation
 class SymbolTable:
     def __init__(self):
@@ -28,19 +30,34 @@ class SymbolTable:
         return self.current_scope
     
     def add_symbol(self, name, type_info, line_num=None, is_initialized=False, **kwargs):
-        """Add a symbol to the current scope."""
+        """Add a symbol to the current scope. type_info can be a TypeInfo or string for legacy."""
         if self.current_scope not in self.table:
             self.table[self.current_scope] = {}
-        
-        symbol_info = {
-            'type': type_info,
-            'line': line_num,
-            'initialized': is_initialized
-        }
+        if isinstance(type_info, str):
+            symbol_info = {'type': type_info}
+        elif isinstance(type_info, TypeInfo):
+            symbol_info = {'type': 'array' if type_info.kind == 'array' else type_info.base,
+                           'typeinfo': type_info,
+                           'element_type': type_info.base if type_info.kind == 'array' else None,
+                           'is_dynamic': type_info.is_dynamic,
+                           'size': type_info.size}
+        else:
+            symbol_info = {'type': str(type_info)}
+        symbol_info.update({'line': line_num, 'initialized': is_initialized})
         symbol_info.update(kwargs)
-        
         self.table[self.current_scope][name] = symbol_info
         return symbol_info
+
+    def get_array_info(self, name):
+        sym = self.lookup_symbol(name)
+        if not sym:
+            return None
+        ti = sym.get('typeinfo')
+        if ti and ti.kind == 'array':
+            return ti
+        if sym.get('type') == 'array':
+            return TypeInfo(sym.get('element_type'), is_dynamic=sym.get('is_dynamic', False), is_array=not sym.get('is_dynamic', False), size=sym.get('size'))
+        return None
     
     def lookup_symbol(self, name):
         """Look up a symbol in the current scope and parent scopes."""
@@ -91,126 +108,68 @@ class SymbolTable:
 class TypeChecker:
     def __init__(self, symbol_table):
         self.symbol_table = symbol_table
-        
-        # This specific compatible_types map might be less needed if is_compatible is robust
-        self.compatible_types = {
-            'KEYWORD_INT': ['KEYWORD_INT', 'KEYWORD_FLOAT'],
-            'KEYWORD_FLOAT': ['KEYWORD_FLOAT', 'KEYWORD_INT'],
-            'KEYWORD_BOOL': ['KEYWORD_BOOL'],
-            'KEYWORD_STRING': ['KEYWORD_STRING'],
-            'KEYWORD_CHAR': ['KEYWORD_CHAR']
-        }
-        
-    def _normalize_type(self, type_name):
-        """Convert literal types and language types to standardized keyword types."""
-        if not isinstance(type_name, str):
-            return None # Or a specific "UNKNOWN_TYPE"
+        self.numeric = {'KEYWORD_INT','KEYWORD_FLOAT','int','float'}
 
+    def _normalize_type(self, type_name):
+        if type_name is None:
+            return None
+        if isinstance(type_name, TypeInfo):
+            if type_name.kind == 'array':
+                return 'array'
+            return 'KEYWORD_'+type_name.base.upper()
+        # Keep legacy KEYWORD_ forms
+        if type_name.startswith('KEYWORD_'):
+            return type_name
+        base = canonicalize(type_name)
         mapping = {
-            'INT_LITERAL': 'KEYWORD_INT',
-            'FLOAT_LITERAL': 'KEYWORD_FLOAT',
-            'STRING_LITERAL': 'KEYWORD_STRING',
-            'CHAR_LITERAL': 'KEYWORD_CHAR',
-            'KEYWORD_TRUE': 'KEYWORD_BOOL',
-            'KEYWORD_FALSE': 'KEYWORD_BOOL',
-            'int': 'KEYWORD_INT',
-            'float': 'KEYWORD_FLOAT',
-            'string': 'KEYWORD_STRING',
-            'char': 'KEYWORD_CHAR',
-            'boolean': 'KEYWORD_BOOL', # From test2.pie
-            'bool': 'KEYWORD_BOOL',
-            'void': 'KEYWORD_VOID',
-            'file': 'KEYWORD_FILE',
-            'socket': 'KEYWORD_SOCKET',
-            'd_array_int': 'KEYWORD_D_ARRAY_INT',
-            'd_array_string': 'KEYWORD_D_ARRAY_STRING',
-            'array_int': 'KEYWORD_D_ARRAY_INT',
-            'array_string': 'KEYWORD_D_ARRAY_STRING',
-            # Idempotent entries for already normalized types
-            'KEYWORD_INT': 'KEYWORD_INT',
-            'KEYWORD_FLOAT': 'KEYWORD_FLOAT',
-            'KEYWORD_BOOL': 'KEYWORD_BOOL',
-            'KEYWORD_STRING': 'KEYWORD_STRING',
-            'KEYWORD_CHAR': 'KEYWORD_CHAR',
-            'KEYWORD_VOID': 'KEYWORD_VOID',
-            'KEYWORD_NULL': 'KEYWORD_NULL',
-            'KEYWORD_D_ARRAY_INT': 'KEYWORD_D_ARRAY_INT',
-            'KEYWORD_D_ARRAY_STRING': 'KEYWORD_D_ARRAY_STRING',
+            'int':'KEYWORD_INT','float':'KEYWORD_FLOAT','char':'KEYWORD_CHAR','string':'KEYWORD_STRING','bool':'KEYWORD_BOOL','void':'KEYWORD_VOID','file':'KEYWORD_FILE','socket':'KEYWORD_SOCKET','dict':'KEYWORD_DICT','null':'KEYWORD_NULL'
         }
-        return mapping.get(type_name, type_name) # Return original if not in map, though ideally all types should be mappable or already KEYWORD_
+        return mapping.get(base, type_name)
 
     def is_compatible(self, target_type, source_type):
-        """Check if source_type can be assigned to target_type."""
-        norm_target_type = self._normalize_type(target_type)
-        norm_source_type = self._normalize_type(source_type)
-
-        if norm_target_type is None or norm_source_type is None:
+        t = self._normalize_type(target_type)
+        s = self._normalize_type(source_type)
+        if not t or not s:
             return False
-
-        if norm_source_type == 'KEYWORD_NULL':
-            # Allow assigning null to reference-like types
-            return norm_target_type in ['KEYWORD_STRING', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_D_ARRAY_INT', 'KEYWORD_D_ARRAY_STRING']
-
-        if norm_target_type == norm_source_type:
+        if s == 'KEYWORD_NULL' and t in ['KEYWORD_STRING','KEYWORD_FILE','KEYWORD_SOCKET']:
             return True
-        
-        if norm_target_type == 'KEYWORD_FLOAT' and norm_source_type == 'KEYWORD_INT':
+        if t == s:
             return True
-        
-        # Add other compatibilities if needed, e.g., char to string
+        if t == 'KEYWORD_FLOAT' and s == 'KEYWORD_INT':
+            return True
         return False
-    
+
     def check_binary_op(self, op, left_type, right_type):
-        """Check if a binary operation is valid for the given types and return result type."""
-        norm_left = self._normalize_type(left_type)
-        norm_right = self._normalize_type(right_type)
-
-        if norm_left is None or norm_right is None:
+        l = self._normalize_type(left_type)
+        r = self._normalize_type(right_type)
+        if not l or not r:
             return None
-
-        # Arithmetic operators: +, -, *, /
-        if op in ['PLUS', 'MINUS', 'MUL', 'DIV', 'MOD']:
-            # String concatenation special-case
-            if op == 'PLUS' and norm_left == 'KEYWORD_STRING' and norm_right == 'KEYWORD_STRING':
+        if op in ['PLUS','MINUS','MUL','DIV','MOD']:
+            if op=='PLUS' and l=='KEYWORD_STRING' and r=='KEYWORD_STRING':
                 return 'KEYWORD_STRING'
-            # Arithmetic numeric operations
-            if norm_left in ['KEYWORD_INT', 'KEYWORD_FLOAT'] and norm_right in ['KEYWORD_INT', 'KEYWORD_FLOAT']:
-                if op == 'DIV':
-                    # Division always produces float (even int/int)
+            if l in ['KEYWORD_INT','KEYWORD_FLOAT'] and r in ['KEYWORD_INT','KEYWORD_FLOAT']:
+                if op=='DIV':
                     return 'KEYWORD_FLOAT'
-                if 'KEYWORD_FLOAT' in [norm_left, norm_right]:
+                if l=='KEYWORD_FLOAT' or r=='KEYWORD_FLOAT':
                     return 'KEYWORD_FLOAT'
-                # For MOD we still want int result; others int if both ints
                 return 'KEYWORD_INT'
             return None
-
-        # Comparison operators: <, >, <=, >=
-        if op in ['LT', 'GT', 'LEQ', 'GEQ']:
-            if norm_left in ['KEYWORD_INT', 'KEYWORD_FLOAT'] and norm_right in ['KEYWORD_INT', 'KEYWORD_FLOAT']:
-                return 'KEYWORD_BOOL'
-            else:
-                return None
-
-        # Equality operators: ==, !=
-        if op in ['EQ', 'NEQ']:
-            if norm_left == norm_right:
-                return 'KEYWORD_BOOL'
-            # Allow int/float comparison
-            if {norm_left, norm_right} <= {'KEYWORD_INT', 'KEYWORD_FLOAT'}:
-                return 'KEYWORD_BOOL'
-            # Allow null equality comparisons with reference-like types
-            ref_types = {'KEYWORD_STRING','KEYWORD_FILE','KEYWORD_SOCKET','KEYWORD_D_ARRAY_INT','KEYWORD_D_ARRAY_STRING'}
-            if (norm_left == 'KEYWORD_NULL' and norm_right in ref_types) or (norm_right == 'KEYWORD_NULL' and norm_left in ref_types):
+        if op in ['LT','GT','LEQ','GEQ']:
+            if l in ['KEYWORD_INT','KEYWORD_FLOAT'] and r in ['KEYWORD_INT','KEYWORD_FLOAT']:
                 return 'KEYWORD_BOOL'
             return None
-
-        # Logical operators: &&, ||
-        if op in ['AND', 'OR']:
-            if norm_left == 'KEYWORD_BOOL' and norm_right == 'KEYWORD_BOOL':
+        if op in ['EQ','NEQ']:
+            if l==r:
                 return 'KEYWORD_BOOL'
-            else:
-                return None
-
+            if {l,r} <= {'KEYWORD_INT','KEYWORD_FLOAT'}:
+                return 'KEYWORD_BOOL'
+            if 'KEYWORD_NULL' in [l,r]:
+                return 'KEYWORD_BOOL'
+            return None
+        if op in ['AND','OR']:
+            if l=='KEYWORD_BOOL' and r=='KEYWORD_BOOL':
+                return 'KEYWORD_BOOL'
+            return None
         return None
 
 # Usage Example

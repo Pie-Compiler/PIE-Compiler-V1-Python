@@ -152,6 +152,41 @@ class SystemExit(FunctionCall):
     def __init__(self):
         super().__init__('exit', [])
 
+# Array Functions
+class ArrayPush(FunctionCall):
+    def __init__(self, array, value):
+        super().__init__('arr_push', [array, value])
+        self.array = array
+        self.value = value
+
+class ArrayPop(FunctionCall):
+    def __init__(self, array):
+        super().__init__('arr_pop', [array])
+        self.array = array
+
+class ArraySize(FunctionCall):
+    def __init__(self, array):
+        super().__init__('arr_size', [array])
+        self.array = array
+
+class ArrayContains(FunctionCall):
+    def __init__(self, array, value):
+        super().__init__('arr_contains', [array, value])
+        self.array = array
+        self.value = value
+
+class ArrayIndexOf(FunctionCall):
+    def __init__(self, array, value):
+        super().__init__('arr_indexof', [array, value])
+        self.array = array
+        self.value = value
+
+class ArrayAvg(FunctionCall):
+    def __init__(self, array, precision=None):
+        super().__init__('arr_avg', [array, precision])
+        self.array = array
+        self.precision = precision
+
 # TypeSpecifier Node
 class TypeSpecifier(Node):
     def __init__(self, type_name, is_array=False):

@@ -18,6 +18,11 @@ void d_array_int_append(DArrayInt* arr, int value) {
     arr->data[arr->size++] = value;
 }
 
+// Alias for append to match PIE language syntax
+void d_array_int_push(DArrayInt* arr, int value) {
+    d_array_int_append(arr, value);
+}
+
 int d_array_int_get(DArrayInt* arr, int index) {
     if (index >= arr->size) {
         // Error handling? For now, return 0
@@ -103,6 +108,78 @@ double d_array_int_avg(DArrayInt* arr) {
     return (double)sum / arr->size;
 }
 
+// String array functions
+DArrayString* d_array_string_create() {
+    DArrayString* arr = (DArrayString*)malloc(sizeof(DArrayString));
+    arr->data = (char**)malloc(sizeof(char*) * 4); // Initial capacity of 4
+    arr->size = 0;
+    arr->capacity = 4;
+    return arr;
+}
+
+void d_array_string_append(DArrayString* arr, const char* value) {
+    if (arr->size >= arr->capacity) {
+        arr->capacity *= 2;
+        arr->data = (char**)realloc(arr->data, sizeof(char*) * arr->capacity);
+    }
+    // Allocate memory for the string and copy it
+    size_t len = strlen(value) + 1;
+    arr->data[arr->size] = (char*)malloc(len);
+    strcpy(arr->data[arr->size], value);
+    arr->size++;
+}
+
+// Alias for append to match PIE language syntax
+void d_array_string_push(DArrayString* arr, const char* value) {
+    d_array_string_append(arr, value);
+}
+
+char* d_array_string_get(DArrayString* arr, int index) {
+    if (index >= arr->size) {
+        return NULL;
+    }
+    return arr->data[index];
+}
+
+void d_array_string_set(DArrayString* arr, int index, const char* value) {
+    if (index >= arr->size) {
+        if (index >= arr->capacity) {
+            size_t new_capacity = arr->capacity;
+            while (index >= new_capacity) {
+                new_capacity *= 2;
+            }
+            arr->data = (char**)realloc(arr->data, sizeof(char*) * new_capacity);
+            arr->capacity = new_capacity;
+        }
+        for (size_t i = arr->size; i < index; i++) {
+            arr->data[i] = NULL;
+        }
+        arr->size = index + 1;
+    }
+    if (arr->data[index]) {
+        free(arr->data[index]);
+    }
+    size_t len = strlen(value) + 1;
+    arr->data[index] = (char*)malloc(len);
+    strcpy(arr->data[index], value);
+}
+
+int d_array_string_size(DArrayString* arr) {
+    return arr->size;
+}
+
+void d_array_string_free(DArrayString* arr) {
+    if (arr) {
+        for (size_t i = 0; i < arr->size; i++) {
+            if (arr->data[i]) {
+                free(arr->data[i]);
+            }
+        }
+        free(arr->data);
+        free(arr);
+    }
+}
+
 char* d_array_string_pop(DArrayString* arr) {
     if (arr->size == 0) {
         return NULL;
@@ -154,6 +231,11 @@ void d_array_float_append(DArrayFloat* arr, double value) {
         arr->data = (double*)realloc(arr->data, sizeof(double) * arr->capacity);
     }
     arr->data[arr->size++] = value;
+}
+
+// Alias for append to match PIE language syntax
+void d_array_float_push(DArrayFloat* arr, double value) {
+    d_array_float_append(arr, value);
 }
 
 double d_array_float_get(DArrayFloat* arr, int index) {
