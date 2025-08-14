@@ -308,7 +308,8 @@ class LLVMCodeGenerator(Visitor):
                     elif expr_initializer:
                         # Handle expression initializers (like array concatenation)
                         result_array = self.visit(expr_initializer)
-                        self.builder.store(result_array, self.global_vars[name])
+                        if result_array is not None:  # Only store if we have a result
+                            self.builder.store(result_array, self.global_vars[name])
             
             # Process deferred initializers (function call initializers) after arrays are created
             for var_name, initializer_node in self.deferred_initializers:
@@ -1133,3 +1134,9 @@ class LLVMCodeGenerator(Visitor):
         else:
             raise Exception(f"Unsupported array type for contains: {array_type}")
         return self.builder.call(contains_func, [array_val, value_val])
+
+    def visit_initializerlist(self, node):
+        """Handle InitializerList nodes - for empty arrays, just return None"""
+        # For empty arrays, we don't need to do anything special
+        # The array creation is handled in the array declaration logic
+        return None
