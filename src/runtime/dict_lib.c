@@ -159,3 +159,16 @@ DictValue* dict_value_create_null() {
     dv->type = DICT_VALUE_NULL;
     return dv;
 }
+
+// PIE language wrapper functions (as documented)
+DictValue* new_int(int32_t value) {
+    return dict_value_create_int(value);
+}
+
+DictValue* new_float(double value) {
+    return dict_value_create_float(value);
+}
+
+DictValue* new_string(const char* value) {
+    return dict_value_create_string(value);
+}

@@ -3,20 +3,21 @@ source_filename = "<string>"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
+%Dictionary = type { i8**, i32, i32 }
+%DictValue = type { i32, i64 }
 %DArrayInt = type { i32*, i64, i64 }
 %DArrayString = type { i8**, i64, i64 }
 %DArrayFloat = type { double*, i64, i64 }
 %DArrayChar = type { i8*, i64, i64 }
 
-@x = internal global double 0.000000e+00
-@num = internal global i32 0
-@big_num = internal global double 0.000000e+00
-@.str0 = internal constant [4 x i8] c"Foo\00"
-@.str1 = internal constant [55 x i8] c"Enter a number (recommend < 46340 to avoid overflow): \00"
-@.str2 = internal constant [11 x i8] c"Square of \00"
-@.str3 = internal constant [5 x i8] c" is \00"
-@.str4 = internal constant [2 x i8] c"\0A\00"
-@.str5 = internal constant [45 x i8] c"Enter a large number for float calculation: \00"
+@config = internal global %Dictionary* null
+@.str0 = internal constant [10 x i8] c"max_users\00"
+@.str1 = internal constant [8 x i8] c"timeout\00"
+@.str2 = internal constant [5 x i8] c"host\00"
+@.str3 = internal constant [10 x i8] c"localhost\00"
+@.str4 = internal constant [12 x i8] c"Max users: \00"
+@.str5 = internal constant [10 x i8] c"Timeout: \00"
+@.str6 = internal constant [7 x i8] c"Host: \00"
 
 declare void @input_int(i32*)
 
@@ -107,6 +108,36 @@ declare void @file_write(i64, i8*)
 declare i8* @file_read_all(i64)
 
 declare i8* @file_read_line(i64)
+
+declare %Dictionary* @dict_create()
+
+declare void @dict_set(%Dictionary*, i8*, %DictValue*)
+
+declare %DictValue* @dict_get(%Dictionary*, i8*)
+
+declare i32 @dict_get_int(%Dictionary*, i8*)
+
+declare double @dict_get_float(%Dictionary*, i8*)
+
+declare i8* @dict_get_string(%Dictionary*, i8*)
+
+declare void @dict_delete(%Dictionary*, i8*)
+
+declare void @dict_free(%Dictionary*)
+
+declare %DictValue* @dict_value_create_int(i32)
+
+declare %DictValue* @dict_value_create_float(double)
+
+declare %DictValue* @dict_value_create_string(i8*)
+
+declare %DictValue* @dict_value_create_null()
+
+declare %DictValue* @new_int(i32)
+
+declare %DictValue* @new_float(double)
+
+declare %DictValue* @new_string(i8*)
 
 declare void @d_array_int_push(%DArrayInt*, i32)
 
@@ -200,73 +231,52 @@ declare i32 @d_array_char_indexof(%DArrayChar*, i8)
 
 declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
-define i32 @sqr(i32 %y) {
+define void @prepare() {
 entry:
-  %y.1 = alloca i32, align 4
-  store i32 %y, i32* %y.1, align 4
-  %.4 = load i32, i32* %y.1, align 4
-  %.5 = load i32, i32* %y.1, align 4
-  %i_tmp = mul i32 %.4, %.5
-  ret i32 %i_tmp
-}
-
-define double @sqr_float(double %y) {
-entry:
-  %y.1 = alloca double, align 8
-  store double %y, double* %y.1, align 8
-  %.4 = load double, double* %y.1, align 8
-  %.5 = load double, double* %y.1, align 8
-  %f_tmp = fmul double %.4, %.5
-  ret double %f_tmp
+  %.2 = load %Dictionary*, %Dictionary** @config, align 8
+  %.3 = bitcast [10 x i8]* @.str0 to i8*
+  %call_tmp = call %DictValue* @new_int(i32 100)
+  call void @dict_set(%Dictionary* %.2, i8* %.3, %DictValue* %call_tmp)
+  %.4 = load %Dictionary*, %Dictionary** @config, align 8
+  %.5 = bitcast [8 x i8]* @.str1 to i8*
+  %call_tmp.2 = call %DictValue* @new_float(double 3.050000e+01)
+  call void @dict_set(%Dictionary* %.4, i8* %.5, %DictValue* %call_tmp.2)
+  %.6 = load %Dictionary*, %Dictionary** @config, align 8
+  %.7 = bitcast [5 x i8]* @.str2 to i8*
+  %.8 = bitcast [10 x i8]* @.str3 to i8*
+  %call_tmp.4 = call %DictValue* @new_string(i8* %.8)
+  call void @dict_set(%Dictionary* %.6, i8* %.7, %DictValue* %call_tmp.4)
+  %max_users = alloca i32, align 4
+  %.9 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.6 = call i32 @dict_get_int(%Dictionary* %.9, i8* %.3)
+  store i32 %call_tmp.6, i32* %max_users, align 4
+  %timeout = alloca double, align 8
+  %.11 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.7 = call double @dict_get_float(%Dictionary* %.11, i8* %.5)
+  store double %call_tmp.7, double* %timeout, align 8
+  %host = alloca i8*, align 8
+  %.13 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.8 = call i8* @dict_get_string(%Dictionary* %.13, i8* %.7)
+  store i8* %call_tmp.8, i8** %host, align 8
+  %.15 = bitcast [12 x i8]* @.str4 to i8*
+  call void @output_string(i8* %.15)
+  %.17 = load i32, i32* %max_users, align 4
+  call void @output_int(i32 %.17)
+  %.19 = bitcast [10 x i8]* @.str5 to i8*
+  call void @output_string(i8* %.19)
+  %.21 = load double, double* %timeout, align 8
+  call void @output_float(double %.21, i32 2)
+  %.23 = bitcast [7 x i8]* @.str6 to i8*
+  call void @output_string(i8* %.23)
+  %.25 = load i8*, i8** %host, align 8
+  call void @output_string(i8* %.25)
+  ret void
 }
 
 define i32 @main() {
 entry:
-  %.2 = sitofp i32 2 to double
-  %.3 = sitofp i32 3 to double
-  %call_tmp = call double @pie_pow(double %.2, double %.3)
-  store double %call_tmp, double* @x, align 8
-  %.5 = load double, double* @x, align 8
-  call void @output_float(double %.5, i32 2)
-  %.7 = load double, double* @x, align 8
-  %.8 = sitofp i32 5 to double
-  %f_cmp_tmp = fcmp ogt double %.7, %.8
-  %.9 = load double, double* @x, align 8
-  %.10 = sitofp i32 8 to double
-  %f_cmp_tmp.1 = fcmp one double %.9, %.10
-  %and_tmp = and i1 %f_cmp_tmp, %f_cmp_tmp.1
-  br i1 %and_tmp, label %then, label %if_cont
-
-then:                                             ; preds = %entry
-  %.12 = bitcast [4 x i8]* @.str0 to i8*
-  call void @output_string(i8* %.12)
-  br label %if_cont
-
-if_cont:                                          ; preds = %then, %entry
-  %.15 = bitcast [55 x i8]* @.str1 to i8*
-  call void @output_string(i8* %.15)
-  call void @input_int(i32* @num)
-  %.18 = bitcast [11 x i8]* @.str2 to i8*
-  call void @output_string(i8* %.18)
-  %.20 = load i32, i32* @num, align 4
-  call void @output_int(i32 %.20)
-  %.22 = bitcast [5 x i8]* @.str3 to i8*
-  call void @output_string(i8* %.22)
-  %.24 = load i32, i32* @num, align 4
-  %call_tmp.1 = call i32 @sqr(i32 %.24)
-  call void @output_int(i32 %call_tmp.1)
-  %.26 = bitcast [2 x i8]* @.str4 to i8*
-  call void @output_string(i8* %.26)
-  %.28 = bitcast [45 x i8]* @.str5 to i8*
-  call void @output_string(i8* %.28)
-  call void @input_float(double* @big_num)
-  call void @output_string(i8* %.18)
-  %.32 = load double, double* @big_num, align 8
-  call void @output_float(double %.32, i32 1)
-  call void @output_string(i8* %.22)
-  %.35 = load double, double* @big_num, align 8
-  %call_tmp.2 = call double @sqr_float(double %.35)
-  call void @output_float(double %call_tmp.2, i32 1)
-  call void @output_string(i8* %.26)
+  %call_tmp = call %Dictionary* @dict_create()
+  store %Dictionary* %call_tmp, %Dictionary** @config, align 8
+  call void @prepare()
   ret i32 0
 }

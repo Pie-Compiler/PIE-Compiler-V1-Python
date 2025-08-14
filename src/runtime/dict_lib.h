@@ -51,4 +51,9 @@ DictValue* dict_value_create_float(double value);
 DictValue* dict_value_create_string(const char* value);
 DictValue* dict_value_create_null();
 
+// PIE language wrapper functions (as documented)
+DictValue* new_int(int32_t value);
+DictValue* new_float(double value);
+DictValue* new_string(const char* value);
+
 #endif // DICT_LIB_H

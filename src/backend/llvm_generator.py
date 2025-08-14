@@ -182,6 +182,29 @@ class LLVMCodeGenerator(Visitor):
 
         # Dictionary, etc. would be declared here too...
         # (Keeping it concise for this example)
+        
+        # Dictionary functions
+        dict_type = self.dict_type
+        dict_value_type = self.dict_value_type
+        ir.Function(self.module, ir.FunctionType(dict_type, []), name="dict_create")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type, string_type, dict_value_type]), name="dict_set")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [dict_type, string_type]), name="dict_get")
+        ir.Function(self.module, ir.FunctionType(int_type, [dict_type, string_type]), name="dict_get_int")
+        ir.Function(self.module, ir.FunctionType(double_type, [dict_type, string_type]), name="dict_get_float")
+        ir.Function(self.module, ir.FunctionType(string_type, [dict_type, string_type]), name="dict_get_string")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type, string_type]), name="dict_delete")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type]), name="dict_free")
+        
+        # Dictionary value helper functions
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [int_type]), name="dict_value_create_int")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [double_type]), name="dict_value_create_float")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [string_type]), name="dict_value_create_string")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, []), name="dict_value_create_null")
+        
+        # Helper functions for PIE language (matching documentation)
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [int_type]), name="new_int")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [double_type]), name="new_float")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [string_type]), name="new_string")
 
         # Dynamic array functions
         int_array_ptr = self.d_array_int_type
@@ -511,7 +534,7 @@ class LLVMCodeGenerator(Visitor):
         class_name = type(node).__name__
         
         # Check if the node itself is a function call
-        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput', 'FunctionCall']:
+        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput', 'FunctionCall', 'DictionaryLiteral']:
             return True
         
         # Check if it's a BinaryOp that references global variables
@@ -918,7 +941,16 @@ class LLVMCodeGenerator(Visitor):
         if func is None:
             raise Exception(f"Unknown function referenced: {node.name} (mapped to {actual_name})")
 
-        args = [self._load_if_pointer(self.visit(arg)) for arg in node.args]
+        args = []
+        for arg in node.args:
+            arg_val = self.visit(arg)
+            # Only load from pointer if it's not a return value from functions that should return pointers
+            # Functions like new_int, new_float, new_string, dict_create should return pointers
+            if isinstance(arg, FunctionCall) and arg.name in ['new_int', 'new_float', 'new_string', 'dict_create', 'dict_get']:
+                # These functions return pointers that should not be dereferenced
+                args.append(arg_val)
+            else:
+                args.append(self._load_if_pointer(arg_val))
 
         new_args = []
         for i, arg in enumerate(args):
@@ -1268,3 +1300,51 @@ class LLVMCodeGenerator(Visitor):
         # For empty arrays, we don't need to do anything special
         # The array creation is handled in the array declaration logic
         return None
+
+    def visit_dictionaryliteral(self, node):
+        """Handle dictionary literal: {"key1": value1, "key2": value2}"""
+        # Create a new dictionary
+        dict_create_func = self.module.get_global("dict_create")
+        dict_ptr = self.builder.call(dict_create_func, [])
+        
+        # Add each key-value pair
+        dict_set_func = self.module.get_global("dict_set")
+        
+        for key_expr, value_expr in node.pairs:
+            # Evaluate the key (must be a string)
+            key_val = self.visit(key_expr)
+            # Don't load string pointers - they should remain as pointers
+            
+            # Evaluate the value
+            value_val = self.visit(value_expr)
+            
+            # Create a DictValue based on the value type
+            if value_val.type == ir.IntType(32):
+                # Integer value
+                new_int_func = self.module.get_global("new_int")
+                dict_value = self.builder.call(new_int_func, [value_val])
+            elif value_val.type == ir.DoubleType():
+                # Float value
+                new_float_func = self.module.get_global("new_float") 
+                dict_value = self.builder.call(new_float_func, [value_val])
+            elif value_val.type == ir.IntType(8).as_pointer():
+                # String value
+                new_string_func = self.module.get_global("new_string")
+                dict_value = self.builder.call(new_string_func, [value_val])
+            elif isinstance(value_val.type, ir.PointerType) and isinstance(value_val.type.pointee, ir.IntType) and value_val.type.pointee.width == 32:
+                # Integer pointer - load it first
+                loaded_val = self.builder.load(value_val)
+                new_int_func = self.module.get_global("new_int")
+                dict_value = self.builder.call(new_int_func, [loaded_val])
+            elif isinstance(value_val.type, ir.PointerType) and isinstance(value_val.type.pointee, ir.DoubleType):
+                # Float pointer - load it first
+                loaded_val = self.builder.load(value_val)
+                new_float_func = self.module.get_global("new_float") 
+                dict_value = self.builder.call(new_float_func, [loaded_val])
+            else:
+                raise Exception(f"Unsupported dictionary value type: {value_val.type}")
+            
+            # Set the key-value pair in the dictionary
+            self.builder.call(dict_set_func, [dict_ptr, key_val, dict_value])
+        
+        return dict_ptr
