@@ -1,0 +1,91 @@
+// Test PIE file for arrays
+
+// Static array
+int static_num[] = [1, 2, 3];
+output(static_num[1], int); // Expected: 2
+
+// Dynamic arrays
+string names[] = ["Alice", "Bob", "Charlie"];
+int numbers[] = [1, 2, 3];
+float avgs[] = [4.2, 2.4];
+char grades[] = ['A', 'B', 'C', 'D'];
+
+// arr_push
+arr_push(names, "David");
+arr_push(numbers, 4);
+arr_push(avgs, 3.3);
+arr_push(grades, 'E');
+
+// arr_size
+output(arr_size(names), int); // Expected: 4
+output(arr_size(numbers), int); // Expected: 4
+output(arr_size(avgs), int); // Expected: 4
+output(arr_size(grades), int); // Expected: 4
+
+// arr_pop
+string popped_name = arr_pop(names);
+output(popped_name, string); // Expected: David
+output(arr_size(names), int); // Expected: 3
+
+int popped_num = arr_pop(numbers);
+output(popped_num, int); // Expected: 4
+output(arr_size(numbers), int); // Expected: 3
+
+float popped_avg = arr_pop(avgs);
+output(popped_avg, float, 1); // Expected: 3.3
+output(arr_size(avgs), int); // Expected: 3
+
+char popped_grade = arr_pop(grades);
+output(popped_grade, char); // Expected: E
+output(arr_size(grades), int); // Expected: 3
+
+// arr_contains
+output(arr_contains(names, "Bob"), bool); // Expected: 1 (true)
+output(arr_contains(names, "Eve"), bool); // Expected: 0 (false)
+output(arr_contains(numbers, 3), bool); // Expected: 1 (true)
+output(arr_contains(numbers, 99), bool); // Expected: 0 (false)
+output(arr_contains(avgs, 2.4), bool); // Expected: 1 (true)
+output(arr_contains(avgs, 9.9), bool); // Expected: 0 (false)
+output(arr_contains(grades, 'C'), bool); // Expected: 1 (true)
+output(arr_contains(grades, 'F'), bool); // Expected: 0 (false)
+
+
+// arr_indexof
+output(arr_indexof(names, "Charlie"), int); // Expected: 2
+output(arr_indexof(names, "Eve"), int); // Expected: -1
+output(arr_indexof(numbers, 1), int); // Expected: 0
+output(arr_indexof(numbers, 99), int); // Expected: -1
+output(arr_indexof(avgs, 4.2), int); // Expected: 0
+output(arr_indexof(avgs, 9.9), int); // Expected: -1
+output(arr_indexof(grades, 'B'), int); // Expected: 1
+output(arr_indexof(grades, 'F'), int); // Expected: -1
+
+
+// Array concatenation
+int arr1[] = [10, 20];
+int arr2[] = [30, 40];
+int arr3[] = arr1 + arr2;
+output(arr_size(arr3), int); // Expected: 4
+output(arr3[0], int); // Expected: 10
+output(arr3[3], int); // Expected: 40
+
+// arr_avg
+int avg_nums[] = [10, 20, 30];
+output(arr_avg(avg_nums, 2), float); // Expected: 20.00
+float avg_floats[] = [10.5, 20.5, 30.5];
+output(arr_avg(avg_floats, 2), float); // Expected: 20.50
+
+// Out-of-bounds assignment
+int oob[];
+oob[2] = 5;
+output(oob[2], int); // Expected: 5
+output(oob[0], int); // Expected: 0 (null)
+output(arr_size(oob), int); // Expected: 3
+
+// Printing arrays
+output(names, array);
+output(numbers, array);
+output(avgs, array);
+output(grades, array);
+output(arr3, array);
+output(oob, array);
