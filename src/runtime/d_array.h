@@ -3,83 +3,42 @@
 
 #include <stddef.h>
 
+// Generic Dynamic Array Structure
 typedef struct {
-    int* data;
-    size_t size;
-    size_t capacity;
-} DArrayInt;
+    void* data;          // Pointer to the data
+    size_t size;         // Current number of elements
+    size_t capacity;     // Total capacity of the array
+    size_t element_size; // Size of each element
+} DArray;
 
-DArrayInt* d_array_int_create();
-void d_array_int_append(DArrayInt* arr, int value);
-void d_array_int_push(DArrayInt* arr, int value);  // Alias for append
-int d_array_int_get(DArrayInt* arr, int index);
-void d_array_int_set(DArrayInt* arr, int index, int value);
-int d_array_int_size(DArrayInt* arr);
-void d_array_int_free(DArrayInt* arr);
-int d_array_int_pop(DArrayInt* arr);
-int d_array_int_contains(DArrayInt* arr, int value);
-int d_array_int_indexof(DArrayInt* arr, int value);
-DArrayInt* d_array_int_concat(DArrayInt* arr1, DArrayInt* arr2);
-double d_array_int_avg(DArrayInt* arr);
+// Generic DArray Functions
+DArray* d_array_create(size_t element_size, size_t initial_capacity);
+void d_array_free(DArray* arr);
 
+void d_array_push(DArray* arr, const void* value);
+void d_array_pop(DArray* arr, void* out_value);
 
-typedef struct {
-    char** data;
-    size_t size;
-    size_t capacity;
-} DArrayString;
+void d_array_get(DArray* arr, int index, void* out_value);
+void d_array_set(DArray* arr, int index, const void* value);
 
-DArrayString* d_array_string_create();
-void d_array_string_append(DArrayString* arr, const char* value);
-void d_array_string_push(DArrayString* arr, const char* value);  // Alias for append
-char* d_array_string_get(DArrayString* arr, int index);
-void d_array_string_set(DArrayString* arr, int index, const char* value);
-int d_array_string_size(DArrayString* arr);
-void d_array_string_free(DArrayString* arr);
-char* d_array_string_pop(DArrayString* arr);
-int d_array_string_contains(DArrayString* arr, const char* value);
-int d_array_string_indexof(DArrayString* arr, const char* value);
-DArrayString* d_array_string_concat(DArrayString* arr1, DArrayString* arr2);
+int d_array_size(DArray* arr);
 
-typedef struct {
-    char* data;
-    size_t size;
-    size_t capacity;
-} DArrayChar;
+// Type-specific comparison function pointer
+typedef int (*compare_func)(const void*, const void*);
 
-DArrayChar* d_array_char_create();
-void d_array_char_append(DArrayChar* arr, char value);
-char d_array_char_get(DArrayChar* arr, int index);
-void d_array_char_set(DArrayChar* arr, int index, char value);
-int d_array_char_size(DArrayChar* arr);
-void d_array_char_free(DArrayChar* arr);
-char d_array_char_pop(DArrayChar* arr);
-int d_array_char_contains(DArrayChar* arr, char value);
-int d_array_char_indexof(DArrayChar* arr, char value);
-DArrayChar* d_array_char_concat(DArrayChar* arr1, DArrayChar* arr2);
+int d_array_contains(DArray* arr, const void* value, compare_func cmp);
+int d_array_indexof(DArray* arr, const void* value, compare_func cmp);
 
-typedef struct {
-    double* data;
-    size_t size;
-    size_t capacity;
-} DArrayFloat;
+DArray* d_array_concat(const DArray* arr1, const DArray* arr2);
 
-DArrayFloat* d_array_float_create();
-void d_array_float_append(DArrayFloat* arr, double value);
-void d_array_float_push(DArrayFloat* arr, double value);  // Alias for append
-double d_array_float_get(DArrayFloat* arr, int index);
-void d_array_float_set(DArrayFloat* arr, int index, double value);
-int d_array_float_size(DArrayFloat* arr);
-void d_array_float_free(DArrayFloat* arr);
-double d_array_float_pop(DArrayFloat* arr);
-int d_array_float_contains(DArrayFloat* arr, double value);
-int d_array_float_indexof(DArrayFloat* arr, double value);
-DArrayFloat* d_array_float_concat(DArrayFloat* arr1, DArrayFloat* arr2);
-double d_array_float_avg(DArrayFloat* arr);
+// Type-specific helper functions (to be called from the compiler)
+double d_array_avg_int(DArray* arr);
+double d_array_avg_float(DArray* arr);
 
-void print_int_array(DArrayInt* arr);
-void print_string_array(DArrayString* arr);
-void print_float_array(DArrayFloat* arr);
-void print_char_array(DArrayChar* arr);
+// Functions for printing (useful for debugging)
+void print_int_array(DArray* arr);
+void print_string_array(DArray* arr);
+void print_float_array(DArray* arr);
+void print_char_array(DArray* arr);
 
 #endif // D_ARRAY_H

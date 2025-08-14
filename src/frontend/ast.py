@@ -27,10 +27,9 @@ class Declaration(Statement):
         self.initializer = initializer
 
 class ArrayDeclaration(Declaration):
-    def __init__(self, var_type, identifier, size=None, initializer=None, is_dynamic=False):
+    def __init__(self, var_type, identifier, size=None, initializer=None):
         super().__init__(var_type, identifier, initializer)
         self.size = size
-        self.is_dynamic = is_dynamic
 
 class Assignment(Statement):
     def __init__(self, lhs, rhs):
