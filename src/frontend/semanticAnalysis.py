@@ -59,18 +59,27 @@ class SemanticAnalyzer(Visitor):
             else:
                 self.add_error("Array size must be a constant integer.")
         if node.initializer:
-            if not isinstance(node.initializer, InitializerList):
-                self.add_error(f"Array '{node.identifier}' must be initialized with an initializer list.")
-                return None
-            init_list_exprs = node.initializer.values
-            if size is None and not node.is_dynamic:
-                size = len(init_list_exprs)
-            if size is not None and not node.is_dynamic and size < len(init_list_exprs):
-                self.add_error(f"Too many initializers for array '{node.identifier}'")
-            for expr in init_list_exprs:
-                expr_type = self.visit(expr)
-                if not self.type_checker.is_compatible(element_type, expr_type):
-                    self.add_error(f"Type mismatch in initializer for array '{node.identifier}'. Expected {element_type}, got {expr_type}")
+            if isinstance(node.initializer, InitializerList):
+                # Handle initializer list
+                init_list_exprs = node.initializer.values
+                if size is None and not node.is_dynamic:
+                    size = len(init_list_exprs)
+                if size is not None and not node.is_dynamic and size < len(init_list_exprs):
+                    self.add_error(f"Too many initializers for array '{node.identifier}'")
+                for expr in init_list_exprs:
+                    expr_type = self.visit(expr)
+                    if not self.type_checker.is_compatible(element_type, expr_type):
+                        self.add_error(f"Type mismatch in initializer for array '{node.identifier}'. Expected {element_type}, got {expr_type}")
+            else:
+                # Handle expression initializer (like array concatenation)
+                expr_type = self.visit(node.initializer)
+                if expr_type == 'array':
+                    # For array concatenation, check that the element types match
+                    if hasattr(node.initializer, 'element_type') and node.initializer.element_type != element_type:
+                        self.add_error(f"Type mismatch in array initialization: Cannot assign array of {node.initializer.element_type} to array of {element_type}")
+                else:
+                    self.add_error(f"Invalid initializer for array '{node.identifier}'. Expected array or initializer list, got {expr_type}")
+                    return None
         ti = TypeInfo(base=element_type, is_dynamic=node.is_dynamic, is_array=not node.is_dynamic, size=size)
         self.symbol_table.add_symbol(node.identifier, ti, is_initialized=True)
         return None
@@ -258,12 +267,14 @@ class SemanticAnalyzer(Visitor):
             if isinstance(node.left, Identifier) and isinstance(node.right, Identifier):
                 left_symbol = self.symbol_table.lookup_symbol(node.left.name)
                 right_symbol = self.symbol_table.lookup_symbol(node.right.name)
-                if left_symbol.get('element_type') == right_symbol.get('element_type'):
+                left_element_type = left_symbol.get('element_type')
+                right_element_type = right_symbol.get('element_type')
+                if left_element_type == right_element_type:
                     node.result_type = 'array'
-                    node.element_type = left_symbol.get('element_type')
+                    node.element_type = left_element_type
                     return 'array'
                 else:
-                    self.add_error("Cannot concatenate arrays of different element types.")
+                    self.add_error(f"Cannot concatenate arrays of different element types: {left_element_type} vs {right_element_type}")
                     return None
             else:
                 self.add_error("Array concatenation is only supported between array variables.")
@@ -314,6 +325,11 @@ class SemanticAnalyzer(Visitor):
     def visit_identifier(self, node):
         symbol = self.symbol_table.lookup_symbol(node.name)
         if symbol:
+            # Check if this is an array by looking at typeinfo first
+            type_info = symbol.get('typeinfo')
+            if type_info and type_info.kind == 'array':
+                return 'array'
+            # Fall back to regular type checking
             return self.type_checker._normalize_type(symbol.get('type'))
         else:
             self.add_error(f"Undefined variable: '{node.name}'")

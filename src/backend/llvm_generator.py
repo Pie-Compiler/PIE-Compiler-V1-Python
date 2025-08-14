@@ -16,6 +16,7 @@ class LLVMCodeGenerator(Visitor):
         self.global_strings = {}
         self.global_vars = {}
         self.global_dynamic_arrays = []  # (name, element_type_str, initializer_nodes, is_dynamic)
+        self.deferred_initializers = []  # (var_name, initializer_node) for function call initializers
         self._define_structs()
         self._declare_runtime_functions()
 
@@ -269,24 +270,22 @@ class LLVMCodeGenerator(Visitor):
             self.builder = ir.IRBuilder(entry_block)
             self.current_function = main_func
             
-            # First, handle global variable initializations that involve function calls
-            for stmt in ast.statements:
-                if isinstance(stmt, Declaration) and not isinstance(stmt, ArrayDeclaration) and stmt.initializer:
-                    # Check if initializer is a function call
-                    if isinstance(stmt.initializer, FunctionCall):  # FunctionCall
-                        var_name = stmt.identifier
-                        if var_name in self.global_vars:
-                            # Evaluate the function call and store in the global variable
-                            init_val = self.visit(stmt.initializer)
-                            self.builder.store(init_val, self.global_vars[var_name])
             # Initialize global dynamic arrays (create + optional initializer append)
-            for name, element_type_str, init_nodes, is_dynamic in self.global_dynamic_arrays:
+            for array_info in self.global_dynamic_arrays:
+                # Handle both old format (4 items) and new format (5 items)
+                if len(array_info) == 4:
+                    name, element_type_str, init_nodes, is_dynamic = array_info
+                    expr_initializer = None
+                else:
+                    name, element_type_str, init_nodes, is_dynamic, expr_initializer = array_info
+                    
                 if self.debug:
                     print(f"DEBUG: Processing global array '{name}' with element_type_str='{element_type_str}'")
                 if is_dynamic:
                     create_func = self.module.get_global(f"d_array_{element_type_str}_create")
                     new_array_ptr = self.builder.call(create_func, [])
                     self.builder.store(new_array_ptr, self.global_vars[name])
+                    
                     if init_nodes:
                         append_func = self.module.get_global(f"d_array_{element_type_str}_append")
                         array_struct_ptr = new_array_ptr
@@ -306,6 +305,17 @@ class LLVMCodeGenerator(Visitor):
                             if self.debug:
                                 print(f"DEBUG: About to call append with val: {val}, type: {val.type}, expected: {expected_elem_type}")
                             self.builder.call(append_func, [array_struct_ptr, val])
+                    elif expr_initializer:
+                        # Handle expression initializers (like array concatenation)
+                        result_array = self.visit(expr_initializer)
+                        self.builder.store(result_array, self.global_vars[name])
+            
+            # Process deferred initializers (function call initializers) after arrays are created
+            for var_name, initializer_node in self.deferred_initializers:
+                if var_name in self.global_vars:
+                    init_val = self.visit(initializer_node)
+                    self.builder.store(init_val, self.global_vars[var_name])
+                        
             # Then visit all non-declaration, non-function-definition statements
             for stmt in ast.statements:
                 if not isinstance(stmt, (Declaration, FunctionDefinition)):
@@ -398,12 +408,12 @@ class LLVMCodeGenerator(Visitor):
 
         if self.builder is None:
             # Global variable declaration
-            if node.initializer:
-                # For global variables, we need to evaluate the initializer to get a constant
+            if node.initializer and not self._is_function_call_initializer(node.initializer):
+                # For global variables with constant initializers, evaluate to get a constant
                 init_val = self._evaluate_constant_expression(node.initializer)
                 initializer = init_val
             else:
-                # Default initialization
+                # Default initialization (used for function call initializers too)
                 if isinstance(var_type, ir.IntType):
                     initializer = ir.Constant(var_type, 0)
                 elif isinstance(var_type, ir.DoubleType):
@@ -421,6 +431,10 @@ class LLVMCodeGenerator(Visitor):
             # Store reference for later use
             self.global_vars[var_name] = global_var
             self.llvm_var_table[var_name] = global_var
+            
+            # If this has a function call initializer, defer it for later processing
+            if node.initializer and self._is_function_call_initializer(node.initializer):
+                self.deferred_initializers.append((node.identifier, node.initializer))
         else:
             # Local variable declaration (inside a function)
             ptr = self.builder.alloca(var_type, name=var_name)
@@ -462,10 +476,27 @@ class LLVMCodeGenerator(Visitor):
                         return ir.Constant(ir.DoubleType(), float(val))
                 except ValueError:
                     pass
+                # Handle char literals like 'A', 'B', etc.
+                if val.startswith("'") and val.endswith("'") and len(val) == 3:
+                    ch = val[1]  # Extract the character
+                    return ir.Constant(ir.IntType(8), ord(ch))
         
         # For function calls and other expressions, we'll need more sophisticated handling
         # For now, return a default value - use int32 as it's the most common
         return ir.Constant(ir.IntType(32), 0)
+
+    def _is_function_call_initializer(self, node):
+        """Check if an initializer node contains a function call."""
+        # Check if the node's class name indicates it's a function call
+        class_name = type(node).__name__
+        
+        # Check if the node itself is a function call
+        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput']:
+            return True
+        
+        # For more complex expressions, we might need to check recursively
+        # For now, this covers our main use cases
+        return False
 
     def visit_arraydeclaration(self, node):
         var_name = node.identifier
@@ -484,26 +515,46 @@ class LLVMCodeGenerator(Visitor):
                 global_var.linkage = 'internal'
                 self.global_vars[var_name] = global_var
                 self.llvm_var_table[var_name] = global_var
-                init_nodes = node.initializer.values if node.initializer else []
-                self.global_dynamic_arrays.append((var_name, base, init_nodes, True))
+                
+                # Handle different types of initializers
+                init_nodes = []
+                if node.initializer:
+                    if hasattr(node.initializer, 'values'):  # InitializerList
+                        init_nodes = node.initializer.values
+                    else:  # Expression (like BinaryOp for concatenation)
+                        # For global arrays with expression initializers, we'll handle it in main
+                        init_nodes = []
+                self.global_dynamic_arrays.append((var_name, base, init_nodes, True, node.initializer))
             else:
                 ptr = self.builder.alloca(array_ptr_type, name=var_name)
                 self.llvm_var_table[var_name] = ptr
-                create_func = self._array_runtime_func(base, 'create')
-                new_array_ptr = self.builder.call(create_func, [])
-                self.builder.store(new_array_ptr, ptr)
+                
                 if node.initializer:
-                    append_func = self._array_runtime_func(base, 'append')
-                    array_struct_ptr = new_array_ptr
-                    expected_elem_type = append_func.function_type.args[1]
-                    for val_node in node.initializer.values:
-                        raw_val = self.visit(val_node)
-                        val = self._coerce_char_array_element(expected_elem_type, raw_val)
-                        if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
-                            val = self.builder.sitofp(val, expected_elem_type)
-                        if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
-                            val = self.builder.load(val)
-                        self.builder.call(append_func, [array_struct_ptr, val])
+                    if hasattr(node.initializer, 'values'):  # InitializerList
+                        create_func = self._array_runtime_func(base, 'create')
+                        new_array_ptr = self.builder.call(create_func, [])
+                        self.builder.store(new_array_ptr, ptr)
+                        
+                        append_func = self._array_runtime_func(base, 'append')
+                        array_struct_ptr = new_array_ptr
+                        expected_elem_type = append_func.function_type.args[1]
+                        for val_node in node.initializer.values:
+                            raw_val = self.visit(val_node)
+                            val = self._coerce_char_array_element(expected_elem_type, raw_val)
+                            if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
+                                val = self.builder.sitofp(val, expected_elem_type)
+                            if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
+                                val = self.builder.load(val)
+                            self.builder.call(append_func, [array_struct_ptr, val])
+                    else:  # Expression (like BinaryOp for concatenation)
+                        # Visit the expression and store the result
+                        result_array = self.visit(node.initializer)
+                        self.builder.store(result_array, ptr)
+                else:
+                    # Empty array
+                    create_func = self._array_runtime_func(base, 'create')
+                    new_array_ptr = self.builder.call(create_func, [])
+                    self.builder.store(new_array_ptr, ptr)
         else:
             size = int(node.size.value) if node.size else (len(node.initializer.values) if node.initializer else 0)
             array_type = ir.ArrayType(element_type_ir, size)
@@ -605,11 +656,14 @@ class LLVMCodeGenerator(Visitor):
                 func_name = f"d_array_{element_type}_concat"
                 concat_func = self.module.get_global(func_name)
 
-                # We need the pointers to the array structs, not the loaded values
-                lhs_ptr = self.builder.load(self.visit(node.left))
-                rhs_ptr = self.builder.load(self.visit(node.right))
+                # For array concatenation, we need the array struct pointers, not the loaded values
+                # Visit the identifiers to get the pointers, then load to get the array structs
+                lhs_var_ptr = self.visit(node.left)  # This gives us the variable pointer
+                rhs_var_ptr = self.visit(node.right)  # This gives us the variable pointer
+                lhs_array_ptr = self.builder.load(lhs_var_ptr)  # Load to get the array struct pointer
+                rhs_array_ptr = self.builder.load(rhs_var_ptr)  # Load to get the array struct pointer
 
-                return self.builder.call(concat_func, [lhs_ptr, rhs_ptr], 'concat_array_tmp')
+                return self.builder.call(concat_func, [lhs_array_ptr, rhs_array_ptr], 'concat_array_tmp')
 
         # Type promotion for float operations
         if isinstance(lhs.type, ir.DoubleType) or isinstance(rhs.type, ir.DoubleType):
@@ -809,6 +863,11 @@ class LLVMCodeGenerator(Visitor):
 
     def visit_ifstatement(self, node):
         cond_val = self._load_if_pointer(self.visit(node.condition))
+        
+        # Convert integer conditions to boolean (i1) type
+        if cond_val.type == ir.IntType(32):  # i32
+            zero = ir.Constant(ir.IntType(32), 0)
+            cond_val = self.builder.icmp_signed('!=', cond_val, zero, 'bool_cond')
 
         # Create basic blocks
         then_block = self.current_function.append_basic_block(name='then')
@@ -975,8 +1034,14 @@ class LLVMCodeGenerator(Visitor):
             value_val = self._load_if_pointer(raw_value_val)
         elif array_type == self.d_array_string_type:
             push_func = self.module.get_global("d_array_string_push")
-            # String arrays need the string pointer, not dereferenced
-            value_val = raw_value_val
+            # For string variables, we need to load the string pointer
+            # For string literals, we already have the pointer
+            if isinstance(raw_value_val.type, ir.PointerType) and raw_value_val.type.pointee == ir.IntType(8).as_pointer():
+                # This is a string variable (i8**), load it to get the string pointer (i8*)
+                value_val = self.builder.load(raw_value_val)
+            else:
+                # This is already a string pointer (i8*) from a literal
+                value_val = raw_value_val
         elif array_type == self.d_array_float_type:
             push_func = self.module.get_global("d_array_float_push")
             value_val = self._load_if_pointer(raw_value_val)
@@ -1020,3 +1085,51 @@ class LLVMCodeGenerator(Visitor):
         else:
             raise Exception(f"Unsupported array type for size: {array_type}")
         return self.builder.call(size_func, [array_val])
+
+    def visit_arrayavg(self, node):
+        array_ptr = self.visit(node.array)
+        array_val = self.builder.load(array_ptr)
+        array_type = array_val.type
+        if array_type == self.d_array_int_type:
+            avg_func = self.module.get_global("d_array_int_avg")
+        elif array_type == self.d_array_float_type:
+            avg_func = self.module.get_global("d_array_float_avg")
+        else:
+            raise Exception(f"Unsupported array type for avg: {array_type}")
+        return self.builder.call(avg_func, [array_val])
+
+    def visit_arrayindexof(self, node):
+        array_ptr = self.visit(node.array)
+        array_val = self.builder.load(array_ptr)
+        array_type = array_val.type
+        value_val = self._load_if_pointer(self.visit(node.value))
+        
+        if array_type == self.d_array_int_type:
+            indexof_func = self.module.get_global("d_array_int_indexof")
+        elif array_type == self.d_array_string_type:
+            indexof_func = self.module.get_global("d_array_string_indexof")
+        elif array_type == self.d_array_float_type:
+            indexof_func = self.module.get_global("d_array_float_indexof")
+        elif array_type == self.d_array_char_type:
+            indexof_func = self.module.get_global("d_array_char_indexof")
+        else:
+            raise Exception(f"Unsupported array type for indexof: {array_type}")
+        return self.builder.call(indexof_func, [array_val, value_val])
+
+    def visit_arraycontains(self, node):
+        array_ptr = self.visit(node.array)
+        array_val = self.builder.load(array_ptr)
+        array_type = array_val.type
+        value_val = self._load_if_pointer(self.visit(node.value))
+        
+        if array_type == self.d_array_int_type:
+            contains_func = self.module.get_global("d_array_int_contains")
+        elif array_type == self.d_array_string_type:
+            contains_func = self.module.get_global("d_array_string_contains")
+        elif array_type == self.d_array_float_type:
+            contains_func = self.module.get_global("d_array_float_contains")
+        elif array_type == self.d_array_char_type:
+            contains_func = self.module.get_global("d_array_char_contains")
+        else:
+            raise Exception(f"Unsupported array type for contains: {array_type}")
+        return self.builder.call(contains_func, [array_val, value_val])

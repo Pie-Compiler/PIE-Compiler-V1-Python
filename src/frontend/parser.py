@@ -329,6 +329,7 @@ class Parser:
                                 | type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON'''
         # Simple variable decl
         if len(p) == 4:
@@ -342,7 +343,7 @@ class Parser:
         # Static array with size and initializer: type id [ expr ] = init ;
         elif len(p) == 9 and p[3] == '[' and p[5] == ']' and p[6] == '=':
             p[0] = ArrayDeclaration(p[1], p[2], size=p[4], initializer=p[7], is_dynamic=False)
-        # Dynamic array with initializer: type id [ ] = init ;
+        # Dynamic array with initializer: type id [ ] = init ; (can be initializer_list or expression)
         elif len(p) == 8 and p[3] == '[' and p[4] == ']' and p[5] == '=':
             p[0] = ArrayDeclaration(p[1], p[2], initializer=p[6], is_dynamic=True)
         # Empty dynamic array: type id [ ] ;

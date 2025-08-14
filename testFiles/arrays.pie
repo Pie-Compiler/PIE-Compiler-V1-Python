@@ -1,7 +1,7 @@
 // Test PIE file for arrays
 
 // Static array
-int static_num[3] = [1, 2, 3];
+int static_num[] = [1, 2, 3];
 output(static_num[1], int); // Expected: 2
 
 // Dynamic arrays
