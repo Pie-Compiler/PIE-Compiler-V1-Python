@@ -226,7 +226,7 @@ class SemanticAnalyzer(Visitor):
             if i < len(param_types):
                 param_type = param_types[i]
                 if not self.type_checker.is_compatible(param_type, arg_type):
-                    is_math_func = node.name in ["sqrt", "pow", "sin", "cos"]
+                    is_math_func = node.name in ["sqrt", "pow", "sin", "cos", "tan", "asin", "acos", "atan", "log", "log10", "exp", "floor", "ceil", "round", "abs", "min", "max"]
                     if not (is_math_func and param_type == 'float' and arg_type == 'KEYWORD_INT'):
                         self.add_error(f"Type mismatch for argument {i+1} of function '{node.name}'. Expected {param_type}, got {arg_type}.")
 

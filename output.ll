@@ -8,15 +8,7 @@ target triple = "x86_64-unknown-linux-gnu"
 %DArrayFloat = type { double*, i64, i64 }
 %DArrayChar = type { i8*, i64, i64 }
 
-@state = internal global i32 0
-@numbers = internal global %DArrayInt* null
-@num = internal global i32 0
-@sum = internal global i32 0
-@arrsize = internal global i32 0
-@average = internal global double 0.000000e+00
-@.str0 = internal constant [22 x i8] c"Please enter a number\00"
-@.str1 = internal constant [25 x i8] c"Continue? \0A 0:Yes \0A 1:No\00"
-@.str2 = internal constant [27 x i8] c"The sum of the numbers is \00"
+@x = internal global double 0.000000e+00
 
 declare void @input_int(i32*)
 
@@ -44,11 +36,49 @@ declare double @pie_sin(double)
 
 declare double @pie_cos(double)
 
+declare double @pie_tan(double)
+
+declare double @pie_asin(double)
+
+declare double @pie_acos(double)
+
+declare double @pie_atan(double)
+
+declare double @pie_log(double)
+
+declare double @pie_log10(double)
+
+declare double @pie_exp(double)
+
 declare double @pie_floor(double)
 
 declare double @pie_ceil(double)
 
+declare double @pie_round(double)
+
+declare double @pie_abs(double)
+
+declare i32 @pie_abs_int(i32)
+
+declare double @pie_min(double, double)
+
+declare double @pie_max(double, double)
+
+declare i32 @pie_min_int(i32, i32)
+
+declare i32 @pie_max_int(i32, i32)
+
 declare i32 @pie_rand()
+
+declare void @pie_srand(i32)
+
+declare i32 @pie_rand_range(i32, i32)
+
+declare double @pie_pi()
+
+declare double @pie_e()
+
+declare i32 @pie_time()
 
 declare i8* @concat_strings(i8*, i8*)
 
@@ -164,67 +194,11 @@ declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
 define i32 @main() {
 entry:
-  %.2 = call %DArrayInt* @d_array_int_create()
-  store %DArrayInt* %.2, %DArrayInt** @numbers, align 8
-  br label %loop_header
-
-loop_header:                                      ; preds = %loop_body, %entry
-  %.5 = load i32, i32* @state, align 4
-  %i_cmp_tmp = icmp ne i32 %.5, 1
-  br i1 %i_cmp_tmp, label %loop_body, label %loop_exit
-
-loop_body:                                        ; preds = %loop_header
-  %.7 = bitcast [22 x i8]* @.str0 to i8*
-  call void @output_string(i8* %.7)
-  call void @input_int(i32* @num)
-  %.10 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.11 = load i32, i32* @num, align 4
-  call void @d_array_int_push(%DArrayInt* %.10, i32 %.11)
-  %.13 = bitcast [25 x i8]* @.str1 to i8*
-  call void @output_string(i8* %.13)
-  call void @input_int(i32* @state)
-  br label %loop_header
-
-loop_exit:                                        ; preds = %loop_header
-  %.17 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.18 = call i32 @d_array_int_size(%DArrayInt* %.17)
-  store i32 %.18, i32* @arrsize, align 4
-  %i = alloca i32, align 4
-  store i32 0, i32* %i, align 4
-  br label %for_header
-
-for_header:                                       ; preds = %for_update, %loop_exit
-  %.22 = load i32, i32* %i, align 4
-  %.23 = load i32, i32* @arrsize, align 4
-  %i_cmp_tmp.1 = icmp slt i32 %.22, %.23
-  br i1 %i_cmp_tmp.1, label %for_body, label %for_exit
-
-for_body:                                         ; preds = %for_header
-  %.25 = load i32, i32* @sum, align 4
-  %.26 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.27 = load i32, i32* %i, align 4
-  %dyn_idx_tmp = call i32 @d_array_int_get(%DArrayInt* %.26, i32 %.27)
-  %i_tmp = add i32 %.25, %dyn_idx_tmp
-  store i32 %i_tmp, i32* @sum, align 4
-  br label %for_update
-
-for_update:                                       ; preds = %for_body
-  %.30 = load i32, i32* %i, align 4
-  %i_tmp.1 = add i32 %.30, 1
-  store i32 %i_tmp.1, i32* %i, align 4
-  br label %for_header
-
-for_exit:                                         ; preds = %for_header
-  %.33 = bitcast [27 x i8]* @.str2 to i8*
-  call void @output_string(i8* %.33)
-  %.35 = load i32, i32* @sum, align 4
-  call void @output_int(i32 %.35)
-  %.37 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  call void @print_int_array(%DArrayInt* %.37)
-  %.39 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.40 = call double @d_array_int_avg(%DArrayInt* %.39)
-  store double %.40, double* @average, align 8
-  %.42 = load double, double* @average, align 8
-  call void @output_float(double %.42, i32 2)
+  %.2 = sitofp i32 2 to double
+  %.3 = sitofp i32 3 to double
+  %call_tmp = call double @pie_pow(double %.2, double %.3)
+  store double %call_tmp, double* @x, align 8
+  %.5 = load double, double* @x, align 8
+  call void @output_float(double %.5, i32 2)
   ret i32 0
 }

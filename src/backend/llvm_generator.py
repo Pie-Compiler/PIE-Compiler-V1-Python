@@ -138,9 +138,28 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_pow")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sin")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_cos")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_tan")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_asin")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_acos")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_atan")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_log")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_log10")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_exp")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_floor")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_ceil")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_round")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_abs")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type]), name="pie_abs_int")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_min")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_max")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type, int_type]), name="pie_min_int")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type, int_type]), name="pie_max_int")
         ir.Function(self.module, ir.FunctionType(int_type, []), name="pie_rand")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_type]), name="pie_srand")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type, int_type]), name="pie_rand_range")
+        ir.Function(self.module, ir.FunctionType(double_type, []), name="pie_pi")
+        ir.Function(self.module, ir.FunctionType(double_type, []), name="pie_e")
+        ir.Function(self.module, ir.FunctionType(int_type, []), name="pie_time")
 
         # String Library
         string_type = self.get_llvm_type('string')
@@ -487,16 +506,39 @@ class LLVMCodeGenerator(Visitor):
         return ir.Constant(ir.IntType(32), 0)
 
     def _is_function_call_initializer(self, node):
-        """Check if an initializer node contains a function call."""
+        """Check if an initializer node contains a function call or references global variables."""
         # Check if the node's class name indicates it's a function call
         class_name = type(node).__name__
         
         # Check if the node itself is a function call
-        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput']:
+        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput', 'FunctionCall']:
             return True
+        
+        # Check if it's a BinaryOp that references global variables
+        if class_name == 'BinaryOp':
+            return self._contains_global_reference(node)
         
         # For more complex expressions, we might need to check recursively
         # For now, this covers our main use cases
+        return False
+
+    def _contains_global_reference(self, node):
+        """Check if a node contains references to global variables."""
+        class_name = type(node).__name__
+        
+        if class_name == 'Identifier':
+            # Check if this identifier refers to a global variable
+            return node.name in self.global_vars
+        
+        # Recursively check sub-nodes
+        if class_name == 'BinaryOp':
+            return (self._contains_global_reference(node.left) or 
+                    self._contains_global_reference(node.right))
+        
+        if class_name == 'FunctionCall':
+            return True
+        
+        # For other node types, assume no global reference
         return False
 
     def visit_arraydeclaration(self, node):
@@ -624,11 +666,8 @@ class LLVMCodeGenerator(Visitor):
         """Loads a value if it's a pointer, otherwise returns the value directly."""
         if isinstance(value.type, ir.PointerType):
             # Check if it's a string constant/literal - don't load it
-            if (value.type.pointee == ir.IntType(8) and 
-                hasattr(value, 'name') and 
-                (value.name.startswith('.str') or 
-                 str(value).startswith('bitcast') or
-                 str(value).startswith('getelementptr'))):
+            if (value.type.pointee == ir.IntType(8)):
+                # Always keep string pointers as pointers - don't load them
                 return value
             # For other pointer types (variables), load the value
             return self.builder.load(value)
@@ -844,9 +883,40 @@ class LLVMCodeGenerator(Visitor):
         if node.name.startswith('arr_'):
             return self.visit_array_function_call(node)
 
-        func = self.module.get_global(node.name)
+        # Map PIE function names to their actual LLVM function names
+        math_function_map = {
+            'pow': 'pie_pow',
+            'sqrt': 'pie_sqrt',
+            'sin': 'pie_sin',
+            'cos': 'pie_cos',
+            'tan': 'pie_tan',
+            'asin': 'pie_asin',
+            'acos': 'pie_acos',
+            'atan': 'pie_atan',
+            'log': 'pie_log',
+            'log10': 'pie_log10',
+            'exp': 'pie_exp',
+            'floor': 'pie_floor',
+            'ceil': 'pie_ceil',
+            'round': 'pie_round',
+            'abs': 'pie_abs',
+            'abs_int': 'pie_abs_int',
+            'min': 'pie_min',
+            'max': 'pie_max',
+            'min_int': 'pie_min_int',
+            'max_int': 'pie_max_int',
+            'rand': 'pie_rand',
+            'srand': 'pie_srand',
+            'rand_range': 'pie_rand_range',
+            'pi': 'pie_pi',
+            'e': 'pie_e',
+            'time': 'pie_time'
+        }
+        
+        actual_name = math_function_map.get(node.name, node.name)
+        func = self.module.get_global(actual_name)
         if func is None:
-            raise Exception(f"Unknown function referenced: {node.name}")
+            raise Exception(f"Unknown function referenced: {node.name} (mapped to {actual_name})")
 
         args = [self._load_if_pointer(self.visit(arg)) for arg in node.args]
 
@@ -956,6 +1026,64 @@ class LLVMCodeGenerator(Visitor):
 
         # 6. Position builder at the exit block
         self.builder.position_at_end(loop_exit_block)
+
+    def visit_switchstatement(self, node):
+        # Get the switch expression value - make sure it's loaded if it's a pointer
+        switch_val = self._load_if_pointer(self.visit(node.expression))
+        
+        # Create blocks for each case and default
+        case_blocks = []
+        default_block = None
+        exit_block = self.current_function.append_basic_block("switch_exit")
+        
+        # Create blocks for each case
+        for i, case in enumerate(node.cases):
+            if hasattr(case, 'value') and case.value == 'default':
+                default_block = self.current_function.append_basic_block("default")
+            else:
+                case_block = self.current_function.append_basic_block(f"case_{i}")
+                case_blocks.append((case, case_block))
+        
+        # If no default case, create one that jumps to exit
+        if default_block is None:
+            default_block = exit_block
+        
+        # Create the switch instruction
+        switch_instr = self.builder.switch(switch_val, default_block)
+        
+        # Add cases to the switch instruction
+        for case, case_block in case_blocks:
+            case_val = self.visit(case.value)
+            switch_instr.add_case(case_val, case_block)
+        
+        # Generate code for each case
+        for case, case_block in case_blocks:
+            self.builder.position_at_end(case_block)
+            for stmt in case.statements:
+                self.visit(stmt)
+                # If this is a return statement, don't add a branch
+                if stmt.__class__.__name__ == 'ReturnStatement':
+                    break
+            else:
+                # If no return statement, branch to exit
+                self.builder.branch(exit_block)
+        
+        # Generate code for default case if it exists and is not the exit block
+        if default_block != exit_block:
+            self.builder.position_at_end(default_block)
+            # Find the default case
+            for case in node.cases:
+                if hasattr(case, 'value') and case.value == 'default':
+                    for stmt in case.statements:
+                        self.visit(stmt)
+                        if stmt.__class__.__name__ == 'ReturnStatement':
+                            break
+                    else:
+                        self.builder.branch(exit_block)
+                    break
+        
+        # Position builder at exit block
+        self.builder.position_at_end(exit_block)
 
     # visit_switchstatement and others would follow a similar pattern
     # of creating blocks and using branching instructions.
