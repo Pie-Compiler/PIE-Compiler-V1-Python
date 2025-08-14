@@ -9,6 +9,14 @@ target triple = "x86_64-unknown-linux-gnu"
 %DArrayChar = type { i8*, i64, i64 }
 
 @x = internal global double 0.000000e+00
+@num = internal global i32 0
+@big_num = internal global double 0.000000e+00
+@.str0 = internal constant [4 x i8] c"Foo\00"
+@.str1 = internal constant [55 x i8] c"Enter a number (recommend < 46340 to avoid overflow): \00"
+@.str2 = internal constant [11 x i8] c"Square of \00"
+@.str3 = internal constant [5 x i8] c" is \00"
+@.str4 = internal constant [2 x i8] c"\0A\00"
+@.str5 = internal constant [45 x i8] c"Enter a large number for float calculation: \00"
 
 declare void @input_int(i32*)
 
@@ -192,6 +200,26 @@ declare i32 @d_array_char_indexof(%DArrayChar*, i8)
 
 declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
+define i32 @sqr(i32 %y) {
+entry:
+  %y.1 = alloca i32, align 4
+  store i32 %y, i32* %y.1, align 4
+  %.4 = load i32, i32* %y.1, align 4
+  %.5 = load i32, i32* %y.1, align 4
+  %i_tmp = mul i32 %.4, %.5
+  ret i32 %i_tmp
+}
+
+define double @sqr_float(double %y) {
+entry:
+  %y.1 = alloca double, align 8
+  store double %y, double* %y.1, align 8
+  %.4 = load double, double* %y.1, align 8
+  %.5 = load double, double* %y.1, align 8
+  %f_tmp = fmul double %.4, %.5
+  ret double %f_tmp
+}
+
 define i32 @main() {
 entry:
   %.2 = sitofp i32 2 to double
@@ -200,5 +228,45 @@ entry:
   store double %call_tmp, double* @x, align 8
   %.5 = load double, double* @x, align 8
   call void @output_float(double %.5, i32 2)
+  %.7 = load double, double* @x, align 8
+  %.8 = sitofp i32 5 to double
+  %f_cmp_tmp = fcmp ogt double %.7, %.8
+  %.9 = load double, double* @x, align 8
+  %.10 = sitofp i32 8 to double
+  %f_cmp_tmp.1 = fcmp one double %.9, %.10
+  %and_tmp = and i1 %f_cmp_tmp, %f_cmp_tmp.1
+  br i1 %and_tmp, label %then, label %if_cont
+
+then:                                             ; preds = %entry
+  %.12 = bitcast [4 x i8]* @.str0 to i8*
+  call void @output_string(i8* %.12)
+  br label %if_cont
+
+if_cont:                                          ; preds = %then, %entry
+  %.15 = bitcast [55 x i8]* @.str1 to i8*
+  call void @output_string(i8* %.15)
+  call void @input_int(i32* @num)
+  %.18 = bitcast [11 x i8]* @.str2 to i8*
+  call void @output_string(i8* %.18)
+  %.20 = load i32, i32* @num, align 4
+  call void @output_int(i32 %.20)
+  %.22 = bitcast [5 x i8]* @.str3 to i8*
+  call void @output_string(i8* %.22)
+  %.24 = load i32, i32* @num, align 4
+  %call_tmp.1 = call i32 @sqr(i32 %.24)
+  call void @output_int(i32 %call_tmp.1)
+  %.26 = bitcast [2 x i8]* @.str4 to i8*
+  call void @output_string(i8* %.26)
+  %.28 = bitcast [45 x i8]* @.str5 to i8*
+  call void @output_string(i8* %.28)
+  call void @input_float(double* @big_num)
+  call void @output_string(i8* %.18)
+  %.32 = load double, double* @big_num, align 8
+  call void @output_float(double %.32, i32 1)
+  call void @output_string(i8* %.22)
+  %.35 = load double, double* @big_num, align 8
+  %call_tmp.2 = call double @sqr_float(double %.35)
+  call void @output_float(double %call_tmp.2, i32 1)
+  call void @output_string(i8* %.26)
   ret i32 0
 }
