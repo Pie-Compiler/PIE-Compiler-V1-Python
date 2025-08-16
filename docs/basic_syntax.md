@@ -17,6 +17,36 @@ float y = 3.14;
 string message = "Hello, PIE!";
 ```
 
+### Important: Global Variable Initialization Order
+
+When declaring global variables, PIE follows a specific initialization order:
+
+1. **Constant values** (numbers, strings, literals) are initialized immediately
+2. **Function calls** are deferred and executed in the main program context
+
+```pie
+// ✅ This works - initialized immediately
+int count = 42;
+string name = "Alice";
+
+// ⚠️ This creates an empty dictionary first
+dict config = dict_create();
+
+// ❌ This would read from an empty dictionary
+// int value = dict_get_int(config, "key");  // Returns 0!
+
+// ✅ Use functions to ensure proper order
+void setup() {
+    dict_set(config, "key", new_int(100));
+}
+
+void use_data() {
+    int value = dict_get_int(config, "key");  // Now returns 100
+}
+```
+
+For more details, see the [Dictionaries documentation](dictionaries.md#important-variable-initialization-order).
+
 ## Semicolons
 
 Each statement in PIE must be terminated with a semicolon (`;`).

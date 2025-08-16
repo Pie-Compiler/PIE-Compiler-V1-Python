@@ -138,9 +138,28 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_pow")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_sin")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_cos")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_tan")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_asin")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_acos")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_atan")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_log")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_log10")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_exp")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_floor")
         ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_ceil")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_round")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type]), name="pie_abs")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type]), name="pie_abs_int")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_min")
+        ir.Function(self.module, ir.FunctionType(double_type, [double_type, double_type]), name="pie_max")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type, int_type]), name="pie_min_int")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type, int_type]), name="pie_max_int")
         ir.Function(self.module, ir.FunctionType(int_type, []), name="pie_rand")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_type]), name="pie_srand")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_type, int_type]), name="pie_rand_range")
+        ir.Function(self.module, ir.FunctionType(double_type, []), name="pie_pi")
+        ir.Function(self.module, ir.FunctionType(double_type, []), name="pie_e")
+        ir.Function(self.module, ir.FunctionType(int_type, []), name="pie_time")
 
         # String Library
         string_type = self.get_llvm_type('string')
@@ -163,6 +182,41 @@ class LLVMCodeGenerator(Visitor):
 
         # Dictionary, etc. would be declared here too...
         # (Keeping it concise for this example)
+        
+        # Dictionary functions
+        dict_type = self.dict_type
+        dict_value_type = self.dict_value_type
+        ir.Function(self.module, ir.FunctionType(dict_type, []), name="dict_create")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type, string_type, dict_value_type]), name="dict_set")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [dict_type, string_type]), name="dict_get")
+        ir.Function(self.module, ir.FunctionType(int_type, [dict_type, string_type]), name="dict_get_int")
+        ir.Function(self.module, ir.FunctionType(double_type, [dict_type, string_type]), name="dict_get_float")
+        ir.Function(self.module, ir.FunctionType(string_type, [dict_type, string_type]), name="dict_get_string")
+        ir.Function(self.module, ir.FunctionType(int_type, [dict_type, string_type]), name="dict_has_key")  # Check if key exists
+        ir.Function(self.module, ir.FunctionType(int_type, [dict_type, string_type]), name="dict_key_exists")  # PIE wrapper for key existence
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type, string_type]), name="dict_delete")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_type]), name="dict_free")
+        
+        # Dictionary value helper functions
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [int_type]), name="dict_value_create_int")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [double_type]), name="dict_value_create_float")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [string_type]), name="dict_value_create_string")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, []), name="dict_value_create_null")
+        
+        # Helper functions for PIE language (matching documentation)
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [int_type]), name="new_int")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [double_type]), name="new_float")
+        ir.Function(self.module, ir.FunctionType(dict_value_type, [string_type]), name="new_string")
+
+        # Variable validation functions
+        ir.Function(self.module, ir.FunctionType(int_type, [ir.IntType(8).as_pointer()]), name="is_variable_defined")
+        ir.Function(self.module, ir.FunctionType(int_type, [ir.IntType(8).as_pointer()]), name="is_variable_null")
+
+        # String utility functions
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_starts_with")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_ends_with")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type]), name="string_is_empty")
 
         # Dynamic array functions
         int_array_ptr = self.d_array_int_type
@@ -487,16 +541,39 @@ class LLVMCodeGenerator(Visitor):
         return ir.Constant(ir.IntType(32), 0)
 
     def _is_function_call_initializer(self, node):
-        """Check if an initializer node contains a function call."""
+        """Check if an initializer node contains a function call or references global variables."""
         # Check if the node's class name indicates it's a function call
         class_name = type(node).__name__
         
         # Check if the node itself is a function call
-        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput']:
+        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput', 'FunctionCall', 'DictionaryLiteral']:
             return True
+        
+        # Check if it's a BinaryOp that references global variables
+        if class_name == 'BinaryOp':
+            return self._contains_global_reference(node)
         
         # For more complex expressions, we might need to check recursively
         # For now, this covers our main use cases
+        return False
+
+    def _contains_global_reference(self, node):
+        """Check if a node contains references to global variables."""
+        class_name = type(node).__name__
+        
+        if class_name == 'Identifier':
+            # Check if this identifier refers to a global variable
+            return node.name in self.global_vars
+        
+        # Recursively check sub-nodes
+        if class_name == 'BinaryOp':
+            return (self._contains_global_reference(node.left) or 
+                    self._contains_global_reference(node.right))
+        
+        if class_name == 'FunctionCall':
+            return True
+        
+        # For other node types, assume no global reference
         return False
 
     def visit_arraydeclaration(self, node):
@@ -624,17 +701,102 @@ class LLVMCodeGenerator(Visitor):
         """Loads a value if it's a pointer, otherwise returns the value directly."""
         if isinstance(value.type, ir.PointerType):
             # Check if it's a string constant/literal - don't load it
-            if (value.type.pointee == ir.IntType(8) and 
-                hasattr(value, 'name') and 
-                (value.name.startswith('.str') or 
-                 str(value).startswith('bitcast') or
-                 str(value).startswith('getelementptr'))):
+            if (value.type.pointee == ir.IntType(8)):
+                # Always keep string pointers as pointers - don't load them
                 return value
             # For other pointer types (variables), load the value
             return self.builder.load(value)
         return value
 
     def visit_binaryop(self, node):
+        # Check for null equality operations first
+        if node.op in ['==', '!=']:
+            left_val = self.visit(node.left)
+            right_val = self.visit(node.right)
+            
+            # Debug output
+            if self.debug:
+                print(f"DEBUG: Binary op {node.op}, left type: {left_val.type}, right type: {right_val.type}")
+                print(f"DEBUG: Left is null: {self._is_null_value(left_val)}, Right is null: {self._is_null_value(right_val)}")
+            
+            # Check if this is a null equality comparison
+            null_check = self._check_null_equality(left_val, right_val)
+            if null_check is not None:
+                if self.debug:
+                    print(f"DEBUG: Null equality check successful for {node.op}")
+                if node.op == '!=':
+                    # Invert the result for !=
+                    return self.builder.not_(null_check, 'not_null_check')
+                return null_check
+            elif self.debug:
+                print(f"DEBUG: Null equality check returned None")
+        
+        # Check for string comparison operations
+        if node.op in ['==', '!=', '<', '>', '<=', '>=']:
+            left_val = self.visit(node.left)
+            right_val = self.visit(node.right)
+            
+            # Check if both operands are string pointers (i8*) or string variable pointers (i8**)
+            left_is_string = False
+            right_is_string = False
+            
+            # Check left operand
+            if isinstance(left_val.type, ir.PointerType):
+                if left_val.type.pointee == ir.IntType(8):
+                    left_is_string = True
+                elif (isinstance(left_val.type.pointee, ir.PointerType) and 
+                      left_val.type.pointee.pointee == ir.IntType(8)):
+                    left_is_string = True
+            
+            # Check right operand
+            if isinstance(right_val.type, ir.PointerType):
+                if right_val.type.pointee == ir.IntType(8):
+                    right_is_string = True
+                elif (isinstance(right_val.type.pointee, ir.PointerType) and 
+                      right_val.type.pointee.pointee == ir.IntType(8)):
+                    right_is_string = True
+            
+            if left_is_string and right_is_string:
+                # Handle string comparisons using pie_strcmp
+                # First, load the actual string values if they're variable pointers
+                if isinstance(left_val.type.pointee, ir.PointerType):
+                    left_str = self.builder.load(left_val)
+                else:
+                    left_str = left_val
+                
+                if isinstance(right_val.type.pointee, ir.PointerType):
+                    right_str = self.builder.load(right_val)
+                else:
+                    right_str = right_val
+                
+                strcmp_func = self.module.get_global("pie_strcmp")
+                cmp_result = self.builder.call(strcmp_func, [left_str, right_str], 'strcmp_result')
+                
+                # Convert strcmp result (-1, 0, 1) to boolean based on operator
+                if node.op == '==':
+                    # Equal: strcmp returns 0
+                    return self.builder.icmp_signed('==', cmp_result, ir.Constant(ir.IntType(32), 0), 'str_eq')
+                elif node.op == '!=':
+                    # Not equal: strcmp returns non-zero
+                    return self.builder.icmp_signed('!=', cmp_result, ir.Constant(ir.IntType(32), 0), 'str_ne')
+                elif node.op == '<':
+                    # Less than: strcmp returns negative
+                    return self.builder.icmp_signed('<', cmp_result, ir.Constant(ir.IntType(32), 0), 'str_lt')
+                elif node.op == '>':
+                    # Greater than: strcmp returns positive
+                    return self.builder.icmp_signed('>', cmp_result, ir.Constant(ir.IntType(32), 0), 'str_gt')
+                elif node.op == '<=':
+                    # Less than or equal: strcmp returns non-positive
+                    return self.builder.icmp_signed('<=', cmp_result, ir.Constant(ir.IntType(32), 0), 'str_le')
+                elif node.op == '>=':
+                    # Greater than or equal: strcmp returns non-negative
+                    return self.builder.icmp_signed('>=', cmp_result, ir.Constant(ir.IntType(32), 0), 'str_ge')
+            
+            # Check for string length comparisons and other string operations
+            string_op_result = self._handle_string_operations(left_val, right_val, node.op)
+            if string_op_result is not None:
+                return string_op_result
+        
         # Visiting an expression node should yield a value (r-value).
         # If the operand is an identifier or subscript, visiting it will return a
         # pointer (l-value), so we must load it.
@@ -736,6 +898,9 @@ class LLVMCodeGenerator(Visitor):
                 return ir.Constant(ir.IntType(1), 1)
             if val == 'false':
                 return ir.Constant(ir.IntType(1), 0)
+            if val == 'null':
+                # Return a null pointer for null values
+                return ir.Constant(ir.IntType(8).as_pointer(), None)
             if val.startswith("'") and val.endswith("'") and len(val) >= 3:
                 inner = val[1:-1]
                 if inner == '\\n':
@@ -771,17 +936,139 @@ class LLVMCodeGenerator(Visitor):
             if isinstance(raw_val.type, ir.IntType) and raw_val.type.width == 8:
                 return raw_val
             # If we have a string pointer, load the first character
-            elif isinstance(raw_val.type, ir.PointerType) and raw_val.type.pointee == ir.IntType(8):
+            elif isinstance(raw_val.type, ir.IntType(8).as_pointer()):
                 return self.builder.load(raw_val)
         
         # For string arrays: expecting i8*, return string pointers as-is
-        elif isinstance(expected_elem_type, ir.PointerType) and expected_elem_type.pointee == ir.IntType(8):
+        elif isinstance(expected_elem_type, ir.IntType(8).as_pointer()):
             # If we have a string pointer, return it directly
-            if isinstance(raw_val.type, ir.PointerType) and raw_val.type.pointee == ir.IntType(8):
+            if isinstance(raw_val.type, ir.IntType(8).as_pointer()):
                 return raw_val
         
         # Otherwise normal pointer load semantics
         return self._load_if_pointer(raw_val)
+
+    def _is_null_value(self, value):
+        """Check if a value represents null"""
+        if isinstance(value, ir.Constant):
+            if value.type == ir.IntType(8).as_pointer():
+                return value.constant is None
+            # Also check for null pointer constants
+            if hasattr(value, 'constant') and value.constant is None:
+                return True
+        return False
+
+    def _check_null_equality(self, left, right):
+        """Generate code to check if a value equals null"""
+        # Handle null == null case
+        if self._is_null_value(left) and self._is_null_value(right):
+            return ir.Constant(ir.IntType(1), 1)
+        
+        # Handle value == null case
+        if self._is_null_value(right):
+            # Check if left is a pointer type (can be null)
+            if isinstance(left.type, ir.PointerType):
+                if left.type.pointee == ir.IntType(8):  # i8*
+                    null_ptr = ir.Constant(ir.IntType(8).as_pointer(), None)
+                    return self.builder.icmp_unsigned('==', left, null_ptr, 'null_check')
+                elif left.type.pointee == ir.IntType(8).as_pointer():  # i8**
+                    # This is a variable pointer, we need to load it first
+                    loaded_left = self.builder.load(left)
+                    null_ptr = ir.Constant(ir.IntType(8).as_pointer(), None)
+                    return self.builder.icmp_unsigned('==', loaded_left, null_ptr, 'null_check')
+                elif left.type.pointee == ir.IntType(32):  # i32*
+                    # This is an int variable pointer, we need to load it first
+                    loaded_left = self.builder.load(left)
+                    # For int variables, we can't compare with null - they're always defined
+                    # Return false (not null) for int variables
+                    return ir.Constant(ir.IntType(1), 0)
+            else:
+                # Left is not a pointer type, can't be null
+                return ir.Constant(ir.IntType(1), 0)
+        
+        # Handle null == value case
+        if self._is_null_value(left):
+            if isinstance(right.type, ir.PointerType):
+                if right.type.pointee == ir.IntType(8):  # i8*
+                    null_ptr = ir.Constant(ir.IntType(8).as_pointer(), None)
+                    return self.builder.icmp_unsigned('==', right, null_ptr, 'null_check')
+                elif right.type.pointee == ir.IntType(8).as_pointer():  # i8**
+                    # This is a variable pointer, we need to load it first
+                    loaded_right = self.builder.load(right)
+                    null_ptr = ir.Constant(ir.IntType(8).as_pointer(), None)
+                    return self.builder.icmp_unsigned('==', loaded_right, null_ptr, 'null_check')
+                elif right.type.pointee == ir.IntType(32):  # i32*
+                    # This is an int variable pointer, we need to load it first
+                    loaded_right = self.builder.load(right)
+                    # For int variables, we can't compare with null - they're always defined
+                    # Return false (not null) for int variables
+                    return ir.Constant(ir.IntType(1), 0)
+            else:
+                # Right is not a pointer type, can't be null
+                return ir.Constant(ir.IntType(1), 0)
+        
+        # Handle string pointer == null case (both are i8*)
+        if (isinstance(left.type, ir.PointerType) and left.type.pointee == ir.IntType(8) and
+            isinstance(right.type, ir.PointerType) and right.type.pointee == ir.IntType(8)):
+            # Check if one of them is a null constant
+            if self._is_null_value(left):
+                null_ptr = ir.Constant(ir.IntType(8).as_pointer(), None)
+                return self.builder.icmp_unsigned('==', right, null_ptr, 'null_check')
+            elif self._is_null_value(right):
+                null_ptr = ir.Constant(ir.IntType(8).as_pointer(), None)
+                return self.builder.icmp_unsigned('==', left, null_ptr, 'null_check')
+        
+        return None
+
+    def _handle_string_operations(self, left_val, right_val, op):
+        """Handle string-specific operations like length comparison"""
+        # Check if we're comparing string lengths
+        if op in ['<', '>', '<=', '>=']:
+            # Helper function to check if a value is a string (either direct pointer or variable pointer)
+            def is_string_value(val):
+                if isinstance(val.type, ir.PointerType):
+                    if val.type.pointee == ir.IntType(8):  # i8* (direct string pointer)
+                        return True
+                    elif (isinstance(val.type.pointee, ir.PointerType) and 
+                          val.type.pointee.pointee == ir.IntType(8)):  # i8** (string variable pointer)
+                        return True
+                return False
+            
+            # Helper function to get string length from a string value
+            def get_string_length(val):
+                if isinstance(val.type.pointee, ir.PointerType):
+                    # This is a string variable pointer (i8**), load it first
+                    str_ptr = self.builder.load(val)
+                else:
+                    # This is a direct string pointer (i8*)
+                    str_ptr = val
+                
+                strlen_func = self.module.get_global("pie_strlen")
+                return self.builder.call(strlen_func, [str_ptr], 'strlen_result')
+            
+            # If one operand is a string and the other is an integer, compare string length
+            if is_string_value(left_val) and isinstance(right_val.type, ir.IntType):
+                # String length < int
+                left_len = get_string_length(left_val)
+                return self._compare_values(left_len, right_val, op)
+            elif is_string_value(right_val) and isinstance(left_val.type, ir.IntType):
+                # int < String length
+                right_len = get_string_length(right_val)
+                return self._compare_values(left_val, right_len, op)
+        
+        return None
+
+    def _compare_values(self, left_val, right_val, op):
+        """Helper method to compare two values with a given operator"""
+        if op == '<':
+            return self.builder.icmp_signed('<', left_val, right_val, 'cmp_lt')
+        elif op == '>':
+            return self.builder.icmp_signed('>', left_val, right_val, 'cmp_gt')
+        elif op == '<=':
+            return self.builder.icmp_signed('<=', left_val, right_val, 'cmp_le')
+        elif op == '>=':
+            return self.builder.icmp_signed('>=', left_val, right_val, 'cmp_ge')
+        return None
 
     def visit_identifier(self, node):
         # Return the pointer/value associated with an identifier.
@@ -798,6 +1085,48 @@ class LLVMCodeGenerator(Visitor):
     def visit_subscriptaccess(self, node):
         sym = self.symbol_table.lookup_symbol(node.name)
         ti = sym.get('typeinfo') if sym else None
+        
+        # Handle dictionary access
+        if sym and sym.get('type') == 'KEYWORD_DICT':
+            dict_var_ptr = self.llvm_var_table[node.name]
+            dict_val = self.builder.load(dict_var_ptr)
+            key_val = self.visit(node.key)  # Don't load string pointers
+            
+            # Check if key exists first
+            dict_has_key_func = self.module.get_global("dict_has_key")
+            key_exists = self.builder.call(dict_has_key_func, [dict_val, key_val], 'key_exists')
+            
+            # Create a conditional block for safe access
+            current_block = self.builder.block
+            safe_block = self.current_function.append_basic_block('dict_safe_access')
+            error_block = self.current_function.append_basic_block('dict_key_error')
+            merge_block = self.current_function.append_basic_block('dict_merge')
+            
+            # Check if key exists
+            self.builder.cbranch(key_exists, safe_block, error_block)
+            
+            # Safe access block - key exists
+            self.builder.position_at_end(safe_block)
+            dict_get_func = self.module.get_global("dict_get")
+            safe_result = self.builder.call(dict_get_func, [dict_val, key_val], 'dict_value')
+            self.builder.branch(merge_block)
+            
+            # Error block - key doesn't exist
+            self.builder.position_at_end(error_block)
+            # For now, return NULL (could be enhanced with runtime error handling)
+            dict_value_create_null_func = self.module.get_global("dict_value_create_null")
+            error_result = self.builder.call(dict_value_create_null_func, [], 'null_value')
+            self.builder.branch(merge_block)
+            
+            # Merge block
+            self.builder.position_at_end(merge_block)
+            phi = self.builder.phi(self.dict_value_type, 'dict_access_result')
+            phi.add_incoming(safe_result, safe_block)
+            phi.add_incoming(error_result, error_block)
+            
+            return phi
+        
+        # Handle dynamic arrays
         if ti and ti.is_dynamic:
             base = ti.base
             array_var_ptr = self.llvm_var_table[node.name]
@@ -805,7 +1134,8 @@ class LLVMCodeGenerator(Visitor):
             index_val = self._load_if_pointer(self.visit(node.key))
             get_func = self._array_runtime_func(base, 'get')
             return self.builder.call(get_func, [array_struct_ptr, index_val], 'dyn_idx_tmp')
-        # Static array
+        
+        # Handle static arrays
         array_ptr = self.llvm_var_table[node.name]
         key_val = self._load_if_pointer(self.visit(node.key))
         return self.builder.gep(array_ptr, [ir.Constant(ir.IntType(32),0), key_val], inbounds=True)
@@ -844,11 +1174,51 @@ class LLVMCodeGenerator(Visitor):
         if node.name.startswith('arr_'):
             return self.visit_array_function_call(node)
 
-        func = self.module.get_global(node.name)
+        # Map PIE function names to their actual LLVM function names
+        math_function_map = {
+            'pow': 'pie_pow',
+            'sqrt': 'pie_sqrt',
+            'sin': 'pie_sin',
+            'cos': 'pie_cos',
+            'tan': 'pie_tan',
+            'asin': 'pie_asin',
+            'acos': 'pie_acos',
+            'atan': 'pie_atan',
+            'log': 'pie_log',
+            'log10': 'pie_log10',
+            'exp': 'pie_exp',
+            'floor': 'pie_floor',
+            'ceil': 'pie_ceil',
+            'round': 'pie_round',
+            'abs': 'pie_abs',
+            'abs_int': 'pie_abs_int',
+            'min': 'pie_min',
+            'max': 'pie_max',
+            'min_int': 'pie_min_int',
+            'max_int': 'pie_max_int',
+            'rand': 'pie_rand',
+            'srand': 'pie_srand',
+            'rand_range': 'pie_rand_range',
+            'pi': 'pie_pi',
+            'e': 'pie_e',
+            'time': 'pie_time'
+        }
+        
+        actual_name = math_function_map.get(node.name, node.name)
+        func = self.module.get_global(actual_name)
         if func is None:
-            raise Exception(f"Unknown function referenced: {node.name}")
+            raise Exception(f"Unknown function referenced: {node.name} (mapped to {actual_name})")
 
-        args = [self._load_if_pointer(self.visit(arg)) for arg in node.args]
+        args = []
+        for arg in node.args:
+            arg_val = self.visit(arg)
+            # Only load from pointer if it's not a return value from functions that should return pointers
+            # Functions like new_int, new_float, new_string, dict_create should return pointers
+            if isinstance(arg, FunctionCall) and arg.name in ['new_int', 'new_float', 'new_string', 'dict_create', 'dict_get']:
+                # These functions return pointers that should not be dereferenced
+                args.append(arg_val)
+            else:
+                args.append(self._load_if_pointer(arg_val))
 
         new_args = []
         for i, arg in enumerate(args):
@@ -956,6 +1326,64 @@ class LLVMCodeGenerator(Visitor):
 
         # 6. Position builder at the exit block
         self.builder.position_at_end(loop_exit_block)
+
+    def visit_switchstatement(self, node):
+        # Get the switch expression value - make sure it's loaded if it's a pointer
+        switch_val = self._load_if_pointer(self.visit(node.expression))
+        
+        # Create blocks for each case and default
+        case_blocks = []
+        default_block = None
+        exit_block = self.current_function.append_basic_block("switch_exit")
+        
+        # Create blocks for each case
+        for i, case in enumerate(node.cases):
+            if hasattr(case, 'value') and case.value == 'default':
+                default_block = self.current_function.append_basic_block("default")
+            else:
+                case_block = self.current_function.append_basic_block(f"case_{i}")
+                case_blocks.append((case, case_block))
+        
+        # If no default case, create one that jumps to exit
+        if default_block is None:
+            default_block = exit_block
+        
+        # Create the switch instruction
+        switch_instr = self.builder.switch(switch_val, default_block)
+        
+        # Add cases to the switch instruction
+        for case, case_block in case_blocks:
+            case_val = self.visit(case.value)
+            switch_instr.add_case(case_val, case_block)
+        
+        # Generate code for each case
+        for case, case_block in case_blocks:
+            self.builder.position_at_end(case_block)
+            for stmt in case.statements:
+                self.visit(stmt)
+                # If this is a return statement, don't add a branch
+                if stmt.__class__.__name__ == 'ReturnStatement':
+                    break
+            else:
+                # If no return statement, branch to exit
+                self.builder.branch(exit_block)
+        
+        # Generate code for default case if it exists and is not the exit block
+        if default_block != exit_block:
+            self.builder.position_at_end(default_block)
+            # Find the default case
+            for case in node.cases:
+                if hasattr(case, 'value') and case.value == 'default':
+                    for stmt in case.statements:
+                        self.visit(stmt)
+                        if stmt.__class__.__name__ == 'ReturnStatement':
+                            break
+                    else:
+                        self.builder.branch(exit_block)
+                    break
+        
+        # Position builder at exit block
+        self.builder.position_at_end(exit_block)
 
     # visit_switchstatement and others would follow a similar pattern
     # of creating blocks and using branching instructions.
@@ -1140,3 +1568,105 @@ class LLVMCodeGenerator(Visitor):
         # For empty arrays, we don't need to do anything special
         # The array creation is handled in the array declaration logic
         return None
+
+    def visit_dictionaryliteral(self, node):
+        """Handle dictionary literal: {"key1": value1, "key2": value2}"""
+        # Create a new dictionary
+        dict_create_func = self.module.get_global("dict_create")
+        dict_ptr = self.builder.call(dict_create_func, [])
+        
+        # Add each key-value pair
+        dict_set_func = self.module.get_global("dict_set")
+        
+        for key_expr, value_expr in node.pairs:
+            # Evaluate the key (must be a string)
+            key_val = self.visit(key_expr)
+            # Don't load string pointers - they should remain as pointers
+            
+            # Evaluate the value
+            value_val = self.visit(value_expr)
+            
+            # Create a DictValue based on the value type
+            if value_val.type == ir.IntType(32):
+                # Integer value
+                new_int_func = self.module.get_global("new_int")
+                dict_value = self.builder.call(new_int_func, [value_val])
+            elif value_val.type == ir.DoubleType():
+                # Float value
+                new_float_func = self.module.get_global("new_float") 
+                dict_value = self.builder.call(new_float_func, [value_val])
+            elif value_val.type == ir.IntType(8).as_pointer():
+                # String value
+                new_string_func = self.module.get_global("new_string")
+                dict_value = self.builder.call(new_string_func, [value_val])
+            elif isinstance(value_val.type, ir.PointerType) and isinstance(value_val.type.pointee, ir.IntType) and value_val.type.pointee.width == 32:
+                # Integer pointer - load it first
+                loaded_val = self.builder.load(value_val)
+                new_int_func = self.module.get_global("new_int")
+                dict_value = self.builder.call(new_int_func, [loaded_val])
+            elif isinstance(value_val.type, ir.PointerType) and isinstance(value_val.type.pointee, ir.DoubleType):
+                # Float pointer - load it first
+                loaded_val = self.builder.load(value_val)
+                new_float_func = self.module.get_global("new_float") 
+                dict_value = self.builder.call(new_float_func, [loaded_val])
+            else:
+                raise Exception(f"Unsupported dictionary value type: {value_val.type}")
+            
+            # Set the key-value pair in the dictionary
+            self.builder.call(dict_set_func, [dict_ptr, key_val, dict_value])
+        
+        return dict_ptr
+
+    def visit_safedictionaryaccess(self, node):
+        """Handle safe dictionary access with validation and optional default value"""
+        dict_var_ptr = self.llvm_var_table[node.dict_name]
+        dict_val = self.builder.load(dict_var_ptr)
+        key_val = self.visit(node.key)  # Don't load string pointers
+        
+        # Check if key exists first
+        dict_has_key_func = self.module.get_global("dict_has_key")
+        key_exists = self.builder.call(dict_has_key_func, [dict_val, key_val], 'key_exists')
+        
+        # Create a conditional block for safe access
+        current_block = self.builder.block
+        safe_block = self.current_function.append_basic_block('safe_dict_access')
+        default_block = self.current_function.append_basic_block('dict_default_value')
+        merge_block = self.current_function.append_basic_block('safe_dict_merge')
+        
+        # Check if key exists
+        self.builder.cbranch(key_exists, safe_block, default_block)
+        
+        # Safe access block - key exists
+        self.builder.position_at_end(safe_block)
+        dict_get_func = self.module.get_global("dict_get")
+        safe_result = self.builder.call(dict_get_func, [dict_val, key_val], 'dict_value')
+        self.builder.branch(merge_block)
+        
+        # Default value block - key doesn't exist
+        self.builder.position_at_end(default_block)
+        if node.default_value:
+            # Use provided default value
+            default_result = self.visit(node.default_value)
+            # Convert to DictValue if needed
+            if default_result.type == ir.IntType(32):
+                new_int_func = self.module.get_global("new_int")
+                default_result = self.builder.call(new_int_func, [default_result])
+            elif default_result.type == ir.DoubleType():
+                new_float_func = self.module.get_global("new_float")
+                default_result = self.builder.call(new_float_func, [default_result])
+            elif default_result.type == ir.IntType(8).as_pointer():
+                new_string_func = self.module.get_global("new_string")
+                default_result = self.builder.call(new_string_func, [default_result])
+        else:
+            # Use NULL as default
+            dict_value_create_null_func = self.module.get_global("dict_value_create_null")
+            default_result = self.builder.call(dict_value_create_null_func, [], 'null_value')
+        self.builder.branch(merge_block)
+        
+        # Merge block
+        self.builder.position_at_end(merge_block)
+        phi = self.builder.phi(self.dict_value_type, 'safe_dict_result')
+        phi.add_incoming(safe_result, safe_block)
+        phi.add_incoming(default_result, default_block)
+        
+        return phi

@@ -47,9 +47,28 @@ class Parser:
             "pow": {"return_type": "float", "params": [("float", "base"), ("float", "exp")]},
             "sin": {"return_type": "float", "params": [("float", "x")]},
             "cos": {"return_type": "float", "params": [("float", "x")]},
+            "tan": {"return_type": "float", "params": [("float", "x")]},
+            "asin": {"return_type": "float", "params": [("float", "x")]},
+            "acos": {"return_type": "float", "params": [("float", "x")]},
+            "atan": {"return_type": "float", "params": [("float", "x")]},
+            "log": {"return_type": "float", "params": [("float", "x")]},
+            "log10": {"return_type": "float", "params": [("float", "x")]},
+            "exp": {"return_type": "float", "params": [("float", "x")]},
             "floor": {"return_type": "float", "params": [("float", "x")]},
             "ceil": {"return_type": "float", "params": [("float", "x")]},
+            "round": {"return_type": "float", "params": [("float", "x")]},
+            "abs": {"return_type": "float", "params": [("float", "x")]},
+            "abs_int": {"return_type": "int", "params": [("int", "x")]},
+            "min": {"return_type": "float", "params": [("float", "a"), ("float", "b")]},
+            "max": {"return_type": "float", "params": [("float", "a"), ("float", "b")]},
+            "min_int": {"return_type": "int", "params": [("int", "a"), ("int", "b")]},
+            "max_int": {"return_type": "int", "params": [("int", "a"), ("int", "b")]},
             "rand": {"return_type": "int", "params": []},
+            "srand": {"return_type": "void", "params": [("int", "seed")]},
+            "rand_range": {"return_type": "int", "params": [("int", "min"), ("int", "max")]},
+            "pi": {"return_type": "float", "params": []},
+            "e": {"return_type": "float", "params": []},
+            "time": {"return_type": "int", "params": []},
         }
         for name, info in math_functions.items():
             param_types = [p[0] for p in info['params']]
@@ -77,6 +96,27 @@ class Parser:
                 params=info['params']
             )
 
+        # I/O Functions
+        io_functions = {
+            "output_int": {"return_type": "void", "params": [("int", "value")]},
+            "output_float": {"return_type": "void", "params": [("float", "value"), ("int", "precision")]},
+            "output_string": {"return_type": "void", "params": [("string", "s")]},
+            "output_char": {"return_type": "void", "params": [("char", "c")]},
+            "input_int": {"return_type": "void", "params": [("int*", "value")]},
+            "input_float": {"return_type": "void", "params": [("float*", "value")]},
+            "input_string": {"return_type": "void", "params": [("string*", "s")]},
+            "input_char": {"return_type": "void", "params": [("char*", "c")]},
+        }
+        for name, info in io_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
         dict_functions = {
             "dict_create": {"return_type": "dict", "params": []},
             "dict_set": {"return_type": "void", "params": [("dict", "d"), ("string", "key"), ("void*", "value")]},
@@ -84,10 +124,18 @@ class Parser:
             "dict_get_int": {"return_type": "int", "params": [("dict", "d"), ("string", "key")]},
             "dict_get_float": {"return_type": "float", "params": [("dict", "d"), ("string", "key")]},
             "dict_get_string": {"return_type": "string", "params": [("dict", "d"), ("string", "key")]},
+            "dict_has_key": {"return_type": "int", "params": [("dict", "d"), ("string", "key")]},  # Check if key exists
+            "dict_key_exists": {"return_type": "int", "params": [("dict", "d"), ("string", "key")]},  # PIE wrapper for key existence
             "dict_delete": {"return_type": "void", "params": [("dict", "d"), ("string", "key")]},
             "new_int": {"return_type": "void*", "params": [("int", "value")]},
             "new_float": {"return_type": "void*", "params": [("float", "value")]},
             "new_string": {"return_type": "void*", "params": [("string", "value")]},
+            "is_variable_defined": {"return_type": "int", "params": [("void*", "variable")]},  # Check if variable is defined
+            "is_variable_null": {"return_type": "int", "params": [("void*", "variable")]},  # Check if variable is null
+            "string_contains": {"return_type": "int", "params": [("string", "haystack"), ("string", "needle")]},  # Check if string contains substring
+            "string_starts_with": {"return_type": "int", "params": [("string", "str"), ("string", "prefix")]},  # Check if string starts with prefix
+            "string_ends_with": {"return_type": "int", "params": [("string", "str"), ("string", "suffix")]},  # Check if string ends with suffix
+            "string_is_empty": {"return_type": "int", "params": [("string", "str")]},  # Check if string is empty
         }
         for name, info in dict_functions.items():
             param_types = [p[0] for p in info['params']]

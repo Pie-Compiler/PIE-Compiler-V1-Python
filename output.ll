@@ -3,20 +3,23 @@ source_filename = "<string>"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
+%Dictionary = type { i8**, i32, i32 }
+%DictValue = type { i32, i64 }
 %DArrayInt = type { i32*, i64, i64 }
 %DArrayString = type { i8**, i64, i64 }
 %DArrayFloat = type { double*, i64, i64 }
 %DArrayChar = type { i8*, i64, i64 }
 
-@state = internal global i32 0
-@numbers = internal global %DArrayInt* null
-@num = internal global i32 0
-@sum = internal global i32 0
-@arrsize = internal global i32 0
-@average = internal global double 0.000000e+00
-@.str0 = internal constant [22 x i8] c"Please enter a number\00"
-@.str1 = internal constant [25 x i8] c"Continue? \0A 0:Yes \0A 1:No\00"
-@.str2 = internal constant [27 x i8] c"The sum of the numbers is \00"
+@person = internal global %Dictionary* null
+@username = internal global i8* null
+@.str0 = internal constant [1 x i8] zeroinitializer
+@empty = internal global i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str0, i32 0, i32 0)
+@.str1 = internal constant [5 x i8] c"name\00"
+@.str2 = internal constant [9 x i8] c"John Doe\00"
+@.str3 = internal constant [4 x i8] c"age\00"
+@.str4 = internal constant [6 x i8] c"names\00"
+@.str5 = internal constant [18 x i8] c"username is empty\00"
+@.str6 = internal constant [5 x i8] c"null\00"
 
 declare void @input_int(i32*)
 
@@ -44,11 +47,49 @@ declare double @pie_sin(double)
 
 declare double @pie_cos(double)
 
+declare double @pie_tan(double)
+
+declare double @pie_asin(double)
+
+declare double @pie_acos(double)
+
+declare double @pie_atan(double)
+
+declare double @pie_log(double)
+
+declare double @pie_log10(double)
+
+declare double @pie_exp(double)
+
 declare double @pie_floor(double)
 
 declare double @pie_ceil(double)
 
+declare double @pie_round(double)
+
+declare double @pie_abs(double)
+
+declare i32 @pie_abs_int(i32)
+
+declare double @pie_min(double, double)
+
+declare double @pie_max(double, double)
+
+declare i32 @pie_min_int(i32, i32)
+
+declare i32 @pie_max_int(i32, i32)
+
 declare i32 @pie_rand()
+
+declare void @pie_srand(i32)
+
+declare i32 @pie_rand_range(i32, i32)
+
+declare double @pie_pi()
+
+declare double @pie_e()
+
+declare i32 @pie_time()
 
 declare i8* @concat_strings(i8*, i8*)
 
@@ -69,6 +110,52 @@ declare void @file_write(i64, i8*)
 declare i8* @file_read_all(i64)
 
 declare i8* @file_read_line(i64)
+
+declare %Dictionary* @dict_create()
+
+declare void @dict_set(%Dictionary*, i8*, %DictValue*)
+
+declare %DictValue* @dict_get(%Dictionary*, i8*)
+
+declare i32 @dict_get_int(%Dictionary*, i8*)
+
+declare double @dict_get_float(%Dictionary*, i8*)
+
+declare i8* @dict_get_string(%Dictionary*, i8*)
+
+declare i32 @dict_has_key(%Dictionary*, i8*)
+
+declare i32 @dict_key_exists(%Dictionary*, i8*)
+
+declare void @dict_delete(%Dictionary*, i8*)
+
+declare void @dict_free(%Dictionary*)
+
+declare %DictValue* @dict_value_create_int(i32)
+
+declare %DictValue* @dict_value_create_float(double)
+
+declare %DictValue* @dict_value_create_string(i8*)
+
+declare %DictValue* @dict_value_create_null()
+
+declare %DictValue* @new_int(i32)
+
+declare %DictValue* @new_float(double)
+
+declare %DictValue* @new_string(i8*)
+
+declare i32 @is_variable_defined(i8*)
+
+declare i32 @is_variable_null(i8*)
+
+declare i32 @string_contains(i8*, i8*)
+
+declare i32 @string_starts_with(i8*, i8*)
+
+declare i32 @string_ends_with(i8*, i8*)
+
+declare i32 @string_is_empty(i8*)
 
 declare void @d_array_int_push(%DArrayInt*, i32)
 
@@ -164,67 +251,42 @@ declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
 define i32 @main() {
 entry:
-  %.2 = call %DArrayInt* @d_array_int_create()
-  store %DArrayInt* %.2, %DArrayInt** @numbers, align 8
-  br label %loop_header
+  %.2 = call %Dictionary* @dict_create()
+  %.3 = bitcast [5 x i8]* @.str1 to i8*
+  %.4 = bitcast [9 x i8]* @.str2 to i8*
+  %.5 = call %DictValue* @new_string(i8* %.4)
+  call void @dict_set(%Dictionary* %.2, i8* %.3, %DictValue* %.5)
+  %.7 = bitcast [4 x i8]* @.str3 to i8*
+  %.8 = call %DictValue* @new_int(i32 30)
+  call void @dict_set(%Dictionary* %.2, i8* %.7, %DictValue* %.8)
+  store %Dictionary* %.2, %Dictionary** @person, align 8
+  %.11 = load %Dictionary*, %Dictionary** @person, align 8
+  %.12 = bitcast [6 x i8]* @.str4 to i8*
+  %call_tmp = call i8* @dict_get_string(%Dictionary* %.11, i8* %.12)
+  store i8* %call_tmp, i8** @username, align 8
+  %.14 = load i8*, i8** @username, align 8
+  %.15 = load i8*, i8** @empty, align 8
+  %strcmp_result = call i32 @pie_strcmp(i8* %.14, i8* %.15)
+  %str_eq = icmp eq i32 %strcmp_result, 0
+  br i1 %str_eq, label %then, label %if_cont
 
-loop_header:                                      ; preds = %loop_body, %entry
-  %.5 = load i32, i32* @state, align 4
-  %i_cmp_tmp = icmp ne i32 %.5, 1
-  br i1 %i_cmp_tmp, label %loop_body, label %loop_exit
+then:                                             ; preds = %entry
+  %.17 = bitcast [18 x i8]* @.str5 to i8*
+  call void @output_string(i8* %.17)
+  br label %if_cont
 
-loop_body:                                        ; preds = %loop_header
-  %.7 = bitcast [22 x i8]* @.str0 to i8*
-  call void @output_string(i8* %.7)
-  call void @input_int(i32* @num)
-  %.10 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.11 = load i32, i32* @num, align 4
-  call void @d_array_int_push(%DArrayInt* %.10, i32 %.11)
-  %.13 = bitcast [25 x i8]* @.str1 to i8*
-  call void @output_string(i8* %.13)
-  call void @input_int(i32* @state)
-  br label %loop_header
+if_cont:                                          ; preds = %then, %entry
+  %.20 = load i8*, i8** @username, align 8
+  %null_check = icmp eq i8* %.20, null
+  br i1 %null_check, label %then.1, label %if_cont.1
 
-loop_exit:                                        ; preds = %loop_header
-  %.17 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.18 = call i32 @d_array_int_size(%DArrayInt* %.17)
-  store i32 %.18, i32* @arrsize, align 4
-  %i = alloca i32, align 4
-  store i32 0, i32* %i, align 4
-  br label %for_header
+then.1:                                           ; preds = %if_cont
+  %.22 = bitcast [5 x i8]* @.str6 to i8*
+  call void @output_string(i8* %.22)
+  br label %if_cont.1
 
-for_header:                                       ; preds = %for_update, %loop_exit
-  %.22 = load i32, i32* %i, align 4
-  %.23 = load i32, i32* @arrsize, align 4
-  %i_cmp_tmp.1 = icmp slt i32 %.22, %.23
-  br i1 %i_cmp_tmp.1, label %for_body, label %for_exit
-
-for_body:                                         ; preds = %for_header
-  %.25 = load i32, i32* @sum, align 4
-  %.26 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.27 = load i32, i32* %i, align 4
-  %dyn_idx_tmp = call i32 @d_array_int_get(%DArrayInt* %.26, i32 %.27)
-  %i_tmp = add i32 %.25, %dyn_idx_tmp
-  store i32 %i_tmp, i32* @sum, align 4
-  br label %for_update
-
-for_update:                                       ; preds = %for_body
-  %.30 = load i32, i32* %i, align 4
-  %i_tmp.1 = add i32 %.30, 1
-  store i32 %i_tmp.1, i32* %i, align 4
-  br label %for_header
-
-for_exit:                                         ; preds = %for_header
-  %.33 = bitcast [27 x i8]* @.str2 to i8*
-  call void @output_string(i8* %.33)
-  %.35 = load i32, i32* @sum, align 4
-  call void @output_int(i32 %.35)
-  %.37 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  call void @print_int_array(%DArrayInt* %.37)
-  %.39 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.40 = call double @d_array_int_avg(%DArrayInt* %.39)
-  store double %.40, double* @average, align 8
-  %.42 = load double, double* @average, align 8
-  call void @output_float(double %.42, i32 2)
+if_cont.1:                                        ; preds = %then.1, %if_cont
+  %.25 = load i8*, i8** @username, align 8
+  call void @output_string(i8* %.25)
   ret i32 0
 }

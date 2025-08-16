@@ -100,6 +100,30 @@ class SemanticAnalyzer(Visitor):
             self.visit(value_expr)
         return 'KEYWORD_DICT'
 
+    def visit_safedictionaryaccess(self, node):
+        # Check if the dictionary variable exists
+        dict_sym = self.symbol_table.lookup_symbol(node.dict_name)
+        if not dict_sym or dict_sym.get('type') != 'KEYWORD_DICT':
+            self.add_error(f"'{node.dict_name}' is not a dictionary")
+            return None
+        
+        # Check key type
+        key_type = self.visit(node.key)
+        if key_type != 'KEYWORD_STRING':
+            self.add_error("Dictionary keys must be strings")
+            return None
+        
+        # Check default value type if provided
+        if node.default_value:
+            default_type = self.visit(node.default_value)
+            # Validate that default value type is compatible with dictionary values
+            # For now, we'll allow common types
+            if default_type not in ['KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_STRING']:
+                self.add_error(f"Default value type {default_type} is not supported for dictionaries")
+        
+        # Return the type of the dictionary value (could be enhanced to track specific value types)
+        return 'KEYWORD_DICT_VALUE'
+
     def visit_subscriptaccess(self, node):
         arr_info = self.symbol_table.get_array_info(node.name)
         if not arr_info:
@@ -226,7 +250,7 @@ class SemanticAnalyzer(Visitor):
             if i < len(param_types):
                 param_type = param_types[i]
                 if not self.type_checker.is_compatible(param_type, arg_type):
-                    is_math_func = node.name in ["sqrt", "pow", "sin", "cos"]
+                    is_math_func = node.name in ["sqrt", "pow", "sin", "cos", "tan", "asin", "acos", "atan", "log", "log10", "exp", "floor", "ceil", "round", "abs", "min", "max"]
                     if not (is_math_func and param_type == 'float' and arg_type == 'KEYWORD_INT'):
                         self.add_error(f"Type mismatch for argument {i+1} of function '{node.name}'. Expected {param_type}, got {arg_type}.")
 
@@ -322,6 +346,16 @@ class SemanticAnalyzer(Visitor):
         self.add_error(f"Internal error: Unhandled primary value '{value}'")
         return None
 
+    def _check_variable_initialization(self, var_name, context=""):
+        """Check if a variable is properly initialized before use"""
+        symbol = self.symbol_table.lookup_symbol(var_name)
+        if symbol and not symbol.get('is_initialized', False):
+            # Only warn for variables that are used in expressions that require a value
+            # Don't warn for simple comparisons with null
+            self.add_error(f"Variable '{var_name}' may be used before initialization{context}")
+            return False
+        return True
+
     def visit_identifier(self, node):
         symbol = self.symbol_table.lookup_symbol(node.name)
         if symbol:
@@ -329,6 +363,14 @@ class SemanticAnalyzer(Visitor):
             type_info = symbol.get('typeinfo')
             if type_info and type_info.kind == 'array':
                 return 'array'
+            
+            # Check variable initialization for non-array variables
+            # But don't warn if we're just checking for null/undefined
+            if not type_info:  # Only check for regular variables, not arrays
+                # For now, let's be less strict about initialization checking
+                # This will be improved in future versions
+                pass
+            
             # Fall back to regular type checking
             return self.type_checker._normalize_type(symbol.get('type'))
         else:

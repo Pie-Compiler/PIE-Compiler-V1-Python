@@ -90,6 +90,19 @@ DictValue* dict_get(Dictionary* dict, const char* key) {
     return NULL; // Not found
 }
 
+int32_t dict_has_key(Dictionary* dict, const char* key) {
+    if (!dict) return 0;
+    uint32_t index = hash_key(key) % dict->capacity;
+    DictNode* node = dict->buckets[index];
+    while (node) {
+        if (strcmp(node->key, key) == 0) {
+            return 1; // Key exists
+        }
+        node = node->next;
+    }
+    return 0; // Key doesn't exist
+}
+
 int32_t dict_get_int(Dictionary* dict, const char* key) {
     DictValue* val = dict_get(dict, key);
     if (val && val->type == DICT_VALUE_INT) {
@@ -158,4 +171,59 @@ DictValue* dict_value_create_null() {
     DictValue* dv = (DictValue*)malloc(sizeof(DictValue));
     dv->type = DICT_VALUE_NULL;
     return dv;
+}
+
+// PIE language wrapper functions (as documented)
+DictValue* new_int(int32_t value) {
+    return dict_value_create_int(value);
+}
+
+DictValue* new_float(double value) {
+    return dict_value_create_float(value);
+}
+
+DictValue* new_string(const char* value) {
+    return dict_value_create_string(value);
+}
+
+// PIE language wrapper for key existence check
+int32_t dict_key_exists(Dictionary* dict, const char* key) {
+    return dict_has_key(dict, key);
+}
+
+// Variable validation functions
+int32_t is_variable_defined(void* variable) {
+    // Check if variable pointer is not NULL
+    return variable != NULL ? 1 : 0;
+}
+
+int32_t is_variable_null(void* variable) {
+    // Check if variable pointer is NULL
+    return variable == NULL ? 1 : 0;
+}
+
+// String utility functions
+int32_t string_contains(const char* haystack, const char* needle) {
+    if (!haystack || !needle) return 0;
+    return strstr(haystack, needle) != NULL ? 1 : 0;
+}
+
+int32_t string_starts_with(const char* str, const char* prefix) {
+    if (!str || !prefix) return 0;
+    size_t prefix_len = strlen(prefix);
+    if (strlen(str) < prefix_len) return 0;
+    return strncmp(str, prefix, prefix_len) == 0 ? 1 : 0;
+}
+
+int32_t string_ends_with(const char* str, const char* suffix) {
+    if (!str || !suffix) return 0;
+    size_t str_len = strlen(str);
+    size_t suffix_len = strlen(suffix);
+    if (str_len < suffix_len) return 0;
+    return strcmp(str + str_len - suffix_len, suffix) == 0 ? 1 : 0;
+}
+
+int32_t string_is_empty(const char* str) {
+    if (!str) return 1;
+    return strlen(str) == 0 ? 1 : 0;
 }
