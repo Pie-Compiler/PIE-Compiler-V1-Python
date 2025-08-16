@@ -124,10 +124,18 @@ class Parser:
             "dict_get_int": {"return_type": "int", "params": [("dict", "d"), ("string", "key")]},
             "dict_get_float": {"return_type": "float", "params": [("dict", "d"), ("string", "key")]},
             "dict_get_string": {"return_type": "string", "params": [("dict", "d"), ("string", "key")]},
+            "dict_has_key": {"return_type": "int", "params": [("dict", "d"), ("string", "key")]},  # Check if key exists
+            "dict_key_exists": {"return_type": "int", "params": [("dict", "d"), ("string", "key")]},  # PIE wrapper for key existence
             "dict_delete": {"return_type": "void", "params": [("dict", "d"), ("string", "key")]},
             "new_int": {"return_type": "void*", "params": [("int", "value")]},
             "new_float": {"return_type": "void*", "params": [("float", "value")]},
             "new_string": {"return_type": "void*", "params": [("string", "value")]},
+            "is_variable_defined": {"return_type": "int", "params": [("void*", "variable")]},  # Check if variable is defined
+            "is_variable_null": {"return_type": "int", "params": [("void*", "variable")]},  # Check if variable is null
+            "string_contains": {"return_type": "int", "params": [("string", "haystack"), ("string", "needle")]},  # Check if string contains substring
+            "string_starts_with": {"return_type": "int", "params": [("string", "str"), ("string", "prefix")]},  # Check if string starts with prefix
+            "string_ends_with": {"return_type": "int", "params": [("string", "str"), ("string", "suffix")]},  # Check if string ends with suffix
+            "string_is_empty": {"return_type": "int", "params": [("string", "str")]},  # Check if string is empty
         }
         for name, info in dict_functions.items():
             param_types = [p[0] for p in info['params']]

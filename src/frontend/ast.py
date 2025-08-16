@@ -134,6 +134,12 @@ class DictionaryLiteral(Expression):
     def __init__(self, pairs):
         self.pairs = pairs # List of (key_expr, value_expr) tuples
 
+class SafeDictionaryAccess(Expression):
+    def __init__(self, dict_name, key, default_value=None):
+        self.dict_name = dict_name
+        self.key = key
+        self.default_value = default_value  # Optional default value if key doesn't exist
+
 # System Calls (can be treated as specific function calls)
 class SystemInput(FunctionCall):
     def __init__(self, variable, input_type):

@@ -10,14 +10,16 @@ target triple = "x86_64-unknown-linux-gnu"
 %DArrayFloat = type { double*, i64, i64 }
 %DArrayChar = type { i8*, i64, i64 }
 
-@config = internal global %Dictionary* null
-@.str0 = internal constant [10 x i8] c"max_users\00"
-@.str1 = internal constant [8 x i8] c"timeout\00"
-@.str2 = internal constant [5 x i8] c"host\00"
-@.str3 = internal constant [10 x i8] c"localhost\00"
-@.str4 = internal constant [12 x i8] c"Max users: \00"
-@.str5 = internal constant [10 x i8] c"Timeout: \00"
-@.str6 = internal constant [7 x i8] c"Host: \00"
+@person = internal global %Dictionary* null
+@username = internal global i8* null
+@.str0 = internal constant [1 x i8] zeroinitializer
+@empty = internal global i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str0, i32 0, i32 0)
+@.str1 = internal constant [5 x i8] c"name\00"
+@.str2 = internal constant [9 x i8] c"John Doe\00"
+@.str3 = internal constant [4 x i8] c"age\00"
+@.str4 = internal constant [6 x i8] c"names\00"
+@.str5 = internal constant [18 x i8] c"username is empty\00"
+@.str6 = internal constant [5 x i8] c"null\00"
 
 declare void @input_int(i32*)
 
@@ -121,6 +123,10 @@ declare double @dict_get_float(%Dictionary*, i8*)
 
 declare i8* @dict_get_string(%Dictionary*, i8*)
 
+declare i32 @dict_has_key(%Dictionary*, i8*)
+
+declare i32 @dict_key_exists(%Dictionary*, i8*)
+
 declare void @dict_delete(%Dictionary*, i8*)
 
 declare void @dict_free(%Dictionary*)
@@ -138,6 +144,18 @@ declare %DictValue* @new_int(i32)
 declare %DictValue* @new_float(double)
 
 declare %DictValue* @new_string(i8*)
+
+declare i32 @is_variable_defined(i8*)
+
+declare i32 @is_variable_null(i8*)
+
+declare i32 @string_contains(i8*, i8*)
+
+declare i32 @string_starts_with(i8*, i8*)
+
+declare i32 @string_ends_with(i8*, i8*)
+
+declare i32 @string_is_empty(i8*)
 
 declare void @d_array_int_push(%DArrayInt*, i32)
 
@@ -231,52 +249,44 @@ declare i32 @d_array_char_indexof(%DArrayChar*, i8)
 
 declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
-define void @prepare() {
-entry:
-  %.2 = load %Dictionary*, %Dictionary** @config, align 8
-  %.3 = bitcast [10 x i8]* @.str0 to i8*
-  %call_tmp = call %DictValue* @new_int(i32 100)
-  call void @dict_set(%Dictionary* %.2, i8* %.3, %DictValue* %call_tmp)
-  %.4 = load %Dictionary*, %Dictionary** @config, align 8
-  %.5 = bitcast [8 x i8]* @.str1 to i8*
-  %call_tmp.2 = call %DictValue* @new_float(double 3.050000e+01)
-  call void @dict_set(%Dictionary* %.4, i8* %.5, %DictValue* %call_tmp.2)
-  %.6 = load %Dictionary*, %Dictionary** @config, align 8
-  %.7 = bitcast [5 x i8]* @.str2 to i8*
-  %.8 = bitcast [10 x i8]* @.str3 to i8*
-  %call_tmp.4 = call %DictValue* @new_string(i8* %.8)
-  call void @dict_set(%Dictionary* %.6, i8* %.7, %DictValue* %call_tmp.4)
-  %max_users = alloca i32, align 4
-  %.9 = load %Dictionary*, %Dictionary** @config, align 8
-  %call_tmp.6 = call i32 @dict_get_int(%Dictionary* %.9, i8* %.3)
-  store i32 %call_tmp.6, i32* %max_users, align 4
-  %timeout = alloca double, align 8
-  %.11 = load %Dictionary*, %Dictionary** @config, align 8
-  %call_tmp.7 = call double @dict_get_float(%Dictionary* %.11, i8* %.5)
-  store double %call_tmp.7, double* %timeout, align 8
-  %host = alloca i8*, align 8
-  %.13 = load %Dictionary*, %Dictionary** @config, align 8
-  %call_tmp.8 = call i8* @dict_get_string(%Dictionary* %.13, i8* %.7)
-  store i8* %call_tmp.8, i8** %host, align 8
-  %.15 = bitcast [12 x i8]* @.str4 to i8*
-  call void @output_string(i8* %.15)
-  %.17 = load i32, i32* %max_users, align 4
-  call void @output_int(i32 %.17)
-  %.19 = bitcast [10 x i8]* @.str5 to i8*
-  call void @output_string(i8* %.19)
-  %.21 = load double, double* %timeout, align 8
-  call void @output_float(double %.21, i32 2)
-  %.23 = bitcast [7 x i8]* @.str6 to i8*
-  call void @output_string(i8* %.23)
-  %.25 = load i8*, i8** %host, align 8
-  call void @output_string(i8* %.25)
-  ret void
-}
-
 define i32 @main() {
 entry:
-  %call_tmp = call %Dictionary* @dict_create()
-  store %Dictionary* %call_tmp, %Dictionary** @config, align 8
-  call void @prepare()
+  %.2 = call %Dictionary* @dict_create()
+  %.3 = bitcast [5 x i8]* @.str1 to i8*
+  %.4 = bitcast [9 x i8]* @.str2 to i8*
+  %.5 = call %DictValue* @new_string(i8* %.4)
+  call void @dict_set(%Dictionary* %.2, i8* %.3, %DictValue* %.5)
+  %.7 = bitcast [4 x i8]* @.str3 to i8*
+  %.8 = call %DictValue* @new_int(i32 30)
+  call void @dict_set(%Dictionary* %.2, i8* %.7, %DictValue* %.8)
+  store %Dictionary* %.2, %Dictionary** @person, align 8
+  %.11 = load %Dictionary*, %Dictionary** @person, align 8
+  %.12 = bitcast [6 x i8]* @.str4 to i8*
+  %call_tmp = call i8* @dict_get_string(%Dictionary* %.11, i8* %.12)
+  store i8* %call_tmp, i8** @username, align 8
+  %.14 = load i8*, i8** @username, align 8
+  %.15 = load i8*, i8** @empty, align 8
+  %strcmp_result = call i32 @pie_strcmp(i8* %.14, i8* %.15)
+  %str_eq = icmp eq i32 %strcmp_result, 0
+  br i1 %str_eq, label %then, label %if_cont
+
+then:                                             ; preds = %entry
+  %.17 = bitcast [18 x i8]* @.str5 to i8*
+  call void @output_string(i8* %.17)
+  br label %if_cont
+
+if_cont:                                          ; preds = %then, %entry
+  %.20 = load i8*, i8** @username, align 8
+  %null_check = icmp eq i8* %.20, null
+  br i1 %null_check, label %then.1, label %if_cont.1
+
+then.1:                                           ; preds = %if_cont
+  %.22 = bitcast [5 x i8]* @.str6 to i8*
+  call void @output_string(i8* %.22)
+  br label %if_cont.1
+
+if_cont.1:                                        ; preds = %then.1, %if_cont
+  %.25 = load i8*, i8** @username, align 8
+  call void @output_string(i8* %.25)
   ret i32 0
 }

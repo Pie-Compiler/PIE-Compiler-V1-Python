@@ -42,6 +42,7 @@ DictValue* dict_get(Dictionary* dict, const char* key);
 int32_t dict_get_int(Dictionary* dict, const char* key);
 double dict_get_float(Dictionary* dict, const char* key);
 char* dict_get_string(Dictionary* dict, const char* key);
+int32_t dict_has_key(Dictionary* dict, const char* key);  // New function to check key existence
 void dict_delete(Dictionary* dict, const char* key);
 void dict_free(Dictionary* dict);
 
@@ -55,5 +56,16 @@ DictValue* dict_value_create_null();
 DictValue* new_int(int32_t value);
 DictValue* new_float(double value);
 DictValue* new_string(const char* value);
+int32_t dict_key_exists(Dictionary* dict, const char* key);  // Check if key exists
+
+// Variable validation functions
+int32_t is_variable_defined(void* variable);
+int32_t is_variable_null(void* variable);
+
+// String utility functions
+int32_t string_contains(const char* haystack, const char* needle);
+int32_t string_starts_with(const char* str, const char* prefix);
+int32_t string_ends_with(const char* str, const char* suffix);
+int32_t string_is_empty(const char* str);
 
 #endif // DICT_LIB_H

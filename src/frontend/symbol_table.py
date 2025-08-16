@@ -157,6 +157,13 @@ class TypeChecker:
         if op in ['LT','GT','LEQ','GEQ']:
             if l in ['KEYWORD_INT','KEYWORD_FLOAT'] and r in ['KEYWORD_INT','KEYWORD_FLOAT']:
                 return 'KEYWORD_BOOL'
+            # Add support for string comparisons
+            if l == 'KEYWORD_STRING' and r == 'KEYWORD_STRING':
+                return 'KEYWORD_BOOL'
+            # Add support for string length comparisons (string < int, int < string)
+            if (l == 'KEYWORD_STRING' and r in ['KEYWORD_INT', 'KEYWORD_FLOAT']) or \
+               (r == 'KEYWORD_STRING' and l in ['KEYWORD_INT', 'KEYWORD_FLOAT']):
+                return 'KEYWORD_BOOL'
             return None
         if op in ['EQ','NEQ']:
             if l==r:
@@ -164,6 +171,9 @@ class TypeChecker:
             if {l,r} <= {'KEYWORD_INT','KEYWORD_FLOAT'}:
                 return 'KEYWORD_BOOL'
             if 'KEYWORD_NULL' in [l,r]:
+                return 'KEYWORD_BOOL'
+            # Add support for string equality comparisons
+            if l == 'KEYWORD_STRING' and r == 'KEYWORD_STRING':
                 return 'KEYWORD_BOOL'
             return None
         if op in ['AND','OR']:

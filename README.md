@@ -29,6 +29,11 @@ A compiler for the PIE programming language, supporting parsing, semantic analys
 
 ## Language Features
 
+### 📚 Documentation
+- **[Complete Documentation](docs/README.md)** - Comprehensive guide to all PIE features
+- **[String Comparisons](docs/string_comparisons.md)** - String operations and utilities ⭐ **NEW!**
+- **[Quick Reference](docs/string_quick_reference.md)** - String comparison cheat sheet
+
 ### 1. Basic Language Structure
 
 PIE is a C-like language that supports both global statements and user-defined functions. You can write programs in two ways:
