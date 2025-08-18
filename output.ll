@@ -3,26 +3,22 @@ source_filename = "<string>"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-%DArrayString = type { i8**, i64, i64 }
-%DArrayInt = type { i32*, i64, i64 }
-%DArrayChar = type { i8*, i64, i64 }
 %Dictionary = type { i8**, i32, i32 }
 %DictValue = type { i32, i64 }
+%DArrayInt = type { i32*, i64, i64 }
+%DArrayString = type { i8**, i64, i64 }
 %DArrayFloat = type { double*, i64, i64 }
+%DArrayChar = type { i8*, i64, i64 }
 
-@names = internal global %DArrayString* null
-@numbers = internal global %DArrayInt* null
-@grades = internal global %DArrayChar* null
-@search_value = internal global i32 3
-@arr1 = internal global %DArrayInt* null
-@arr2 = internal global %DArrayInt* null
-@arr3 = internal global %DArrayInt* null
-@avg_nums = internal global %DArrayInt* null
-@.str0 = internal constant [6 x i8] c"Alice\00"
-@.str1 = internal constant [4 x i8] c"Bob\00"
-@.str2 = internal constant [8 x i8] c"Charlie\00"
-@.str3 = internal constant [29 x i8] c"Numbers contains the value 3\00"
-@.str4 = internal constant [6 x i8] c"David\00"
+@config = internal global %Dictionary* null
+@.str0 = internal constant [10 x i8] c"max_users\00"
+@.str1 = internal constant [8 x i8] c"timeout\00"
+@.str2 = internal constant [5 x i8] c"host\00"
+@.str3 = internal constant [10 x i8] c"localhost\00"
+@.str4 = internal constant [31 x i8] c"Max timeout is greater than 20\00"
+@.str5 = internal constant [12 x i8] c"Max users: \00"
+@.str6 = internal constant [10 x i8] c"Timeout: \00"
+@.str7 = internal constant [7 x i8] c"Host: \00"
 
 declare void @input_int(i32*)
 
@@ -252,91 +248,64 @@ declare i32 @d_array_char_indexof(%DArrayChar*, i8)
 
 declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
-define i32 @main() {
+define void @main_logic() {
 entry:
-  %.2 = call %DArrayString* @d_array_string_create()
-  store %DArrayString* %.2, %DArrayString** @names, align 8
-  %.4 = bitcast [6 x i8]* @.str0 to i8*
-  call void @d_array_string_append(%DArrayString* %.2, i8* %.4)
-  %.6 = bitcast [4 x i8]* @.str1 to i8*
-  call void @d_array_string_append(%DArrayString* %.2, i8* %.6)
-  %.8 = bitcast [8 x i8]* @.str2 to i8*
-  call void @d_array_string_append(%DArrayString* %.2, i8* %.8)
-  %.10 = call %DArrayInt* @d_array_int_create()
-  store %DArrayInt* %.10, %DArrayInt** @numbers, align 8
-  call void @d_array_int_append(%DArrayInt* %.10, i32 1)
-  call void @d_array_int_append(%DArrayInt* %.10, i32 2)
-  call void @d_array_int_append(%DArrayInt* %.10, i32 3)
-  %.15 = call %DArrayChar* @d_array_char_create()
-  store %DArrayChar* %.15, %DArrayChar** @grades, align 8
-  call void @d_array_char_append(%DArrayChar* %.15, i8 65)
-  call void @d_array_char_append(%DArrayChar* %.15, i8 66)
-  call void @d_array_char_append(%DArrayChar* %.15, i8 67)
-  %.20 = call %DArrayInt* @d_array_int_create()
-  store %DArrayInt* %.20, %DArrayInt** @arr1, align 8
-  call void @d_array_int_append(%DArrayInt* %.20, i32 10)
-  call void @d_array_int_append(%DArrayInt* %.20, i32 20)
-  %.24 = call %DArrayInt* @d_array_int_create()
-  store %DArrayInt* %.24, %DArrayInt** @arr2, align 8
-  call void @d_array_int_append(%DArrayInt* %.24, i32 30)
-  call void @d_array_int_append(%DArrayInt* %.24, i32 40)
-  %.28 = call %DArrayInt* @d_array_int_create()
-  store %DArrayInt* %.28, %DArrayInt** @arr3, align 8
-  %.30 = load %DArrayInt*, %DArrayInt** @arr1, align 8
-  %.31 = load %DArrayInt*, %DArrayInt** @arr2, align 8
-  %.32 = load %DArrayInt*, %DArrayInt** @arr1, align 8
-  %.33 = load %DArrayInt*, %DArrayInt** @arr2, align 8
-  %concat_array_tmp = call %DArrayInt* @d_array_int_concat(%DArrayInt* %.32, %DArrayInt* %.33)
-  store %DArrayInt* %concat_array_tmp, %DArrayInt** @arr3, align 8
-  %.35 = call %DArrayInt* @d_array_int_create()
-  store %DArrayInt* %.35, %DArrayInt** @avg_nums, align 8
-  call void @d_array_int_append(%DArrayInt* %.35, i32 10)
-  call void @d_array_int_append(%DArrayInt* %.35, i32 20)
-  call void @d_array_int_append(%DArrayInt* %.35, i32 37)
-  %.40 = load %DArrayChar*, %DArrayChar** @grades, align 8
-  %.41 = call i32 @d_array_char_indexof(%DArrayChar* %.40, i8 82)
-  call void @output_int(i32 %.41)
-  %.43 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.44 = load i32, i32* @search_value, align 4
-  %.45 = call i32 @d_array_int_contains(%DArrayInt* %.43, i32 %.44)
-  %bool_cond = icmp ne i32 %.45, 0
-  br i1 %bool_cond, label %then, label %else
+  %.2 = load %Dictionary*, %Dictionary** @config, align 8
+  %.3 = bitcast [10 x i8]* @.str0 to i8*
+  %call_tmp = call %DictValue* @new_int(i32 100)
+  call void @dict_set(%Dictionary* %.2, i8* %.3, %DictValue* %call_tmp)
+  %.4 = load %Dictionary*, %Dictionary** @config, align 8
+  %.5 = bitcast [8 x i8]* @.str1 to i8*
+  %.6 = sitofp i32 12 to double
+  %call_tmp.2 = call %DictValue* @new_float(double %.6)
+  call void @dict_set(%Dictionary* %.4, i8* %.5, %DictValue* %call_tmp.2)
+  %.7 = load %Dictionary*, %Dictionary** @config, align 8
+  %.8 = bitcast [5 x i8]* @.str2 to i8*
+  %.9 = bitcast [10 x i8]* @.str3 to i8*
+  %call_tmp.4 = call %DictValue* @new_string(i8* %.9)
+  call void @dict_set(%Dictionary* %.7, i8* %.8, %DictValue* %call_tmp.4)
+  %max_users = alloca i32, align 4
+  %.10 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.6 = call i32 @dict_get_int(%Dictionary* %.10, i8* %.3)
+  store i32 %call_tmp.6, i32* %max_users, align 4
+  %timeout = alloca double, align 8
+  %.12 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.7 = call double @dict_get_float(%Dictionary* %.12, i8* %.5)
+  store double %call_tmp.7, double* %timeout, align 8
+  %host = alloca i8*, align 8
+  %.14 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.8 = call i8* @dict_get_string(%Dictionary* %.14, i8* %.8)
+  store i8* %call_tmp.8, i8** %host, align 8
+  %.16 = load double, double* %timeout, align 8
+  %.17 = sitofp i32 20 to double
+  %f_cmp_tmp = fcmp ogt double %.16, %.17
+  br i1 %f_cmp_tmp, label %then, label %if_cont
 
 then:                                             ; preds = %entry
-  %.47 = bitcast [29 x i8]* @.str3 to i8*
-  call void @output_string(i8* %.47)
+  %.19 = bitcast [31 x i8]* @.str4 to i8*
+  call void @output_string(i8* %.19)
   br label %if_cont
 
-else:                                             ; preds = %entry
-  %.50 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  call void @print_int_array(%DArrayInt* %.50)
-  br label %if_cont
+if_cont:                                          ; preds = %then, %entry
+  %.22 = bitcast [12 x i8]* @.str5 to i8*
+  call void @output_string(i8* %.22)
+  %.24 = load i32, i32* %max_users, align 4
+  call void @output_int(i32 %.24)
+  %.26 = bitcast [10 x i8]* @.str6 to i8*
+  call void @output_string(i8* %.26)
+  %.28 = load double, double* %timeout, align 8
+  call void @output_float(double %.28, i32 2)
+  %.30 = bitcast [7 x i8]* @.str7 to i8*
+  call void @output_string(i8* %.30)
+  %.32 = load i8*, i8** %host, align 8
+  call void @output_string(i8* %.32)
+  ret void
+}
 
-if_cont:                                          ; preds = %else, %then
-  %.53 = load %DArrayString*, %DArrayString** @names, align 8
-  %.54 = bitcast [6 x i8]* @.str4 to i8*
-  call void @d_array_string_push(%DArrayString* %.53, i8* %.54)
-  %.56 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  call void @d_array_int_push(%DArrayInt* %.56, i32 4)
-  %.58 = load %DArrayString*, %DArrayString** @names, align 8
-  %.59 = call i32 @d_array_string_size(%DArrayString* %.58)
-  call void @output_int(i32 %.59)
-  %.61 = load %DArrayInt*, %DArrayInt** @numbers, align 8
-  %.62 = call i32 @d_array_int_size(%DArrayInt* %.61)
-  call void @output_int(i32 %.62)
-  %.64 = load %DArrayInt*, %DArrayInt** @arr3, align 8
-  %.65 = call i32 @d_array_int_size(%DArrayInt* %.64)
-  call void @output_int(i32 %.65)
-  %.67 = load %DArrayInt*, %DArrayInt** @arr3, align 8
-  %dyn_idx_tmp = call i32 @d_array_int_get(%DArrayInt* %.67, i32 0)
-  call void @output_int(i32 %dyn_idx_tmp)
-  %.69 = load %DArrayInt*, %DArrayInt** @arr3, align 8
-  %dyn_idx_tmp.1 = call i32 @d_array_int_get(%DArrayInt* %.69, i32 3)
-  call void @output_int(i32 %dyn_idx_tmp.1)
-  %.71 = load %DArrayInt*, %DArrayInt** @avg_nums, align 8
-  %.72 = call double @d_array_int_avg(%DArrayInt* %.71)
-  call void @output_float(double %.72, i32 3)
-  %.74 = load %DArrayString*, %DArrayString** @names, align 8
-  call void @print_string_array(%DArrayString* %.74)
+define i32 @main() {
+entry:
+  %call_tmp = call %Dictionary* @dict_create()
+  store %Dictionary* %call_tmp, %Dictionary** @config, align 8
+  call void @main_logic()
   ret i32 0
 }

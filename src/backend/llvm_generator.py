@@ -88,7 +88,7 @@ class LLVMCodeGenerator(Visitor):
             return ir.IntType(8)
         elif type_str == 'string':
             return ir.IntType(8).as_pointer()
-        elif type_str == 'boolean':
+        elif type_str == 'boolean' or type_str == 'bool':
             return ir.IntType(1)
         elif type_str == 'void':
             return ir.VoidType()
@@ -535,6 +535,51 @@ class LLVMCodeGenerator(Visitor):
                 if val.startswith("'") and val.endswith("'") and len(val) == 3:
                     ch = val[1]  # Extract the character
                     return ir.Constant(ir.IntType(8), ord(ch))
+            elif isinstance(val, (int, float)):
+                if isinstance(val, int):
+                    return ir.Constant(ir.IntType(32), val)
+                else:
+                    return ir.Constant(ir.DoubleType(), val)
+        
+        # Handle binary operations for constant evaluation
+        if hasattr(node, 'op') and hasattr(node, 'left') and hasattr(node, 'right'):  # BinaryOp
+            left_val = self._evaluate_constant_expression(node.left)
+            right_val = self._evaluate_constant_expression(node.right)
+            
+            # Convert to Python values for computation
+            if isinstance(left_val.type, ir.IntType):
+                left_py = left_val.constant
+            elif isinstance(left_val.type, ir.DoubleType):
+                left_py = left_val.constant
+            else:
+                return ir.Constant(ir.IntType(32), 0)  # Fallback
+                
+            if isinstance(right_val.type, ir.IntType):
+                right_py = right_val.constant
+            elif isinstance(right_val.type, ir.DoubleType):
+                right_py = right_val.constant
+            else:
+                return ir.Constant(ir.IntType(32), 0)  # Fallback
+            
+            # Perform the operation
+            if node.op == '+':
+                result = left_py + right_py
+            elif node.op == '-':
+                result = left_py - right_py
+            elif node.op == '*':
+                result = left_py * right_py
+            elif node.op == '/':
+                result = left_py / right_py
+            elif node.op == '%':
+                result = left_py % right_py
+            else:
+                return ir.Constant(ir.IntType(32), 0)  # Fallback
+            
+            # Return appropriate type based on operands and result
+            if isinstance(result, float) or isinstance(left_py, float) or isinstance(right_py, float):
+                return ir.Constant(ir.DoubleType(), float(result))
+            else:
+                return ir.Constant(ir.IntType(32), int(result))
         
         # For function calls and other expressions, we'll need more sophisticated handling
         # For now, return a default value - use int32 as it's the most common
@@ -1175,7 +1220,8 @@ class LLVMCodeGenerator(Visitor):
             return self.visit_array_function_call(node)
 
         # Map PIE function names to their actual LLVM function names
-        math_function_map = {
+        function_name_map = {
+            # Math functions
             'pow': 'pie_pow',
             'sqrt': 'pie_sqrt',
             'sin': 'pie_sin',
@@ -1201,10 +1247,15 @@ class LLVMCodeGenerator(Visitor):
             'rand_range': 'pie_rand_range',
             'pi': 'pie_pi',
             'e': 'pie_e',
-            'time': 'pie_time'
+            'time': 'pie_time',
+            # String functions
+            'strlen': 'pie_strlen',
+            'strcmp': 'pie_strcmp',
+            'strcpy': 'pie_strcpy',
+            'strcat': 'pie_strcat'
         }
         
-        actual_name = math_function_map.get(node.name, node.name)
+        actual_name = function_name_map.get(node.name, node.name)
         func = self.module.get_global(actual_name)
         if func is None:
             raise Exception(f"Unknown function referenced: {node.name} (mapped to {actual_name})")
@@ -1414,6 +1465,12 @@ class LLVMCodeGenerator(Visitor):
                 output_val = self.builder.load(raw_val)
             else:
                 # It's already an i8* (string literal)
+                output_val = raw_val
+        elif output_type == 'char':
+            # For char, we always need to load the value (i8) from the pointer (i8*)
+            if isinstance(raw_val.type, ir.PointerType):
+                output_val = self.builder.load(raw_val)
+            else:
                 output_val = raw_val
         else:
             # For other types, load if it's a pointer

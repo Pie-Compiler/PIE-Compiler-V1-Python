@@ -85,6 +85,7 @@ class Parser:
             "strcmp": {"return_type": "int", "params": [("string", "s1"), ("string", "s2")]},
             "strcpy": {"return_type": "string", "params": [("string", "dest"), ("string", "src")]},
             "strcat": {"return_type": "string", "params": [("string", "dest"), ("string", "src")]},
+            "concat_strings": {"return_type": "string", "params": [("string", "s1"), ("string", "s2")]},
         }
         for name, info in string_functions.items():
             param_types = [p[0] for p in info['params']]
