@@ -10,16 +10,20 @@ target triple = "x86_64-unknown-linux-gnu"
 %DArrayFloat = type { double*, i64, i64 }
 %DArrayChar = type { i8*, i64, i64 }
 
-@person = internal global %Dictionary* null
-@username = internal global i8* null
-@.str0 = internal constant [1 x i8] zeroinitializer
-@empty = internal global i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str0, i32 0, i32 0)
-@.str1 = internal constant [5 x i8] c"name\00"
-@.str2 = internal constant [9 x i8] c"John Doe\00"
-@.str3 = internal constant [4 x i8] c"age\00"
-@.str4 = internal constant [6 x i8] c"names\00"
-@.str5 = internal constant [18 x i8] c"username is empty\00"
-@.str6 = internal constant [5 x i8] c"null\00"
+@.str0 = internal constant [9 x i8] c"John Doe\00"
+@username = internal global i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str0, i32 0, i32 0)
+@age = internal global i32 0
+@config = internal global %Dictionary* null
+@name = internal global i8* null
+@.str1 = internal constant [7 x i8] c"server\00"
+@.str2 = internal constant [10 x i8] c"localhost\00"
+@.str3 = internal constant [17 x i8] c"Username is null\00"
+@.str4 = internal constant [23 x i8] c"Username is not null: \00"
+@.str5 = internal constant [22 x i8] c"Age is null/undefined\00"
+@.str6 = internal constant [17 x i8] c"Age is defined: \00"
+@.str7 = internal constant [22 x i8] c"Server not configured\00"
+@.str8 = internal constant [5 x i8] c"null\00"
+@.str9 = internal constant [9 x i8] c"not null\00"
 
 declare void @input_int(i32*)
 
@@ -252,41 +256,82 @@ declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 define i32 @main() {
 entry:
   %.2 = call %Dictionary* @dict_create()
-  %.3 = bitcast [5 x i8]* @.str1 to i8*
-  %.4 = bitcast [9 x i8]* @.str2 to i8*
+  %.3 = bitcast [7 x i8]* @.str1 to i8*
+  %.4 = bitcast [10 x i8]* @.str2 to i8*
   %.5 = call %DictValue* @new_string(i8* %.4)
   call void @dict_set(%Dictionary* %.2, i8* %.3, %DictValue* %.5)
-  %.7 = bitcast [4 x i8]* @.str3 to i8*
-  %.8 = call %DictValue* @new_int(i32 30)
-  call void @dict_set(%Dictionary* %.2, i8* %.7, %DictValue* %.8)
-  store %Dictionary* %.2, %Dictionary** @person, align 8
-  %.11 = load %Dictionary*, %Dictionary** @person, align 8
-  %.12 = bitcast [6 x i8]* @.str4 to i8*
-  %call_tmp = call i8* @dict_get_string(%Dictionary* %.11, i8* %.12)
-  store i8* %call_tmp, i8** @username, align 8
-  %.14 = load i8*, i8** @username, align 8
-  %.15 = load i8*, i8** @empty, align 8
-  %strcmp_result = call i32 @pie_strcmp(i8* %.14, i8* %.15)
-  %str_eq = icmp eq i32 %strcmp_result, 0
-  br i1 %str_eq, label %then, label %if_cont
+  store %Dictionary* %.2, %Dictionary** @config, align 8
+  %.8 = load i8*, i8** @username, align 8
+  %null_check = icmp eq i8* %.8, null
+  br i1 %null_check, label %then, label %else
 
 then:                                             ; preds = %entry
-  %.17 = bitcast [18 x i8]* @.str5 to i8*
-  call void @output_string(i8* %.17)
+  %.10 = bitcast [17 x i8]* @.str3 to i8*
+  call void @output_string(i8* %.10)
   br label %if_cont
 
-if_cont:                                          ; preds = %then, %entry
-  %.20 = load i8*, i8** @username, align 8
-  %null_check = icmp eq i8* %.20, null
-  br i1 %null_check, label %then.1, label %if_cont.1
+else:                                             ; preds = %entry
+  %.13 = bitcast [23 x i8]* @.str4 to i8*
+  call void @output_string(i8* %.13)
+  %.15 = load i8*, i8** @username, align 8
+  call void @output_string(i8* %.15)
+  br label %if_cont
+
+if_cont:                                          ; preds = %else, %then
+  %.18 = load i32, i32* @age, align 4
+  br i1 false, label %then.1, label %else.1
 
 then.1:                                           ; preds = %if_cont
-  %.22 = bitcast [5 x i8]* @.str6 to i8*
-  call void @output_string(i8* %.22)
+  %.20 = bitcast [22 x i8]* @.str5 to i8*
+  call void @output_string(i8* %.20)
   br label %if_cont.1
 
-if_cont.1:                                        ; preds = %then.1, %if_cont
-  %.25 = load i8*, i8** @username, align 8
-  call void @output_string(i8* %.25)
+else.1:                                           ; preds = %if_cont
+  %.23 = bitcast [17 x i8]* @.str6 to i8*
+  call void @output_string(i8* %.23)
+  %.25 = load i32, i32* @age, align 4
+  call void @output_int(i32 %.25)
+  br label %if_cont.1
+
+if_cont.1:                                        ; preds = %else.1, %then.1
+  %.28 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp = call i32 @dict_key_exists(%Dictionary* %.28, i8* %.3)
+  %.29 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.1 = call i32 @dict_key_exists(%Dictionary* %.29, i8* %.3)
+  %.30 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.2 = call i32 @dict_key_exists(%Dictionary* %.30, i8* %.3)
+  %i_cmp_tmp = icmp eq i32 %call_tmp.2, 1
+  br i1 %i_cmp_tmp, label %then.2, label %else.2
+
+then.2:                                           ; preds = %if_cont.1
+  %server = alloca i8*, align 8
+  %.32 = load %Dictionary*, %Dictionary** @config, align 8
+  %call_tmp.3 = call i8* @dict_get_string(%Dictionary* %.32, i8* %.3)
+  store i8* %call_tmp.3, i8** %server, align 8
+  %.34 = load i8*, i8** %server, align 8
+  call void @output_string(i8* %.34)
+  br label %if_cont.2
+
+else.2:                                           ; preds = %if_cont.1
+  %.37 = bitcast [22 x i8]* @.str7 to i8*
+  call void @output_string(i8* %.37)
+  br label %if_cont.2
+
+if_cont.2:                                        ; preds = %else.2, %then.2
+  %.40 = load i8*, i8** @name, align 8
+  %null_check.1 = icmp eq i8* %.40, null
+  br i1 %null_check.1, label %then.3, label %else.3
+
+then.3:                                           ; preds = %if_cont.2
+  %.42 = bitcast [5 x i8]* @.str8 to i8*
+  call void @output_string(i8* %.42)
+  br label %if_cont.3
+
+else.3:                                           ; preds = %if_cont.2
+  %.45 = bitcast [9 x i8]* @.str9 to i8*
+  call void @output_string(i8* %.45)
+  br label %if_cont.3
+
+if_cont.3:                                        ; preds = %else.3, %then.3
   ret i32 0
 }

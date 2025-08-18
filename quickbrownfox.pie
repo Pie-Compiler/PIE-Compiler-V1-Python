@@ -20,7 +20,7 @@ int y = 3;
 output(x + y, int); output("\n", string);
 output(x - y, int); output("\n", string);
 output(x * y, int); output("\n", string);
-output(x / y, int); output("\n", string);
+output(x / y, float); output("\n", string);
 output(x % y, int); output("\n", string);
 
 if (x > y) { output("x>y\n", string); } else { output("x<=y\n", string); }
@@ -47,8 +47,8 @@ if (string_is_empty("") == 1) { output("empty ok\n", string); }
 
 // ----- Dynamic arrays: int, float, string, char -----
 output("== Dynamic Arrays ==\n", string);
-d_array_int ai = [1,2,3];
-d_array_int aj = [4,5];
+int ai[] = [1,2,3];
+int aj[] = [4,5];
 ai = ai + aj; // concat
 output(arr_size(ai), int); output("\n", string);
 output(arr_indexof(ai, 5), int); output("\n", string);
@@ -57,14 +57,14 @@ output(arr_avg(ai), float); output("\n", string);
 arr_push(ai, 42);
 output(arr_pop(ai), int); output("\n", string);
 
-d_array_float af = [1.5, 2.5, 3.5];
+float af[] = [1.5, 2.5, 3.5];
 output(arr_size(af), int); output("\n", string);
 output(arr_avg(af), float); output("\n", string);
 
-d_array_string arrs = ["red", "green"];
+string arrs[] = ["red", "green"];
 arr_push(arrs, "blue");
 output(arr_size(arrs), int); output("\n", string);
-output(arr_indexof(arrs, "green"), int); output("\n", string);
+output(arr_indexof(arrs, "green"), int); output("\n", string); 
 
 // (char dynamic array currently omitted in front-end)
 
