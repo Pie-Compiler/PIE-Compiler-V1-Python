@@ -936,13 +936,13 @@ class LLVMCodeGenerator(Visitor):
             if isinstance(raw_val.type, ir.IntType) and raw_val.type.width == 8:
                 return raw_val
             # If we have a string pointer, load the first character
-            elif isinstance(raw_val.type, ir.IntType(8).as_pointer()):
+            elif raw_val.type == ir.IntType(8).as_pointer():
                 return self.builder.load(raw_val)
         
         # For string arrays: expecting i8*, return string pointers as-is
-        elif isinstance(expected_elem_type, ir.IntType(8).as_pointer()):
+        elif expected_elem_type == ir.IntType(8).as_pointer():
             # If we have a string pointer, return it directly
-            if isinstance(raw_val.type, ir.IntType(8).as_pointer()):
+            if raw_val.type == ir.IntType(8).as_pointer():
                 return raw_val
         
         # Otherwise normal pointer load semantics
