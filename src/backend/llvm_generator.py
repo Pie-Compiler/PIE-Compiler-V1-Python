@@ -21,7 +21,6 @@ class LLVMCodeGenerator(Visitor):
         self._declare_runtime_functions()
 
     def _initialize_llvm(self):
-        llvm.initialize()
         llvm.initialize_native_target()
         llvm.initialize_native_asmprinter()
         self.target_machine = llvm.Target.from_default_triple().create_target_machine()
@@ -168,6 +167,16 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="pie_strcmp")
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcpy")
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcat")
+        
+        # Advanced string utilities
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_to_upper")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_to_lower")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_trim")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type, int_type, int_type]), name="string_substring")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_index_of")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type, ir.IntType(8), ir.IntType(8)]), name="string_replace_char")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_reverse")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, ir.IntType(8)]), name="string_count_char")
 
         # File I/O Library
         file_type = self.get_llvm_type('file')

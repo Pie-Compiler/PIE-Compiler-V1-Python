@@ -31,7 +31,8 @@ A compiler for the PIE programming language, supporting parsing, semantic analys
 
 ### 📚 Documentation
 - **[Complete Documentation](docs/README.md)** - Comprehensive guide to all PIE features
-- **[String Comparisons](docs/string_comparisons.md)** - String operations and utilities ⭐ **NEW!**
+- **[String Comparisons](docs/string_comparisons.md)** - String operations and utilities
+- **[Advanced String Utilities](docs/advanced_string_utilities.md)** - Advanced string manipulation functions ⭐ **NEW!**
 - **[Quick Reference](docs/string_quick_reference.md)** - String comparison cheat sheet
 
 ### 1. Basic Language Structure
@@ -271,11 +272,47 @@ file_close(readFile);
 ```
 
 #### String Utility Functions
+
+**Basic String Functions:**
 ```pie
 int strlen(string s);                    // Get string length
 int strcmp(string s1, string s2);       // Compare strings
 string strcpy(string dest, string src); // Copy string
 string strcat(string dest, string src); // Concatenate strings
+```
+
+**Advanced String Utilities:** ⭐ **NEW!**
+```pie
+// Case conversion
+string string_to_upper(string str);     // Convert to uppercase
+string string_to_lower(string str);     // Convert to lowercase
+
+// String manipulation
+string string_trim(string str);         // Remove leading/trailing whitespace
+string string_substring(string str, int start, int length); // Extract substring
+string string_reverse(string str);      // Reverse string
+
+// String searching
+int string_index_of(string haystack, string needle); // Find substring position
+int string_contains(string haystack, string needle); // Check if contains substring
+int string_starts_with(string str, string prefix);   // Check if starts with prefix
+int string_ends_with(string str, string suffix);     // Check if ends with suffix
+
+// Character operations
+string string_replace_char(string str, char old, char new); // Replace character
+int string_count_char(string str, char ch);         // Count character occurrences
+int string_is_empty(string str);                    // Check if string is empty
+```
+
+**Example:**
+```pie
+string text = "  Hello World  ";
+string trimmed = string_trim(text);
+string upper = string_to_upper(trimmed);
+output(upper, string);  // Output: HELLO WORLD
+
+string sub = string_substring(upper, 0, 5);
+output(sub, string);  // Output: HELLO
 ```
 
 #### Network Library

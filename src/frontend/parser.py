@@ -86,6 +86,15 @@ class Parser:
             "strcpy": {"return_type": "string", "params": [("string", "dest"), ("string", "src")]},
             "strcat": {"return_type": "string", "params": [("string", "dest"), ("string", "src")]},
             "concat_strings": {"return_type": "string", "params": [("string", "s1"), ("string", "s2")]},
+            # Advanced string utilities
+            "string_to_upper": {"return_type": "string", "params": [("string", "str")]},
+            "string_to_lower": {"return_type": "string", "params": [("string", "str")]},
+            "string_trim": {"return_type": "string", "params": [("string", "str")]},
+            "string_substring": {"return_type": "string", "params": [("string", "str"), ("int", "start"), ("int", "length")]},
+            "string_index_of": {"return_type": "int", "params": [("string", "haystack"), ("string", "needle")]},
+            "string_replace_char": {"return_type": "string", "params": [("string", "str"), ("char", "old_char"), ("char", "new_char")]},
+            "string_reverse": {"return_type": "string", "params": [("string", "str")]},
+            "string_count_char": {"return_type": "int", "params": [("string", "str"), ("char", "ch")]},
         }
         for name, info in string_functions.items():
             param_types = [p[0] for p in info['params']]
