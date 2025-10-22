@@ -967,18 +967,20 @@ class LLVMCodeGenerator(Visitor):
             if val.startswith('"') and val.endswith('"'):
                 str_val = val[1:-1].replace('\\n', '\n') + '\0'
                 if str_val in self.global_strings:
-                    ptr = self.global_strings[str_val]
+                    global_var = self.global_strings[str_val]
                 else:
                     c_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_val)), bytearray(str_val.encode("utf8")))
                     global_var = ir.GlobalVariable(self.module, c_str.type, name=f".str{len(self.global_strings)}")
                     global_var.initializer = c_str
                     global_var.global_constant = True
                     global_var.linkage = 'internal'
-                    if self.builder:
-                        ptr = self.builder.bitcast(global_var, ir.IntType(8).as_pointer())
-                    else:
-                        ptr = global_var.gep([ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
-                    self.global_strings[str_val] = ptr
+                    self.global_strings[str_val] = global_var
+                
+                # Create a fresh bitcast/GEP for each use to avoid domination issues
+                if self.builder:
+                    ptr = self.builder.bitcast(global_var, ir.IntType(8).as_pointer())
+                else:
+                    ptr = global_var.gep([ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
                 return ptr
         raise Exception(f"Unsupported primary literal: {val}")
 

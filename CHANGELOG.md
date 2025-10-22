@@ -4,6 +4,14 @@
 
 ### Bug Fixes
 
+#### Fixed LLVM Domination Error with String Literals in Conditionals
+- **Issue**: "Instruction does not dominate all uses!" error when using string literals in output statements within conditional blocks (if/else)
+- **Root Cause**: String literal bitcast instructions were being cached and reused across different basic blocks, violating LLVM's domination rules
+- **Fix**: Modified `visit_primary()` method to store the global variable instead of the bitcast instruction, creating a fresh bitcast for each use
+- **Impact**: String literals can now be safely used in any control flow structure (if/else, loops, nested conditionals)
+- **File Modified**: `src/backend/llvm_generator.py` (lines 967-983)
+- **Tests**: All tests pass including null checking and logical operators (&&, ||) with output statements
+
 #### Fixed llvmlite Deprecation Warning
 - **Issue**: The compiler was using the deprecated `llvmlite.initialize()` function
 - **Fix**: Removed the deprecated call from `src/backend/llvm_generator.py`
