@@ -1,23 +1,30 @@
 ; ModuleID = '<string>'
 source_filename = "<string>"
-target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
+
+%DArrayInt = type { i32*, i64, i64 }
+%DArrayString = type { i8**, i64, i64 }
+%DArrayChar = type { i8*, i64, i64 }
+%DArrayFloat = type { double*, i64, i64 }
+%Dictionary = type { i8**, i32, i32 }
+%DictValue = type { i32, i64 }
 
 @my_int = internal global i32 42
 @my_float = internal global double 3.141590e+00
 @my_char = internal global i8 81
 @.str0 = internal constant [44 x i8] c"The quick brown fox jumps over the lazy dog\00"
-@my_string = internal global ptr @.str0
-@numbers = internal global ptr null
-@fibonacci = internal global ptr null
-@animals = internal global ptr null
-@colors = internal global ptr null
-@letters = internal global ptr null
-@vowels = internal global ptr null
-@prices = internal global ptr null
-@coordinates = internal global ptr null
-@person = internal global ptr null
-@config = internal global ptr null
+@my_string = internal global i8* getelementptr inbounds ([44 x i8], [44 x i8]* @.str0, i32 0, i32 0)
+@numbers = internal global %DArrayInt* null
+@fibonacci = internal global %DArrayInt* null
+@animals = internal global %DArrayString* null
+@colors = internal global %DArrayString* null
+@letters = internal global %DArrayChar* null
+@vowels = internal global %DArrayChar* null
+@prices = internal global %DArrayFloat* null
+@coordinates = internal global %DArrayFloat* null
+@person = internal global %Dictionary* null
+@config = internal global %Dictionary* null
 @sum_result = internal global i32 15
 @diff_result = internal global i32 7
 @mult_result = internal global i32 42
@@ -44,21 +51,21 @@ target triple = "x86_64-unknown-linux-gnu"
 @min_int_result = internal global i32 0
 @max_int_result = internal global i32 0
 @.str1 = internal constant [6 x i8] c"Hello\00"
-@hello = internal global ptr @.str1
+@hello = internal global i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str1, i32 0, i32 0)
 @.str2 = internal constant [6 x i8] c"World\00"
-@world = internal global ptr @.str2
-@greeting = internal global ptr null
+@world = internal global i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str2, i32 0, i32 0)
+@greeting = internal global i8* null
 @str_length = internal global i32 0
 @numbers_size = internal global i32 0
 @animals_size = internal global i32 0
 @letters_size = internal global i32 0
 @search_index = internal global i32 0
 @not_found = internal global i32 0
-@more_numbers = internal global ptr null
-@combined = internal global ptr null
+@more_numbers = internal global %DArrayInt* null
+@combined = internal global %DArrayInt* null
 @numbers_avg = internal global double 0.000000e+00
 @prices_avg = internal global double 0.000000e+00
-@person_name = internal global ptr null
+@person_name = internal global i8* null
 @person_age = internal global i32 0
 @person_height = internal global double 0.000000e+00
 @cmp_result = internal global i32 0
@@ -149,17 +156,17 @@ target triple = "x86_64-unknown-linux-gnu"
 @.str85 = internal constant [34 x i8] c"All tests completed successfully!\00"
 @.str86 = internal constant [50 x i8] c"The quick brown fox has tested every PIE feature!\00"
 
-declare void @input_int(ptr)
+declare void @input_int(i32*)
 
-declare void @input_float(ptr)
+declare void @input_float(double*)
 
-declare void @input_string(ptr)
+declare void @input_string(i8**)
 
-declare void @input_char(ptr)
+declare void @input_char(i8*)
 
 declare void @output_int(i32)
 
-declare void @output_string(ptr)
+declare void @output_string(i8*)
 
 declare void @output_char(i8)
 
@@ -219,649 +226,649 @@ declare double @pie_e()
 
 declare i32 @pie_time()
 
-declare ptr @concat_strings(ptr, ptr)
+declare i8* @concat_strings(i8*, i8*)
 
-declare i32 @pie_strlen(ptr)
+declare i32 @pie_strlen(i8*)
 
-declare i32 @pie_strcmp(ptr, ptr)
+declare i32 @pie_strcmp(i8*, i8*)
 
-declare ptr @pie_strcpy(ptr, ptr)
+declare i8* @pie_strcpy(i8*, i8*)
 
-declare ptr @pie_strcat(ptr, ptr)
+declare i8* @pie_strcat(i8*, i8*)
 
-declare ptr @string_to_upper(ptr)
+declare i8* @string_to_upper(i8*)
 
-declare ptr @string_to_lower(ptr)
+declare i8* @string_to_lower(i8*)
 
-declare ptr @string_trim(ptr)
+declare i8* @string_trim(i8*)
 
-declare ptr @string_substring(ptr, i32, i32)
+declare i8* @string_substring(i8*, i32, i32)
 
-declare i32 @string_index_of(ptr, ptr)
+declare i32 @string_index_of(i8*, i8*)
 
-declare ptr @string_replace_char(ptr, i8, i8)
+declare i8* @string_replace_char(i8*, i8, i8)
 
-declare ptr @string_reverse(ptr)
+declare i8* @string_reverse(i8*)
 
-declare i32 @string_count_char(ptr, i8)
+declare i32 @string_count_char(i8*, i8)
 
-declare i64 @file_open(ptr, ptr)
+declare i64 @file_open(i8*, i8*)
 
 declare void @file_close(i64)
 
-declare void @file_write(i64, ptr)
+declare void @file_write(i64, i8*)
 
-declare ptr @file_read_all(i64)
+declare i8* @file_read_all(i64)
 
-declare ptr @file_read_line(i64)
+declare i8* @file_read_line(i64)
 
-declare ptr @dict_create()
+declare %Dictionary* @dict_create()
 
-declare void @dict_set(ptr, ptr, ptr)
+declare void @dict_set(%Dictionary*, i8*, %DictValue*)
 
-declare ptr @dict_get(ptr, ptr)
+declare %DictValue* @dict_get(%Dictionary*, i8*)
 
-declare i32 @dict_get_int(ptr, ptr)
+declare i32 @dict_get_int(%Dictionary*, i8*)
 
-declare double @dict_get_float(ptr, ptr)
+declare double @dict_get_float(%Dictionary*, i8*)
 
-declare ptr @dict_get_string(ptr, ptr)
+declare i8* @dict_get_string(%Dictionary*, i8*)
 
-declare i32 @dict_has_key(ptr, ptr)
+declare i32 @dict_has_key(%Dictionary*, i8*)
 
-declare i32 @dict_key_exists(ptr, ptr)
+declare i32 @dict_key_exists(%Dictionary*, i8*)
 
-declare void @dict_delete(ptr, ptr)
+declare void @dict_delete(%Dictionary*, i8*)
 
-declare void @dict_free(ptr)
+declare void @dict_free(%Dictionary*)
 
-declare ptr @dict_value_create_int(i32)
+declare %DictValue* @dict_value_create_int(i32)
 
-declare ptr @dict_value_create_float(double)
+declare %DictValue* @dict_value_create_float(double)
 
-declare ptr @dict_value_create_string(ptr)
+declare %DictValue* @dict_value_create_string(i8*)
 
-declare ptr @dict_value_create_null()
+declare %DictValue* @dict_value_create_null()
 
-declare ptr @new_int(i32)
+declare %DictValue* @new_int(i32)
 
-declare ptr @new_float(double)
+declare %DictValue* @new_float(double)
 
-declare ptr @new_string(ptr)
+declare %DictValue* @new_string(i8*)
 
-declare i32 @is_variable_defined(ptr)
+declare i32 @is_variable_defined(i8*)
 
-declare i32 @is_variable_null(ptr)
+declare i32 @is_variable_null(i8*)
 
-declare i32 @string_contains(ptr, ptr)
+declare i32 @string_contains(i8*, i8*)
 
-declare i32 @string_starts_with(ptr, ptr)
+declare i32 @string_starts_with(i8*, i8*)
 
-declare i32 @string_ends_with(ptr, ptr)
+declare i32 @string_ends_with(i8*, i8*)
 
-declare i32 @string_is_empty(ptr)
+declare i32 @string_is_empty(i8*)
 
-declare void @d_array_int_push(ptr, i32)
+declare void @d_array_int_push(%DArrayInt*, i32)
 
-declare i32 @d_array_int_pop(ptr)
+declare i32 @d_array_int_pop(%DArrayInt*)
 
-declare i32 @d_array_int_size(ptr)
+declare i32 @d_array_int_size(%DArrayInt*)
 
-declare i32 @d_array_int_contains(ptr, i32)
+declare i32 @d_array_int_contains(%DArrayInt*, i32)
 
-declare i32 @d_array_int_indexof(ptr, i32)
+declare i32 @d_array_int_indexof(%DArrayInt*, i32)
 
-declare ptr @d_array_int_concat(ptr, ptr)
+declare %DArrayInt* @d_array_int_concat(%DArrayInt*, %DArrayInt*)
 
-declare double @d_array_int_avg(ptr)
+declare double @d_array_int_avg(%DArrayInt*)
 
-declare i32 @d_array_int_get(ptr, i32)
+declare i32 @d_array_int_get(%DArrayInt*, i32)
 
-declare void @d_array_int_set(ptr, i32, i32)
+declare void @d_array_int_set(%DArrayInt*, i32, i32)
 
-declare void @d_array_string_push(ptr, ptr)
+declare void @d_array_string_push(%DArrayString*, i8*)
 
-declare ptr @d_array_string_pop(ptr)
+declare i8* @d_array_string_pop(%DArrayString*)
 
-declare i32 @d_array_string_size(ptr)
+declare i32 @d_array_string_size(%DArrayString*)
 
-declare i32 @d_array_string_contains(ptr, ptr)
+declare i32 @d_array_string_contains(%DArrayString*, i8*)
 
-declare i32 @d_array_string_indexof(ptr, ptr)
+declare i32 @d_array_string_indexof(%DArrayString*, i8*)
 
-declare ptr @d_array_string_concat(ptr, ptr)
+declare %DArrayString* @d_array_string_concat(%DArrayString*, %DArrayString*)
 
-declare ptr @d_array_string_get(ptr, i32)
+declare i8* @d_array_string_get(%DArrayString*, i32)
 
-declare void @d_array_string_set(ptr, i32, ptr)
+declare void @d_array_string_set(%DArrayString*, i32, i8*)
 
-declare void @d_array_float_push(ptr, double)
+declare void @d_array_float_push(%DArrayFloat*, double)
 
-declare double @d_array_float_pop(ptr)
+declare double @d_array_float_pop(%DArrayFloat*)
 
-declare i32 @d_array_float_size(ptr)
+declare i32 @d_array_float_size(%DArrayFloat*)
 
-declare i32 @d_array_float_contains(ptr, double)
+declare i32 @d_array_float_contains(%DArrayFloat*, double)
 
-declare i32 @d_array_float_indexof(ptr, double)
+declare i32 @d_array_float_indexof(%DArrayFloat*, double)
 
-declare double @d_array_float_avg(ptr)
+declare double @d_array_float_avg(%DArrayFloat*)
 
-declare ptr @d_array_int_create()
+declare %DArrayInt* @d_array_int_create()
 
-declare ptr @d_array_string_create()
+declare %DArrayString* @d_array_string_create()
 
-declare ptr @d_array_float_create()
+declare %DArrayFloat* @d_array_float_create()
 
-declare void @d_array_int_append(ptr, i32)
+declare void @d_array_int_append(%DArrayInt*, i32)
 
-declare void @d_array_string_append(ptr, ptr)
+declare void @d_array_string_append(%DArrayString*, i8*)
 
-declare void @d_array_float_append(ptr, double)
+declare void @d_array_float_append(%DArrayFloat*, double)
 
-declare double @d_array_float_get(ptr, i32)
+declare double @d_array_float_get(%DArrayFloat*, i32)
 
-declare void @d_array_float_set(ptr, i32, double)
+declare void @d_array_float_set(%DArrayFloat*, i32, double)
 
-declare void @d_array_float_free(ptr)
+declare void @d_array_float_free(%DArrayFloat*)
 
-declare void @print_int_array(ptr)
+declare void @print_int_array(%DArrayInt*)
 
-declare void @print_string_array(ptr)
+declare void @print_string_array(%DArrayString*)
 
-declare void @print_float_array(ptr)
+declare void @print_float_array(%DArrayFloat*)
 
-declare void @print_char_array(ptr)
+declare void @print_char_array(%DArrayChar*)
 
-declare ptr @d_array_char_create()
+declare %DArrayChar* @d_array_char_create()
 
-declare void @d_array_char_append(ptr, i8)
+declare void @d_array_char_append(%DArrayChar*, i8)
 
-declare i8 @d_array_char_get(ptr, i32)
+declare i8 @d_array_char_get(%DArrayChar*, i32)
 
-declare void @d_array_char_set(ptr, i32, i8)
+declare void @d_array_char_set(%DArrayChar*, i32, i8)
 
-declare i32 @d_array_char_size(ptr)
+declare i32 @d_array_char_size(%DArrayChar*)
 
-declare void @d_array_char_free(ptr)
+declare void @d_array_char_free(%DArrayChar*)
 
-declare i8 @d_array_char_pop(ptr)
+declare i8 @d_array_char_pop(%DArrayChar*)
 
-declare i1 @d_array_char_contains(ptr, i8)
+declare i1 @d_array_char_contains(%DArrayChar*, i8)
 
-declare i32 @d_array_char_indexof(ptr, i8)
+declare i32 @d_array_char_indexof(%DArrayChar*, i8)
 
-declare ptr @d_array_char_concat(ptr, ptr)
+declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
 define i32 @main() {
 entry:
-  %.2 = call ptr @d_array_int_create()
-  store ptr %.2, ptr @numbers, align 8
-  call void @d_array_int_append(ptr %.2, i32 1)
-  call void @d_array_int_append(ptr %.2, i32 2)
-  call void @d_array_int_append(ptr %.2, i32 3)
-  call void @d_array_int_append(ptr %.2, i32 4)
-  call void @d_array_int_append(ptr %.2, i32 5)
-  %.9 = call ptr @d_array_int_create()
-  store ptr %.9, ptr @fibonacci, align 8
-  call void @d_array_int_append(ptr %.9, i32 1)
-  call void @d_array_int_append(ptr %.9, i32 1)
-  call void @d_array_int_append(ptr %.9, i32 2)
-  call void @d_array_int_append(ptr %.9, i32 3)
-  call void @d_array_int_append(ptr %.9, i32 5)
-  call void @d_array_int_append(ptr %.9, i32 8)
-  call void @d_array_int_append(ptr %.9, i32 13)
-  %.18 = call ptr @d_array_string_create()
-  store ptr %.18, ptr @animals, align 8
-  %.20 = bitcast ptr @.str3 to ptr
-  call void @d_array_string_append(ptr %.18, ptr %.20)
-  %.22 = bitcast ptr @.str4 to ptr
-  call void @d_array_string_append(ptr %.18, ptr %.22)
-  %.24 = bitcast ptr @.str5 to ptr
-  call void @d_array_string_append(ptr %.18, ptr %.24)
-  %.26 = bitcast ptr @.str6 to ptr
-  call void @d_array_string_append(ptr %.18, ptr %.26)
-  %.28 = call ptr @d_array_string_create()
-  store ptr %.28, ptr @colors, align 8
-  %.30 = bitcast ptr @.str7 to ptr
-  call void @d_array_string_append(ptr %.28, ptr %.30)
-  %.32 = bitcast ptr @.str8 to ptr
-  call void @d_array_string_append(ptr %.28, ptr %.32)
-  %.34 = bitcast ptr @.str9 to ptr
-  call void @d_array_string_append(ptr %.28, ptr %.34)
-  %.36 = call ptr @d_array_char_create()
-  store ptr %.36, ptr @letters, align 8
-  call void @d_array_char_append(ptr %.36, i8 65)
-  call void @d_array_char_append(ptr %.36, i8 66)
-  call void @d_array_char_append(ptr %.36, i8 67)
-  call void @d_array_char_append(ptr %.36, i8 68)
-  %.42 = call ptr @d_array_char_create()
-  store ptr %.42, ptr @vowels, align 8
-  call void @d_array_char_append(ptr %.42, i8 97)
-  call void @d_array_char_append(ptr %.42, i8 101)
-  call void @d_array_char_append(ptr %.42, i8 105)
-  call void @d_array_char_append(ptr %.42, i8 111)
-  call void @d_array_char_append(ptr %.42, i8 117)
-  %.49 = call ptr @d_array_float_create()
-  store ptr %.49, ptr @prices, align 8
-  call void @d_array_float_append(ptr %.49, double 1.999000e+01)
-  call void @d_array_float_append(ptr %.49, double 2.999000e+01)
-  call void @d_array_float_append(ptr %.49, double 3.999000e+01)
-  %.54 = call ptr @d_array_float_create()
-  store ptr %.54, ptr @coordinates, align 8
-  call void @d_array_float_append(ptr %.54, double 1.500000e+00)
-  call void @d_array_float_append(ptr %.54, double 2.700000e+00)
-  call void @d_array_float_append(ptr %.54, double 3.800000e+00)
-  call void @d_array_float_append(ptr %.54, double 4.200000e+00)
-  %.60 = call ptr @d_array_int_create()
-  store ptr %.60, ptr @more_numbers, align 8
-  call void @d_array_int_append(ptr %.60, i32 7)
-  call void @d_array_int_append(ptr %.60, i32 8)
-  call void @d_array_int_append(ptr %.60, i32 9)
-  %.65 = call ptr @d_array_int_create()
-  store ptr %.65, ptr @combined, align 8
-  %.67 = load ptr, ptr @numbers, align 8
-  %.68 = load ptr, ptr @more_numbers, align 8
-  %.69 = load ptr, ptr @numbers, align 8
-  %.70 = load ptr, ptr @more_numbers, align 8
-  %concat_array_tmp = call ptr @d_array_int_concat(ptr %.69, ptr %.70)
-  store ptr %concat_array_tmp, ptr @combined, align 8
-  %.72 = call ptr @dict_create()
-  %.73 = bitcast ptr @.str10 to ptr
-  %.74 = bitcast ptr @.str11 to ptr
-  %.75 = call ptr @new_string(ptr %.74)
-  call void @dict_set(ptr %.72, ptr %.73, ptr %.75)
-  %.77 = bitcast ptr @.str12 to ptr
-  %.78 = call ptr @new_int(i32 30)
-  call void @dict_set(ptr %.72, ptr %.77, ptr %.78)
-  %.80 = bitcast ptr @.str13 to ptr
-  %.81 = call ptr @new_float(double 5.900000e+00)
-  call void @dict_set(ptr %.72, ptr %.80, ptr %.81)
-  store ptr %.72, ptr @person, align 8
-  %.84 = call ptr @dict_create()
-  %.85 = bitcast ptr @.str14 to ptr
-  %.86 = call ptr @new_int(i32 1)
-  call void @dict_set(ptr %.84, ptr %.85, ptr %.86)
-  %.88 = bitcast ptr @.str15 to ptr
-  %.89 = call ptr @new_float(double 3.050000e+01)
-  call void @dict_set(ptr %.84, ptr %.88, ptr %.89)
-  %.91 = bitcast ptr @.str16 to ptr
-  %.92 = bitcast ptr @.str17 to ptr
-  %.93 = call ptr @new_string(ptr %.92)
-  call void @dict_set(ptr %.84, ptr %.91, ptr %.93)
-  store ptr %.84, ptr @config, align 8
+  %.2 = call %DArrayInt* @d_array_int_create()
+  store %DArrayInt* %.2, %DArrayInt** @numbers, align 8
+  call void @d_array_int_append(%DArrayInt* %.2, i32 1)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 2)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 3)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 4)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 5)
+  %.9 = call %DArrayInt* @d_array_int_create()
+  store %DArrayInt* %.9, %DArrayInt** @fibonacci, align 8
+  call void @d_array_int_append(%DArrayInt* %.9, i32 1)
+  call void @d_array_int_append(%DArrayInt* %.9, i32 1)
+  call void @d_array_int_append(%DArrayInt* %.9, i32 2)
+  call void @d_array_int_append(%DArrayInt* %.9, i32 3)
+  call void @d_array_int_append(%DArrayInt* %.9, i32 5)
+  call void @d_array_int_append(%DArrayInt* %.9, i32 8)
+  call void @d_array_int_append(%DArrayInt* %.9, i32 13)
+  %.18 = call %DArrayString* @d_array_string_create()
+  store %DArrayString* %.18, %DArrayString** @animals, align 8
+  %.20 = bitcast [4 x i8]* @.str3 to i8*
+  call void @d_array_string_append(%DArrayString* %.18, i8* %.20)
+  %.22 = bitcast [4 x i8]* @.str4 to i8*
+  call void @d_array_string_append(%DArrayString* %.18, i8* %.22)
+  %.24 = bitcast [4 x i8]* @.str5 to i8*
+  call void @d_array_string_append(%DArrayString* %.18, i8* %.24)
+  %.26 = bitcast [5 x i8]* @.str6 to i8*
+  call void @d_array_string_append(%DArrayString* %.18, i8* %.26)
+  %.28 = call %DArrayString* @d_array_string_create()
+  store %DArrayString* %.28, %DArrayString** @colors, align 8
+  %.30 = bitcast [4 x i8]* @.str7 to i8*
+  call void @d_array_string_append(%DArrayString* %.28, i8* %.30)
+  %.32 = bitcast [6 x i8]* @.str8 to i8*
+  call void @d_array_string_append(%DArrayString* %.28, i8* %.32)
+  %.34 = bitcast [5 x i8]* @.str9 to i8*
+  call void @d_array_string_append(%DArrayString* %.28, i8* %.34)
+  %.36 = call %DArrayChar* @d_array_char_create()
+  store %DArrayChar* %.36, %DArrayChar** @letters, align 8
+  call void @d_array_char_append(%DArrayChar* %.36, i8 65)
+  call void @d_array_char_append(%DArrayChar* %.36, i8 66)
+  call void @d_array_char_append(%DArrayChar* %.36, i8 67)
+  call void @d_array_char_append(%DArrayChar* %.36, i8 68)
+  %.42 = call %DArrayChar* @d_array_char_create()
+  store %DArrayChar* %.42, %DArrayChar** @vowels, align 8
+  call void @d_array_char_append(%DArrayChar* %.42, i8 97)
+  call void @d_array_char_append(%DArrayChar* %.42, i8 101)
+  call void @d_array_char_append(%DArrayChar* %.42, i8 105)
+  call void @d_array_char_append(%DArrayChar* %.42, i8 111)
+  call void @d_array_char_append(%DArrayChar* %.42, i8 117)
+  %.49 = call %DArrayFloat* @d_array_float_create()
+  store %DArrayFloat* %.49, %DArrayFloat** @prices, align 8
+  call void @d_array_float_append(%DArrayFloat* %.49, double 1.999000e+01)
+  call void @d_array_float_append(%DArrayFloat* %.49, double 2.999000e+01)
+  call void @d_array_float_append(%DArrayFloat* %.49, double 3.999000e+01)
+  %.54 = call %DArrayFloat* @d_array_float_create()
+  store %DArrayFloat* %.54, %DArrayFloat** @coordinates, align 8
+  call void @d_array_float_append(%DArrayFloat* %.54, double 1.500000e+00)
+  call void @d_array_float_append(%DArrayFloat* %.54, double 2.700000e+00)
+  call void @d_array_float_append(%DArrayFloat* %.54, double 3.800000e+00)
+  call void @d_array_float_append(%DArrayFloat* %.54, double 4.200000e+00)
+  %.60 = call %DArrayInt* @d_array_int_create()
+  store %DArrayInt* %.60, %DArrayInt** @more_numbers, align 8
+  call void @d_array_int_append(%DArrayInt* %.60, i32 7)
+  call void @d_array_int_append(%DArrayInt* %.60, i32 8)
+  call void @d_array_int_append(%DArrayInt* %.60, i32 9)
+  %.65 = call %DArrayInt* @d_array_int_create()
+  store %DArrayInt* %.65, %DArrayInt** @combined, align 8
+  %.67 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  %.68 = load %DArrayInt*, %DArrayInt** @more_numbers, align 8
+  %.69 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  %.70 = load %DArrayInt*, %DArrayInt** @more_numbers, align 8
+  %concat_array_tmp = call %DArrayInt* @d_array_int_concat(%DArrayInt* %.69, %DArrayInt* %.70)
+  store %DArrayInt* %concat_array_tmp, %DArrayInt** @combined, align 8
+  %.72 = call %Dictionary* @dict_create()
+  %.73 = bitcast [5 x i8]* @.str10 to i8*
+  %.74 = bitcast [9 x i8]* @.str11 to i8*
+  %.75 = call %DictValue* @new_string(i8* %.74)
+  call void @dict_set(%Dictionary* %.72, i8* %.73, %DictValue* %.75)
+  %.77 = bitcast [4 x i8]* @.str12 to i8*
+  %.78 = call %DictValue* @new_int(i32 30)
+  call void @dict_set(%Dictionary* %.72, i8* %.77, %DictValue* %.78)
+  %.80 = bitcast [7 x i8]* @.str13 to i8*
+  %.81 = call %DictValue* @new_float(double 5.900000e+00)
+  call void @dict_set(%Dictionary* %.72, i8* %.80, %DictValue* %.81)
+  store %Dictionary* %.72, %Dictionary** @person, align 8
+  %.84 = call %Dictionary* @dict_create()
+  %.85 = bitcast [6 x i8]* @.str14 to i8*
+  %.86 = call %DictValue* @new_int(i32 1)
+  call void @dict_set(%Dictionary* %.84, i8* %.85, %DictValue* %.86)
+  %.88 = bitcast [8 x i8]* @.str15 to i8*
+  %.89 = call %DictValue* @new_float(double 3.050000e+01)
+  call void @dict_set(%Dictionary* %.84, i8* %.88, %DictValue* %.89)
+  %.91 = bitcast [5 x i8]* @.str16 to i8*
+  %.92 = bitcast [10 x i8]* @.str17 to i8*
+  %.93 = call %DictValue* @new_string(i8* %.92)
+  call void @dict_set(%Dictionary* %.84, i8* %.91, %DictValue* %.93)
+  store %Dictionary* %.84, %Dictionary** @config, align 8
   %call_tmp = call double @pie_pi()
-  store double %call_tmp, ptr @pi_value, align 8
+  store double %call_tmp, double* @pi_value, align 8
   %call_tmp.1 = call double @pie_e()
-  store double %call_tmp.1, ptr @e_value, align 8
-  %.98 = load double, ptr @pi_value, align 8
+  store double %call_tmp.1, double* @e_value, align 8
+  %.98 = load double, double* @pi_value, align 8
   %f_tmp = fdiv double %.98, 4.000000e+00
-  store double %f_tmp, ptr @angle, align 8
-  %.100 = load double, ptr @angle, align 8
+  store double %f_tmp, double* @angle, align 8
+  %.100 = load double, double* @angle, align 8
   %call_tmp.2 = call double @pie_sin(double %.100)
-  store double %call_tmp.2, ptr @sin_45, align 8
-  %.102 = load double, ptr @angle, align 8
+  store double %call_tmp.2, double* @sin_45, align 8
+  %.102 = load double, double* @angle, align 8
   %call_tmp.3 = call double @pie_cos(double %.102)
-  store double %call_tmp.3, ptr @cos_45, align 8
-  %.104 = load double, ptr @angle, align 8
+  store double %call_tmp.3, double* @cos_45, align 8
+  %.104 = load double, double* @angle, align 8
   %call_tmp.4 = call double @pie_tan(double %.104)
-  store double %call_tmp.4, ptr @tan_45, align 8
+  store double %call_tmp.4, double* @tan_45, align 8
   %call_tmp.5 = call double @pie_pow(double 2.000000e+00, double 3.000000e+00)
-  store double %call_tmp.5, ptr @power_result, align 8
+  store double %call_tmp.5, double* @power_result, align 8
   %call_tmp.6 = call double @pie_sqrt(double 1.600000e+01)
-  store double %call_tmp.6, ptr @sqrt_result, align 8
+  store double %call_tmp.6, double* @sqrt_result, align 8
   %call_tmp.7 = call double @pie_round(double 3.700000e+00)
-  store double %call_tmp.7, ptr @round_up, align 8
+  store double %call_tmp.7, double* @round_up, align 8
   %call_tmp.8 = call double @pie_round(double 3.200000e+00)
-  store double %call_tmp.8, ptr @round_down, align 8
+  store double %call_tmp.8, double* @round_down, align 8
   %call_tmp.9 = call double @pie_floor(double 3.900000e+00)
-  store double %call_tmp.9, ptr @floor_result, align 8
+  store double %call_tmp.9, double* @floor_result, align 8
   %call_tmp.10 = call double @pie_ceil(double 3.100000e+00)
-  store double %call_tmp.10, ptr @ceil_result, align 8
+  store double %call_tmp.10, double* @ceil_result, align 8
   %f_neg_tmp = fsub double 0.000000e+00, 5.500000e+00
   %call_tmp.11 = call double @pie_abs(double %f_neg_tmp)
-  store double %call_tmp.11, ptr @abs_result, align 8
+  store double %call_tmp.11, double* @abs_result, align 8
   %i_neg_tmp = sub i32 0, 10
   %call_tmp.12 = call i32 @pie_abs_int(i32 %i_neg_tmp)
-  store i32 %call_tmp.12, ptr @abs_int_result, align 4
+  store i32 %call_tmp.12, i32* @abs_int_result, align 4
   %call_tmp.13 = call double @pie_min(double 3.500000e+00, double 7.200000e+00)
-  store double %call_tmp.13, ptr @min_result, align 8
+  store double %call_tmp.13, double* @min_result, align 8
   %call_tmp.14 = call double @pie_max(double 3.500000e+00, double 7.200000e+00)
-  store double %call_tmp.14, ptr @max_result, align 8
+  store double %call_tmp.14, double* @max_result, align 8
   %call_tmp.15 = call i32 @pie_min_int(i32 15, i32 8)
-  store i32 %call_tmp.15, ptr @min_int_result, align 4
+  store i32 %call_tmp.15, i32* @min_int_result, align 4
   %call_tmp.16 = call i32 @pie_max_int(i32 15, i32 8)
-  store i32 %call_tmp.16, ptr @max_int_result, align 4
-  %.118 = load ptr, ptr @hello, align 8
-  %.119 = load ptr, ptr @world, align 8
-  %call_tmp.17 = call ptr @concat_strings(ptr %.118, ptr %.119)
-  store ptr %call_tmp.17, ptr @greeting, align 8
-  %.121 = load ptr, ptr @my_string, align 8
-  %call_tmp.18 = call i32 @pie_strlen(ptr %.121)
-  store i32 %call_tmp.18, ptr @str_length, align 4
-  %.123 = load ptr, ptr @numbers, align 8
-  %.124 = call i32 @d_array_int_size(ptr %.123)
-  store i32 %.124, ptr @numbers_size, align 4
-  %.126 = load ptr, ptr @animals, align 8
-  %.127 = call i32 @d_array_string_size(ptr %.126)
-  store i32 %.127, ptr @animals_size, align 4
-  %.129 = load ptr, ptr @letters, align 8
-  %.130 = call i32 @d_array_char_size(ptr %.129)
-  store i32 %.130, ptr @letters_size, align 4
-  %.132 = load ptr, ptr @numbers, align 8
-  %.133 = call i32 @d_array_int_indexof(ptr %.132, i32 3)
-  store i32 %.133, ptr @search_index, align 4
-  %.135 = load ptr, ptr @animals, align 8
-  %.136 = bitcast ptr @.str18 to ptr
-  %.137 = call i32 @d_array_string_indexof(ptr %.135, ptr %.136)
-  store i32 %.137, ptr @not_found, align 4
-  %.139 = load ptr, ptr @numbers, align 8
-  %.140 = call double @d_array_int_avg(ptr %.139)
-  store double %.140, ptr @numbers_avg, align 8
-  %.142 = load ptr, ptr @prices, align 8
-  %.143 = call double @d_array_float_avg(ptr %.142)
-  store double %.143, ptr @prices_avg, align 8
-  %.145 = load ptr, ptr @person, align 8
-  %call_tmp.19 = call ptr @dict_get_string(ptr %.145, ptr %.73)
-  store ptr %call_tmp.19, ptr @person_name, align 8
-  %.147 = load ptr, ptr @person, align 8
-  %call_tmp.20 = call i32 @dict_get_int(ptr %.147, ptr %.77)
-  store i32 %call_tmp.20, ptr @person_age, align 4
-  %.149 = load ptr, ptr @person, align 8
-  %call_tmp.21 = call double @dict_get_float(ptr %.149, ptr %.80)
-  store double %call_tmp.21, ptr @person_height, align 8
-  %.151 = bitcast ptr @.str19 to ptr
-  %.152 = bitcast ptr @.str20 to ptr
-  %call_tmp.22 = call i32 @pie_strcmp(ptr %.151, ptr %.152)
-  store i32 %call_tmp.22, ptr @cmp_result, align 4
-  %.154 = bitcast ptr @.str21 to ptr
-  call void @output_string(ptr %.154)
-  %.156 = bitcast ptr @.str22 to ptr
-  call void @output_string(ptr %.156)
-  %.158 = load i32, ptr @my_int, align 4
+  store i32 %call_tmp.16, i32* @max_int_result, align 4
+  %.118 = load i8*, i8** @hello, align 8
+  %.119 = load i8*, i8** @world, align 8
+  %call_tmp.17 = call i8* @concat_strings(i8* %.118, i8* %.119)
+  store i8* %call_tmp.17, i8** @greeting, align 8
+  %.121 = load i8*, i8** @my_string, align 8
+  %call_tmp.18 = call i32 @pie_strlen(i8* %.121)
+  store i32 %call_tmp.18, i32* @str_length, align 4
+  %.123 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  %.124 = call i32 @d_array_int_size(%DArrayInt* %.123)
+  store i32 %.124, i32* @numbers_size, align 4
+  %.126 = load %DArrayString*, %DArrayString** @animals, align 8
+  %.127 = call i32 @d_array_string_size(%DArrayString* %.126)
+  store i32 %.127, i32* @animals_size, align 4
+  %.129 = load %DArrayChar*, %DArrayChar** @letters, align 8
+  %.130 = call i32 @d_array_char_size(%DArrayChar* %.129)
+  store i32 %.130, i32* @letters_size, align 4
+  %.132 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  %.133 = call i32 @d_array_int_indexof(%DArrayInt* %.132, i32 3)
+  store i32 %.133, i32* @search_index, align 4
+  %.135 = load %DArrayString*, %DArrayString** @animals, align 8
+  %.136 = bitcast [6 x i8]* @.str18 to i8*
+  %.137 = call i32 @d_array_string_indexof(%DArrayString* %.135, i8* %.136)
+  store i32 %.137, i32* @not_found, align 4
+  %.139 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  %.140 = call double @d_array_int_avg(%DArrayInt* %.139)
+  store double %.140, double* @numbers_avg, align 8
+  %.142 = load %DArrayFloat*, %DArrayFloat** @prices, align 8
+  %.143 = call double @d_array_float_avg(%DArrayFloat* %.142)
+  store double %.143, double* @prices_avg, align 8
+  %.145 = load %Dictionary*, %Dictionary** @person, align 8
+  %call_tmp.19 = call i8* @dict_get_string(%Dictionary* %.145, i8* %.73)
+  store i8* %call_tmp.19, i8** @person_name, align 8
+  %.147 = load %Dictionary*, %Dictionary** @person, align 8
+  %call_tmp.20 = call i32 @dict_get_int(%Dictionary* %.147, i8* %.77)
+  store i32 %call_tmp.20, i32* @person_age, align 4
+  %.149 = load %Dictionary*, %Dictionary** @person, align 8
+  %call_tmp.21 = call double @dict_get_float(%Dictionary* %.149, i8* %.80)
+  store double %call_tmp.21, double* @person_height, align 8
+  %.151 = bitcast [6 x i8]* @.str19 to i8*
+  %.152 = bitcast [7 x i8]* @.str20 to i8*
+  %call_tmp.22 = call i32 @pie_strcmp(i8* %.151, i8* %.152)
+  store i32 %call_tmp.22, i32* @cmp_result, align 4
+  %.154 = bitcast [29 x i8]* @.str21 to i8*
+  call void @output_string(i8* %.154)
+  %.156 = bitcast [9 x i8]* @.str22 to i8*
+  call void @output_string(i8* %.156)
+  %.158 = load i32, i32* @my_int, align 4
   call void @output_int(i32 %.158)
-  %.160 = bitcast ptr @.str23 to ptr
-  call void @output_string(ptr %.160)
-  %.162 = load double, ptr @my_float, align 8
+  %.160 = bitcast [7 x i8]* @.str23 to i8*
+  call void @output_string(i8* %.160)
+  %.162 = load double, double* @my_float, align 8
   call void @output_float(double %.162, i32 5)
-  %.164 = bitcast ptr @.str24 to ptr
-  call void @output_string(ptr %.164)
-  %.166 = load i8, ptr @my_char, align 1
+  %.164 = bitcast [11 x i8]* @.str24 to i8*
+  call void @output_string(i8* %.164)
+  %.166 = load i8, i8* @my_char, align 1
   call void @output_char(i8 %.166)
-  %.168 = bitcast ptr @.str25 to ptr
-  call void @output_string(ptr %.168)
-  %.170 = bitcast ptr @.str26 to ptr
-  call void @output_string(ptr %.170)
-  %.172 = bitcast ptr @.str27 to ptr
-  call void @output_string(ptr %.172)
-  call void @output_string(ptr %.168)
-  %.175 = load ptr, ptr @numbers, align 8
-  call void @d_array_int_push(ptr %.175, i32 6)
-  %.177 = load ptr, ptr @animals, align 8
-  %.178 = bitcast ptr @.str28 to ptr
-  call void @d_array_string_push(ptr %.177, ptr %.178)
-  %.180 = load ptr, ptr @letters, align 8
-  call void @d_array_char_append(ptr %.180, i8 90)
-  %.182 = load ptr, ptr @prices, align 8
-  call void @d_array_float_push(ptr %.182, double 4.999000e+01)
-  %.184 = bitcast ptr @.str29 to ptr
-  call void @output_string(ptr %.184)
-  call void @output_string(ptr %.156)
-  %.187 = load i32, ptr @my_int, align 4
+  %.168 = bitcast [65 x i8]* @.str25 to i8*
+  call void @output_string(i8* %.168)
+  %.170 = bitcast [38 x i8]* @.str26 to i8*
+  call void @output_string(i8* %.170)
+  %.172 = bitcast [36 x i8]* @.str27 to i8*
+  call void @output_string(i8* %.172)
+  call void @output_string(i8* %.168)
+  %.175 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  call void @d_array_int_push(%DArrayInt* %.175, i32 6)
+  %.177 = load %DArrayString*, %DArrayString** @animals, align 8
+  %.178 = bitcast [9 x i8]* @.str28 to i8*
+  call void @d_array_string_push(%DArrayString* %.177, i8* %.178)
+  %.180 = load %DArrayChar*, %DArrayChar** @letters, align 8
+  call void @d_array_char_append(%DArrayChar* %.180, i8 90)
+  %.182 = load %DArrayFloat*, %DArrayFloat** @prices, align 8
+  call void @d_array_float_push(%DArrayFloat* %.182, double 4.999000e+01)
+  %.184 = bitcast [23 x i8]* @.str29 to i8*
+  call void @output_string(i8* %.184)
+  call void @output_string(i8* %.156)
+  %.187 = load i32, i32* @my_int, align 4
   call void @output_int(i32 %.187)
-  call void @output_string(ptr %.160)
-  %.190 = load double, ptr @my_float, align 8
+  call void @output_string(i8* %.160)
+  %.190 = load double, double* @my_float, align 8
   call void @output_float(double %.190, i32 5)
-  call void @output_string(ptr %.164)
-  %.193 = load i8, ptr @my_char, align 1
+  call void @output_string(i8* %.164)
+  %.193 = load i8, i8* @my_char, align 1
   call void @output_char(i8 %.193)
-  %.195 = bitcast ptr @.str30 to ptr
-  call void @output_string(ptr %.195)
-  %.197 = load i32, ptr @str_length, align 4
+  %.195 = bitcast [15 x i8]* @.str30 to i8*
+  call void @output_string(i8* %.195)
+  %.197 = load i32, i32* @str_length, align 4
   call void @output_int(i32 %.197)
-  %.199 = bitcast ptr @.str31 to ptr
-  call void @output_string(ptr %.199)
-  %.201 = bitcast ptr @.str32 to ptr
-  call void @output_string(ptr %.201)
-  %.203 = load double, ptr @pi_value, align 8
+  %.199 = bitcast [28 x i8]* @.str31 to i8*
+  call void @output_string(i8* %.199)
+  %.201 = bitcast [10 x i8]* @.str32 to i8*
+  call void @output_string(i8* %.201)
+  %.203 = load double, double* @pi_value, align 8
   call void @output_float(double %.203, i32 5)
-  %.205 = bitcast ptr @.str33 to ptr
-  call void @output_string(ptr %.205)
-  %.207 = load double, ptr @e_value, align 8
+  %.205 = bitcast [9 x i8]* @.str33 to i8*
+  call void @output_string(i8* %.205)
+  %.207 = load double, double* @e_value, align 8
   call void @output_float(double %.207, i32 5)
-  %.209 = bitcast ptr @.str34 to ptr
-  call void @output_string(ptr %.209)
-  %.211 = load double, ptr @sin_45, align 8
+  %.209 = bitcast [17 x i8]* @.str34 to i8*
+  call void @output_string(i8* %.209)
+  %.211 = load double, double* @sin_45, align 8
   call void @output_float(double %.211, i32 3)
-  %.213 = bitcast ptr @.str35 to ptr
-  call void @output_string(ptr %.213)
-  %.215 = load double, ptr @cos_45, align 8
+  %.213 = bitcast [17 x i8]* @.str35 to i8*
+  call void @output_string(i8* %.213)
+  %.215 = load double, double* @cos_45, align 8
   call void @output_float(double %.215, i32 3)
-  %.217 = bitcast ptr @.str36 to ptr
-  call void @output_string(ptr %.217)
-  %.219 = load double, ptr @power_result, align 8
+  %.217 = bitcast [6 x i8]* @.str36 to i8*
+  call void @output_string(i8* %.217)
+  %.219 = load double, double* @power_result, align 8
   call void @output_float(double %.219, i32 1)
-  %.221 = bitcast ptr @.str37 to ptr
-  call void @output_string(ptr %.221)
-  %.223 = load double, ptr @sqrt_result, align 8
+  %.221 = bitcast [20 x i8]* @.str37 to i8*
+  call void @output_string(i8* %.221)
+  %.223 = load double, double* @sqrt_result, align 8
   call void @output_float(double %.223, i32 1)
-  %.225 = bitcast ptr @.str38 to ptr
-  call void @output_string(ptr %.225)
-  %.227 = load double, ptr @round_up, align 8
+  %.225 = bitcast [12 x i8]* @.str38 to i8*
+  call void @output_string(i8* %.225)
+  %.227 = load double, double* @round_up, align 8
   call void @output_float(double %.227, i32 1)
-  %.229 = bitcast ptr @.str39 to ptr
-  call void @output_string(ptr %.229)
-  %.231 = load double, ptr @floor_result, align 8
+  %.229 = bitcast [12 x i8]* @.str39 to i8*
+  call void @output_string(i8* %.229)
+  %.231 = load double, double* @floor_result, align 8
   call void @output_float(double %.231, i32 1)
-  %.233 = bitcast ptr @.str40 to ptr
-  call void @output_string(ptr %.233)
-  %.235 = load double, ptr @ceil_result, align 8
+  %.233 = bitcast [11 x i8]* @.str40 to i8*
+  call void @output_string(i8* %.233)
+  %.235 = load double, double* @ceil_result, align 8
   call void @output_float(double %.235, i32 1)
-  %.237 = bitcast ptr @.str41 to ptr
-  call void @output_string(ptr %.237)
-  %.239 = load double, ptr @abs_result, align 8
+  %.237 = bitcast [11 x i8]* @.str41 to i8*
+  call void @output_string(i8* %.237)
+  %.239 = load double, double* @abs_result, align 8
   call void @output_float(double %.239, i32 1)
-  %.241 = bitcast ptr @.str42 to ptr
-  call void @output_string(ptr %.241)
-  %.243 = load double, ptr @min_result, align 8
+  %.241 = bitcast [15 x i8]* @.str42 to i8*
+  call void @output_string(i8* %.241)
+  %.243 = load double, double* @min_result, align 8
   call void @output_float(double %.243, i32 1)
-  %.245 = bitcast ptr @.str43 to ptr
-  call void @output_string(ptr %.245)
-  %.247 = load i32, ptr @max_int_result, align 4
+  %.245 = bitcast [12 x i8]* @.str43 to i8*
+  call void @output_string(i8* %.245)
+  %.247 = load i32, i32* @max_int_result, align 4
   call void @output_int(i32 %.247)
-  %.249 = bitcast ptr @.str44 to ptr
-  call void @output_string(ptr %.249)
-  %.251 = load ptr, ptr @numbers, align 8
-  %.252 = call i32 @d_array_int_contains(ptr %.251, i32 3)
+  %.249 = bitcast [30 x i8]* @.str44 to i8*
+  call void @output_string(i8* %.249)
+  %.251 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  %.252 = call i32 @d_array_int_contains(%DArrayInt* %.251, i32 3)
   %bool_cond = icmp ne i32 %.252, 0
   br i1 %bool_cond, label %then, label %if_cont
 
 then:                                             ; preds = %entry
-  %.254 = bitcast ptr @.str45 to ptr
-  call void @output_string(ptr %.254)
+  %.254 = bitcast [25 x i8]* @.str45 to i8*
+  call void @output_string(i8* %.254)
   br label %if_cont
 
 if_cont:                                          ; preds = %then, %entry
-  %.257 = load ptr, ptr @animals, align 8
-  %.258 = call i32 @d_array_string_contains(ptr %.257, ptr %.20)
+  %.257 = load %DArrayString*, %DArrayString** @animals, align 8
+  %.258 = call i32 @d_array_string_contains(%DArrayString* %.257, i8* %.20)
   %bool_cond.1 = icmp ne i32 %.258, 0
   br i1 %bool_cond.1, label %then.1, label %if_cont.1
 
 then.1:                                           ; preds = %if_cont
-  %.260 = bitcast ptr @.str46 to ptr
-  call void @output_string(ptr %.260)
+  %.260 = bitcast [27 x i8]* @.str46 to i8*
+  call void @output_string(i8* %.260)
   br label %if_cont.1
 
 if_cont.1:                                        ; preds = %then.1, %if_cont
-  %.263 = bitcast ptr @.str47 to ptr
-  call void @output_string(ptr %.263)
-  %.265 = load i32, ptr @numbers_size, align 4
+  %.263 = bitcast [20 x i8]* @.str47 to i8*
+  call void @output_string(i8* %.263)
+  %.265 = load i32, i32* @numbers_size, align 4
   call void @output_int(i32 %.265)
-  %.267 = bitcast ptr @.str48 to ptr
-  call void @output_string(ptr %.267)
-  %.269 = load i32, ptr @animals_size, align 4
+  %.267 = bitcast [20 x i8]* @.str48 to i8*
+  call void @output_string(i8* %.267)
+  %.269 = load i32, i32* @animals_size, align 4
   call void @output_int(i32 %.269)
-  %.271 = bitcast ptr @.str49 to ptr
-  call void @output_string(ptr %.271)
-  %.273 = load double, ptr @numbers_avg, align 8
+  %.271 = bitcast [17 x i8]* @.str49 to i8*
+  call void @output_string(i8* %.271)
+  %.273 = load double, double* @numbers_avg, align 8
   call void @output_float(double %.273, i32 2)
-  %.275 = bitcast ptr @.str50 to ptr
-  call void @output_string(ptr %.275)
-  %.277 = load double, ptr @prices_avg, align 8
+  %.275 = bitcast [16 x i8]* @.str50 to i8*
+  call void @output_string(i8* %.275)
+  %.277 = load double, double* @prices_avg, align 8
   call void @output_float(double %.277, i32 2)
-  %.279 = bitcast ptr @.str51 to ptr
-  call void @output_string(ptr %.279)
-  %.281 = load ptr, ptr @numbers, align 8
-  %dyn_idx_tmp = call i32 @d_array_int_get(ptr %.281, i32 0)
+  %.279 = bitcast [14 x i8]* @.str51 to i8*
+  call void @output_string(i8* %.279)
+  %.281 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  %dyn_idx_tmp = call i32 @d_array_int_get(%DArrayInt* %.281, i32 0)
   call void @output_int(i32 %dyn_idx_tmp)
-  %.283 = bitcast ptr @.str52 to ptr
-  call void @output_string(ptr %.283)
-  %.285 = load ptr, ptr @animals, align 8
-  %dyn_idx_tmp.1 = call ptr @d_array_string_get(ptr %.285, i32 0)
-  call void @output_string(ptr %dyn_idx_tmp.1)
-  %.287 = bitcast ptr @.str53 to ptr
-  call void @output_string(ptr %.287)
-  %.289 = load ptr, ptr @letters, align 8
-  %dyn_idx_tmp.2 = call i8 @d_array_char_get(ptr %.289, i32 0)
+  %.283 = bitcast [14 x i8]* @.str52 to i8*
+  call void @output_string(i8* %.283)
+  %.285 = load %DArrayString*, %DArrayString** @animals, align 8
+  %dyn_idx_tmp.1 = call i8* @d_array_string_get(%DArrayString* %.285, i32 0)
+  call void @output_string(i8* %dyn_idx_tmp.1)
+  %.287 = bitcast [14 x i8]* @.str53 to i8*
+  call void @output_string(i8* %.287)
+  %.289 = load %DArrayChar*, %DArrayChar** @letters, align 8
+  %dyn_idx_tmp.2 = call i8 @d_array_char_get(%DArrayChar* %.289, i32 0)
   call void @output_char(i8 %dyn_idx_tmp.2)
-  %.291 = bitcast ptr @.str54 to ptr
-  call void @output_string(ptr %.291)
-  %.293 = bitcast ptr @.str55 to ptr
-  call void @output_string(ptr %.293)
-  %.295 = load ptr, ptr @person_name, align 8
-  call void @output_string(ptr %.295)
-  %.297 = bitcast ptr @.str56 to ptr
-  call void @output_string(ptr %.297)
-  %.299 = load i32, ptr @person_age, align 4
+  %.291 = bitcast [35 x i8]* @.str54 to i8*
+  call void @output_string(i8* %.291)
+  %.293 = bitcast [13 x i8]* @.str55 to i8*
+  call void @output_string(i8* %.293)
+  %.295 = load i8*, i8** @person_name, align 8
+  call void @output_string(i8* %.295)
+  %.297 = bitcast [12 x i8]* @.str56 to i8*
+  call void @output_string(i8* %.297)
+  %.299 = load i32, i32* @person_age, align 4
   call void @output_int(i32 %.299)
-  %.301 = bitcast ptr @.str57 to ptr
-  call void @output_string(ptr %.301)
-  %.303 = load double, ptr @person_height, align 8
+  %.301 = bitcast [15 x i8]* @.str57 to i8*
+  call void @output_string(i8* %.301)
+  %.303 = load double, double* @person_height, align 8
   call void @output_float(double %.303, i32 1)
-  %.305 = bitcast ptr @.str58 to ptr
-  call void @output_string(ptr %.305)
-  %.307 = bitcast ptr @.str59 to ptr
-  call void @output_string(ptr %.307)
-  %.309 = load ptr, ptr @greeting, align 8
-  call void @output_string(ptr %.309)
-  %.311 = bitcast ptr @.str60 to ptr
-  call void @output_string(ptr %.311)
-  %.313 = load i32, ptr @cmp_result, align 4
+  %.305 = bitcast [30 x i8]* @.str58 to i8*
+  call void @output_string(i8* %.305)
+  %.307 = bitcast [23 x i8]* @.str59 to i8*
+  call void @output_string(i8* %.307)
+  %.309 = load i8*, i8** @greeting, align 8
+  call void @output_string(i8* %.309)
+  %.311 = bitcast [33 x i8]* @.str60 to i8*
+  call void @output_string(i8* %.311)
+  %.313 = load i32, i32* @cmp_result, align 4
   call void @output_int(i32 %.313)
-  %.315 = bitcast ptr @.str61 to ptr
-  call void @output_string(ptr %.315)
-  %.317 = load i32, ptr @a, align 4
+  %.315 = bitcast [34 x i8]* @.str61 to i8*
+  call void @output_string(i8* %.315)
+  %.317 = load i32, i32* @a, align 4
   %i_cmp_tmp = icmp eq i32 %.317, 10
   br i1 %i_cmp_tmp, label %then.2, label %if_cont.2
 
 then.2:                                           ; preds = %if_cont.1
-  %.319 = bitcast ptr @.str62 to ptr
-  call void @output_string(ptr %.319)
+  %.319 = bitcast [21 x i8]* @.str62 to i8*
+  call void @output_string(i8* %.319)
   br label %if_cont.2
 
 if_cont.2:                                        ; preds = %then.2, %if_cont.1
-  %.322 = load i32, ptr @a, align 4
-  %.323 = load i32, ptr @b, align 4
+  %.322 = load i32, i32* @a, align 4
+  %.323 = load i32, i32* @b, align 4
   %i_cmp_tmp.1 = icmp ne i32 %.322, %.323
   br i1 %i_cmp_tmp.1, label %then.3, label %if_cont.3
 
 then.3:                                           ; preds = %if_cont.2
-  %.325 = bitcast ptr @.str63 to ptr
-  call void @output_string(ptr %.325)
+  %.325 = bitcast [23 x i8]* @.str63 to i8*
+  call void @output_string(i8* %.325)
   br label %if_cont.3
 
 if_cont.3:                                        ; preds = %then.3, %if_cont.2
-  %.328 = load i32, ptr @a, align 4
-  %.329 = load i32, ptr @b, align 4
+  %.328 = load i32, i32* @a, align 4
+  %.329 = load i32, i32* @b, align 4
   %i_cmp_tmp.2 = icmp slt i32 %.328, %.329
   br i1 %i_cmp_tmp.2, label %then.4, label %if_cont.4
 
 then.4:                                           ; preds = %if_cont.3
-  %.331 = bitcast ptr @.str64 to ptr
-  call void @output_string(ptr %.331)
+  %.331 = bitcast [22 x i8]* @.str64 to i8*
+  call void @output_string(i8* %.331)
   br label %if_cont.4
 
 if_cont.4:                                        ; preds = %then.4, %if_cont.3
-  %.334 = load i32, ptr @b, align 4
-  %.335 = load i32, ptr @a, align 4
+  %.334 = load i32, i32* @b, align 4
+  %.335 = load i32, i32* @a, align 4
   %i_cmp_tmp.3 = icmp sgt i32 %.334, %.335
   br i1 %i_cmp_tmp.3, label %then.5, label %if_cont.5
 
 then.5:                                           ; preds = %if_cont.4
-  %.337 = bitcast ptr @.str65 to ptr
-  call void @output_string(ptr %.337)
+  %.337 = bitcast [25 x i8]* @.str65 to i8*
+  call void @output_string(i8* %.337)
   br label %if_cont.5
 
 if_cont.5:                                        ; preds = %then.5, %if_cont.4
-  %.340 = load i32, ptr @a, align 4
+  %.340 = load i32, i32* @a, align 4
   %i_cmp_tmp.4 = icmp sle i32 %.340, 10
   br i1 %i_cmp_tmp.4, label %then.6, label %if_cont.6
 
 then.6:                                           ; preds = %if_cont.5
-  %.342 = bitcast ptr @.str66 to ptr
-  call void @output_string(ptr %.342)
+  %.342 = bitcast [31 x i8]* @.str66 to i8*
+  call void @output_string(i8* %.342)
   br label %if_cont.6
 
 if_cont.6:                                        ; preds = %then.6, %if_cont.5
-  %.345 = load i32, ptr @b, align 4
+  %.345 = load i32, i32* @b, align 4
   %i_cmp_tmp.5 = icmp sge i32 %.345, 20
   br i1 %i_cmp_tmp.5, label %then.7, label %if_cont.7
 
 then.7:                                           ; preds = %if_cont.6
-  %.347 = bitcast ptr @.str67 to ptr
-  call void @output_string(ptr %.347)
+  %.347 = bitcast [34 x i8]* @.str67 to i8*
+  call void @output_string(i8* %.347)
   br label %if_cont.7
 
 if_cont.7:                                        ; preds = %then.7, %if_cont.6
-  %.350 = bitcast ptr @.str68 to ptr
-  call void @output_string(ptr %.350)
-  %.352 = bitcast ptr @.str69 to ptr
-  call void @output_string(ptr %.352)
-  %.354 = load ptr, ptr @numbers, align 8
-  call void @print_int_array(ptr %.354)
-  %.356 = bitcast ptr @.str70 to ptr
-  call void @output_string(ptr %.356)
-  %.358 = load ptr, ptr @animals, align 8
-  call void @print_string_array(ptr %.358)
-  %.360 = bitcast ptr @.str71 to ptr
-  call void @output_string(ptr %.360)
-  %.362 = load ptr, ptr @letters, align 8
-  call void @print_char_array(ptr %.362)
-  %.364 = bitcast ptr @.str72 to ptr
-  call void @output_string(ptr %.364)
-  %.366 = load ptr, ptr @prices, align 8
-  call void @print_float_array(ptr %.366)
-  %.368 = bitcast ptr @.str73 to ptr
-  call void @output_string(ptr %.368)
-  %.370 = load ptr, ptr @combined, align 8
-  call void @print_int_array(ptr %.370)
-  %.372 = bitcast ptr @.str74 to ptr
-  call void @output_string(ptr %.372)
-  %.374 = bitcast ptr @.str75 to ptr
-  call void @output_string(ptr %.374)
-  %.376 = bitcast ptr @.str76 to ptr
-  call void @output_string(ptr %.376)
-  %.378 = bitcast ptr @.str77 to ptr
-  call void @output_string(ptr %.378)
-  %.380 = bitcast ptr @.str78 to ptr
-  call void @output_string(ptr %.380)
-  %.382 = bitcast ptr @.str79 to ptr
-  call void @output_string(ptr %.382)
-  %.384 = bitcast ptr @.str80 to ptr
-  call void @output_string(ptr %.384)
-  %.386 = bitcast ptr @.str81 to ptr
-  call void @output_string(ptr %.386)
-  %.388 = bitcast ptr @.str82 to ptr
-  call void @output_string(ptr %.388)
-  %.390 = bitcast ptr @.str83 to ptr
-  call void @output_string(ptr %.390)
-  %.392 = bitcast ptr @.str84 to ptr
-  call void @output_string(ptr %.392)
-  call void @output_string(ptr %.168)
-  %.395 = bitcast ptr @.str85 to ptr
-  call void @output_string(ptr %.395)
-  %.397 = bitcast ptr @.str86 to ptr
-  call void @output_string(ptr %.397)
-  call void @output_string(ptr %.168)
+  %.350 = bitcast [23 x i8]* @.str68 to i8*
+  call void @output_string(i8* %.350)
+  %.352 = bitcast [15 x i8]* @.str69 to i8*
+  call void @output_string(i8* %.352)
+  %.354 = load %DArrayInt*, %DArrayInt** @numbers, align 8
+  call void @print_int_array(%DArrayInt* %.354)
+  %.356 = bitcast [15 x i8]* @.str70 to i8*
+  call void @output_string(i8* %.356)
+  %.358 = load %DArrayString*, %DArrayString** @animals, align 8
+  call void @print_string_array(%DArrayString* %.358)
+  %.360 = bitcast [15 x i8]* @.str71 to i8*
+  call void @output_string(i8* %.360)
+  %.362 = load %DArrayChar*, %DArrayChar** @letters, align 8
+  call void @print_char_array(%DArrayChar* %.362)
+  %.364 = bitcast [14 x i8]* @.str72 to i8*
+  call void @output_string(i8* %.364)
+  %.366 = load %DArrayFloat*, %DArrayFloat** @prices, align 8
+  call void @print_float_array(%DArrayFloat* %.366)
+  %.368 = bitcast [16 x i8]* @.str73 to i8*
+  call void @output_string(i8* %.368)
+  %.370 = load %DArrayInt*, %DArrayInt** @combined, align 8
+  call void @print_int_array(%DArrayInt* %.370)
+  %.372 = bitcast [21 x i8]* @.str74 to i8*
+  call void @output_string(i8* %.372)
+  %.374 = bitcast [49 x i8]* @.str75 to i8*
+  call void @output_string(i8* %.374)
+  %.376 = bitcast [53 x i8]* @.str76 to i8*
+  call void @output_string(i8* %.376)
+  %.378 = bitcast [63 x i8]* @.str77 to i8*
+  call void @output_string(i8* %.378)
+  %.380 = bitcast [54 x i8]* @.str78 to i8*
+  call void @output_string(i8* %.380)
+  %.382 = bitcast [60 x i8]* @.str79 to i8*
+  call void @output_string(i8* %.382)
+  %.384 = bitcast [50 x i8]* @.str80 to i8*
+  call void @output_string(i8* %.384)
+  %.386 = bitcast [59 x i8]* @.str81 to i8*
+  call void @output_string(i8* %.386)
+  %.388 = bitcast [30 x i8]* @.str82 to i8*
+  call void @output_string(i8* %.388)
+  %.390 = bitcast [29 x i8]* @.str83 to i8*
+  call void @output_string(i8* %.390)
+  %.392 = bitcast [34 x i8]* @.str84 to i8*
+  call void @output_string(i8* %.392)
+  call void @output_string(i8* %.168)
+  %.395 = bitcast [34 x i8]* @.str85 to i8*
+  call void @output_string(i8* %.395)
+  %.397 = bitcast [50 x i8]* @.str86 to i8*
+  call void @output_string(i8* %.397)
+  call void @output_string(i8* %.168)
   ret i32 0
 }
