@@ -164,11 +164,19 @@ class LLVMCodeGenerator(Visitor):
 
         # String Library
         string_type = self.get_llvm_type('string')
+        int_type = self.get_llvm_type('int')
+        float_type = self.get_llvm_type('float')
+        char_type = self.get_llvm_type('char')
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="concat_strings")
         ir.Function(self.module, ir.FunctionType(int_type, [string_type]), name="pie_strlen")
         ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="pie_strcmp")
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcpy")
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="pie_strcat")
+        
+        # Type-to-string conversion functions
+        ir.Function(self.module, ir.FunctionType(string_type, [int_type]), name="int_to_string")
+        ir.Function(self.module, ir.FunctionType(string_type, [float_type]), name="float_to_string")
+        ir.Function(self.module, ir.FunctionType(string_type, [char_type]), name="char_to_string")
         
         # Advanced string utilities
         ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_to_upper")
@@ -385,16 +393,25 @@ class LLVMCodeGenerator(Visitor):
                         if result_array is not None:  # Only store if we have a result
                             self.builder.store(result_array, self.global_vars[name])
             
-            # Process deferred initializers (function call initializers) after arrays are created
-            for var_name, initializer_node in self.deferred_initializers:
-                if var_name in self.global_vars:
-                    init_val = self.visit(initializer_node)
-                    self.builder.store(init_val, self.global_vars[var_name])
-                        
-            # Then visit all non-declaration, non-function-definition statements
+            # Process all statements in order, including deferred initializers
+            # This ensures that declarations with function call initializers are executed
+            # in their original order relative to other statements
             for stmt in ast.statements:
-                if not isinstance(stmt, (Declaration, FunctionDefinition)):
-                    self.visit(stmt)
+                if not isinstance(stmt, FunctionDefinition):
+                    if isinstance(stmt, Declaration):
+                        # Check if this declaration has a deferred initializer
+                        var_name = stmt.identifier
+                        if var_name in self.global_vars:
+                            # Find if there's a deferred initializer for this variable
+                            for deferred_var_name, initializer_node in self.deferred_initializers:
+                                if deferred_var_name == var_name:
+                                    # Execute the deferred initializer now
+                                    init_val = self.visit(initializer_node)
+                                    self.builder.store(init_val, self.global_vars[var_name])
+                                    break
+                    else:
+                        # Process non-declaration statements normally
+                        self.visit(stmt)
             
             # Return 0 from main
             if not self.builder.block.is_terminated:
@@ -610,8 +627,8 @@ class LLVMCodeGenerator(Visitor):
         # Check if the node's class name indicates it's a function call
         class_name = type(node).__name__
         
-        # Check if the node itself is a function call
-        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput', 'FunctionCall', 'DictionaryLiteral']:
+        # Check if the node itself is a function call or array subscript access
+        if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput', 'FunctionCall', 'DictionaryLiteral', 'SubscriptAccess']:
             return True
         
         # Check if it's a BinaryOp that references global variables
@@ -870,13 +887,43 @@ class LLVMCodeGenerator(Visitor):
 
         # String or Array concatenation check first
         if node.op == '+':
-            # Check for string concatenation
-            if (isinstance(lhs.type, ir.PointerType) and 
-                isinstance(rhs.type, ir.PointerType) and
-                lhs.type.pointee == ir.IntType(8) and 
-                rhs.type.pointee == ir.IntType(8)):
-                concat_func = self.module.get_global("concat_strings")
-                return self.builder.call(concat_func, [lhs, rhs], 'concat_tmp')
+            # Check for string concatenation (including auto type-to-string conversion)
+            def is_string_type(val):
+                """Check if a value is a string pointer (i8*)"""
+                return (isinstance(val.type, ir.PointerType) and 
+                       val.type.pointee == ir.IntType(8))
+            
+            def convert_to_string(val):
+                """Convert a non-string value to string"""
+                if is_string_type(val):
+                    return val
+                elif isinstance(val.type, ir.IntType) and val.type.width == 32:
+                    # Convert int to string
+                    int_to_str_func = self.module.get_global("int_to_string")
+                    return self.builder.call(int_to_str_func, [val], 'int_to_str')
+                elif isinstance(val.type, ir.DoubleType):
+                    # Convert float to string
+                    float_to_str_func = self.module.get_global("float_to_string")
+                    return self.builder.call(float_to_str_func, [val], 'float_to_str')
+                elif isinstance(val.type, ir.IntType) and val.type.width == 8:
+                    # Convert char to string
+                    char_to_str_func = self.module.get_global("char_to_string")
+                    return self.builder.call(char_to_str_func, [val], 'char_to_str')
+                else:
+                    return None
+            
+            # Check if either operand is a string
+            left_is_string = is_string_type(lhs)
+            right_is_string = is_string_type(rhs)
+            
+            if left_is_string or right_is_string:
+                # Convert both operands to strings
+                lhs_str = convert_to_string(lhs)
+                rhs_str = convert_to_string(rhs)
+                
+                if lhs_str is not None and rhs_str is not None:
+                    concat_func = self.module.get_global("concat_strings")
+                    return self.builder.call(concat_func, [lhs_str, rhs_str], 'concat_tmp')
 
             # Check for array concatenation
             if hasattr(node, 'result_type') and node.result_type == 'array':
@@ -1578,7 +1625,24 @@ class LLVMCodeGenerator(Visitor):
 
             array_name = array_node.name
             symbol = self.symbol_table.lookup_symbol(array_name)
-            element_type = symbol['element_type'].replace('KEYWORD_', '').lower()
+            
+            # Get element type from symbol table or infer from LLVM type
+            if symbol and 'element_type' in symbol:
+                element_type = symbol['element_type'].replace('KEYWORD_', '').lower()
+            else:
+                # Fallback: infer element type from LLVM struct type
+                # The array struct ptr type is like %DArrayInt*, %DArrayString*, etc.
+                struct_type_name = str(array_struct_ptr.type)
+                if 'DArrayInt' in struct_type_name:
+                    element_type = 'int'
+                elif 'DArrayString' in struct_type_name:
+                    element_type = 'string'
+                elif 'DArrayFloat' in struct_type_name:
+                    element_type = 'float'
+                elif 'DArrayChar' in struct_type_name:
+                    element_type = 'char'
+                else:
+                    raise Exception(f"Cannot determine element type for array '{array_name}' with type {struct_type_name}")
 
             func_name = f"print_{element_type}_array"
             print_func = self.module.get_global(func_name)

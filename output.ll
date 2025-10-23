@@ -3,19 +3,29 @@ source_filename = "<string>"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
+%DArrayInt = type { i32*, i64, i64 }
 %Dictionary = type { i8**, i32, i32 }
 %DictValue = type { i32, i64 }
-%DArrayInt = type { i32*, i64, i64 }
 %DArrayString = type { i8**, i64, i64 }
 %DArrayFloat = type { double*, i64, i64 }
 %DArrayChar = type { i8*, i64, i64 }
 
-@username = internal global i8* null
-@.str0 = internal constant [14 x i8] c"john123adsasd\00"
-@user = internal global i8* getelementptr inbounds ([14 x i8], [14 x i8]* @.str0, i32 0, i32 0)
-@.str1 = internal constant [80 x i8] c"(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|0|1|2|3|4|5|6|7|8|9)+>2<21\00"
-@.str2 = internal constant [15 x i8] c"Username valid\00"
-@.str3 = internal constant [33 x i8] c"Username must be 3-20 characters\00"
+@.str0 = internal constant [6 x i8] c"Alice\00"
+@name = internal global i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str0, i32 0, i32 0)
+@age = internal global i32 30
+@height = internal global double 5.900000e+00
+@arr = internal global %DArrayInt* null
+@last = internal global i32 0
+@.str1 = internal constant [9 x i8] c"Test 1: \00"
+@.str2 = internal constant [8 x i8] c"Age is \00"
+@.str3 = internal constant [11 x i8] c"Height is \00"
+@.str4 = internal constant [5 x i8] c" is \00"
+@.str5 = internal constant [16 x i8] c" years old and \00"
+@.str6 = internal constant [11 x i8] c" feet tall\00"
+@.str7 = internal constant [18 x i8] c"Array before pop:\00"
+@.str8 = internal constant [9 x i8] c"Popped: \00"
+@.str9 = internal constant [17 x i8] c"Array after pop:\00"
+@.str10 = internal constant [18 x i8] c"All tests passed!\00"
 
 declare void @input_int(i32*)
 
@@ -96,6 +106,12 @@ declare i32 @pie_strcmp(i8*, i8*)
 declare i8* @pie_strcpy(i8*, i8*)
 
 declare i8* @pie_strcat(i8*, i8*)
+
+declare i8* @int_to_string(i32)
+
+declare i8* @float_to_string(double)
+
+declare i8* @char_to_string(i8)
 
 declare i8* @string_to_upper(i8*)
 
@@ -269,31 +285,58 @@ declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
 define i32 @main() {
 entry:
-  %.2 = bitcast [80 x i8]* @.str1 to i8*
-  %call_tmp = call i8* @regex_compile(i8* %.2)
-  store i8* %call_tmp, i8** @username, align 8
-  %.4 = load i8*, i8** @username, align 8
-  %.5 = load i8*, i8** @user, align 8
-  %call_tmp.1 = call i32 @regex_match(i8* %.4, i8* %.5)
-  %.6 = load i8*, i8** @username, align 8
-  %.7 = load i8*, i8** @user, align 8
-  %call_tmp.2 = call i32 @regex_match(i8* %.6, i8* %.7)
-  %.8 = load i8*, i8** @username, align 8
-  %.9 = load i8*, i8** @user, align 8
-  %call_tmp.3 = call i32 @regex_match(i8* %.8, i8* %.9)
-  %i_cmp_tmp = icmp eq i32 %call_tmp.3, 1
-  br i1 %i_cmp_tmp, label %then, label %else
-
-then:                                             ; preds = %entry
-  %.11 = bitcast [15 x i8]* @.str2 to i8*
-  call void @output_string(i8* %.11)
-  br label %if_cont
-
-else:                                             ; preds = %entry
-  %.14 = bitcast [33 x i8]* @.str3 to i8*
-  call void @output_string(i8* %.14)
-  br label %if_cont
-
-if_cont:                                          ; preds = %else, %then
+  %.2 = call %DArrayInt* @d_array_int_create()
+  store %DArrayInt* %.2, %DArrayInt** @arr, align 8
+  call void @d_array_int_append(%DArrayInt* %.2, i32 1)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 2)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 3)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 4)
+  call void @d_array_int_append(%DArrayInt* %.2, i32 5)
+  %.9 = bitcast [9 x i8]* @.str1 to i8*
+  %.10 = load i8*, i8** @name, align 8
+  %concat_tmp = call i8* @concat_strings(i8* %.9, i8* %.10)
+  call void @output_string(i8* %concat_tmp)
+  %.12 = bitcast [8 x i8]* @.str2 to i8*
+  %.13 = load i32, i32* @age, align 4
+  %int_to_str = call i8* @int_to_string(i32 %.13)
+  %concat_tmp.1 = call i8* @concat_strings(i8* %.12, i8* %int_to_str)
+  call void @output_string(i8* %concat_tmp.1)
+  %.15 = bitcast [11 x i8]* @.str3 to i8*
+  %.16 = load double, double* @height, align 8
+  %float_to_str = call i8* @float_to_string(double %.16)
+  %concat_tmp.2 = call i8* @concat_strings(i8* %.15, i8* %float_to_str)
+  call void @output_string(i8* %concat_tmp.2)
+  %.18 = load i8*, i8** @name, align 8
+  %.19 = bitcast [5 x i8]* @.str4 to i8*
+  %concat_tmp.3 = call i8* @concat_strings(i8* %.18, i8* %.19)
+  %.20 = load i32, i32* @age, align 4
+  %int_to_str.1 = call i8* @int_to_string(i32 %.20)
+  %concat_tmp.4 = call i8* @concat_strings(i8* %concat_tmp.3, i8* %int_to_str.1)
+  %.21 = bitcast [16 x i8]* @.str5 to i8*
+  %concat_tmp.5 = call i8* @concat_strings(i8* %concat_tmp.4, i8* %.21)
+  %.22 = load double, double* @height, align 8
+  %float_to_str.1 = call i8* @float_to_string(double %.22)
+  %concat_tmp.6 = call i8* @concat_strings(i8* %concat_tmp.5, i8* %float_to_str.1)
+  %.23 = bitcast [11 x i8]* @.str6 to i8*
+  %concat_tmp.7 = call i8* @concat_strings(i8* %concat_tmp.6, i8* %.23)
+  call void @output_string(i8* %concat_tmp.7)
+  %.25 = bitcast [18 x i8]* @.str7 to i8*
+  call void @output_string(i8* %.25)
+  %.27 = load %DArrayInt*, %DArrayInt** @arr, align 8
+  call void @print_int_array(%DArrayInt* %.27)
+  %.29 = load %DArrayInt*, %DArrayInt** @arr, align 8
+  %.30 = call i32 @d_array_int_pop(%DArrayInt* %.29)
+  store i32 %.30, i32* @last, align 4
+  %.32 = bitcast [9 x i8]* @.str8 to i8*
+  %.33 = load i32, i32* @last, align 4
+  %int_to_str.2 = call i8* @int_to_string(i32 %.33)
+  %concat_tmp.8 = call i8* @concat_strings(i8* %.32, i8* %int_to_str.2)
+  call void @output_string(i8* %concat_tmp.8)
+  %.35 = bitcast [17 x i8]* @.str9 to i8*
+  call void @output_string(i8* %.35)
+  %.37 = load %DArrayInt*, %DArrayInt** @arr, align 8
+  call void @print_int_array(%DArrayInt* %.37)
+  %.39 = bitcast [18 x i8]* @.str10 to i8*
+  call void @output_string(i8* %.39)
   ret i32 0
 }
