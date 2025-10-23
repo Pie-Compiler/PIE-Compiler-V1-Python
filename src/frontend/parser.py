@@ -20,7 +20,7 @@ class Parser:
             'SEMICOLON', 'COMMA', 'DOT', 'COLON',
             'PLUS', 'MINUS', 'MUL', 'DIV', 'MOD',
             'GT', 'LT', 'GEQ', 'LEQ', 'EQ', 'NEQ', 'AND', 'OR', 'ASSIGN',
-            'SYSTEM_INPUT', 'SYSTEM_OUTPUT', 'SYSTEM_EXIT', 'COMMENT',
+            'SYSTEM_INPUT', 'SYSTEM_OUTPUT', 'SYSTEM_EXIT', 'SYSTEM_SLEEP', 'COMMENT',
             'SYSTEM_ARR_PUSH', 'SYSTEM_ARR_POP', 'SYSTEM_ARR_SIZE', 'SYSTEM_ARR_CONTAINS', 'SYSTEM_ARR_INDEXOF', 'SYSTEM_ARR_AVG'
         ]
         
@@ -556,6 +556,7 @@ class Parser:
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
                         | KEYWORD_EXIT LPAREN RPAREN
+                        | SYSTEM_SLEEP LPAREN expression RPAREN
                         | SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
                         | SYSTEM_ARR_POP LPAREN expression RPAREN
                         | SYSTEM_ARR_SIZE LPAREN expression RPAREN
@@ -571,6 +572,8 @@ class Parser:
             p[0] = SystemOutput(p[3], p[5], precision)
         elif slice_type == 'KEYWORD_EXIT':
             p[0] = SystemExit()
+        elif slice_type == 'SYSTEM_SLEEP':
+            p[0] = SystemSleep(p[3])
         elif slice_type == 'SYSTEM_ARR_PUSH':
             p[0] = ArrayPush(p[3], p[5])
         elif slice_type == 'SYSTEM_ARR_POP':

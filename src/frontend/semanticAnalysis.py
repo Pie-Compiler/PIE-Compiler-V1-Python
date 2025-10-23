@@ -587,6 +587,13 @@ class SemanticAnalyzer(Visitor):
     def visit_systemexit(self, node):
         return None
 
+    def visit_systemsleep(self, node):
+        # Check that the duration expression is an integer
+        duration_type = self.visit(node.duration)
+        if duration_type and duration_type != 'KEYWORD_INT':
+            self.add_error(f"sleep() expects an integer argument, got {duration_type}")
+        return None
+
     def visit_returnstatement(self, node):
         if not self.current_function:
             self.add_error("Return statement outside of a function.")

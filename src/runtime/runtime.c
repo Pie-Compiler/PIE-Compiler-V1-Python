@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
 
 // Input function for float (language 'float' mapped to double in LLVM)
 void input_float(double *ptr) {
@@ -132,4 +137,15 @@ char* char_to_string(char value) {
 // Exit function
 void exit_program() {
     exit(0);
+}
+
+// Sleep function - sleeps for specified number of seconds
+void pie_sleep(int seconds) {
+    if (seconds > 0) {
+        #ifdef _WIN32
+            Sleep(seconds * 1000); // Windows uses milliseconds
+        #else
+            sleep(seconds); // Unix/Linux uses seconds
+        #endif
+    }
 }

@@ -366,6 +366,7 @@ def build_master_nfa():
         "input": "SYSTEM_INPUT",
         "output": "SYSTEM_OUTPUT",
         "exit": "SYSTEM_EXIT",
+        "sleep": "SYSTEM_SLEEP",
         "arr_push": "SYSTEM_ARR_PUSH",
         "arr_pop": "SYSTEM_ARR_POP",
         "arr_size": "SYSTEM_ARR_SIZE",

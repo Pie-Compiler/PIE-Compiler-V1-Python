@@ -131,6 +131,7 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('char')]), name="output_char")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('float'), self.get_llvm_type('int')]), name="output_float")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), []), name="pie_exit")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.get_llvm_type('int')]), name="pie_sleep")
 
         # Math Library
         double_type = self.get_llvm_type('float')
@@ -1719,6 +1720,12 @@ class LLVMCodeGenerator(Visitor):
     def visit_systemexit(self, node):
         exit_func = self.module.get_global("pie_exit")
         self.builder.call(exit_func, [])
+
+    def visit_systemsleep(self, node):
+        sleep_func = self.module.get_global("pie_sleep")
+        # Visit the duration expression and load if it's a pointer
+        duration_val = self._load_if_pointer(self.visit(node.duration))
+        self.builder.call(sleep_func, [duration_val])
 
     def visit_arraypush(self, node):
         array_ptr = self.visit(node.array)
