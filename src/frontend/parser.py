@@ -80,6 +80,20 @@ class Parser:
                 params=info['params']
             )
 
+        time_functions = {
+            "time_now": {"return_type": "int", "params": []},
+            "time_to_local": {"return_type": "string", "params": [("int", "timestamp")]},
+        }
+        for name, info in time_functions.items():
+            param_types = [p[0] for p in info['params']]
+            self.symbol_table.add_symbol(
+                name,
+                'function',
+                return_type=info['return_type'],
+                param_types=param_types,
+                params=info['params']
+            )
+
         string_functions = {
             "strlen": {"return_type": "int", "params": [("string", "s")]},
             "strcmp": {"return_type": "int", "params": [("string", "s1"), ("string", "s2")]},
