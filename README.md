@@ -175,16 +175,54 @@ int main() {
 
 ### 8. Dictionaries
 
-PIE supports dictionaries (hash maps) with string keys.
+PIE supports dictionaries (hash maps) with string keys and **automatic type inference**. ⭐ **NEW!**
+
+ 
+
+**New Syntax (Recommended):**
+
+```pie
+
+// Create dictionary with mixed types
+
+dict person = {"name": "John Doe", "age": 30, "city": "New York"};
+
+ 
+
+// Get values - type is automatically inferred
+
+string name = dict_get(person, "name");
+
+int age = dict_get(person, "age");
+
+string city = dict_get(person, "city");
+
+ 
+
+// Set values - type is automatically inferred
+
+dict_set(person, "age", 31);
+
+dict_set(person, "city", "Nairobi");
+
+```
 
 **Syntax:**
+
+**Old Syntax (Still Supported):**
+
 ```pie
+
 dict myDict = dict_create();
+
 dict_set(myDict, "name", new_string("Jules"));
-dict_set(myDict, "age", new_int(30));
+
+...
 
 string name = dict_get_string(myDict, "name");
+
 int age = dict_get_int(myDict, "age");
+
 ```
 
 ### 9. String Operations

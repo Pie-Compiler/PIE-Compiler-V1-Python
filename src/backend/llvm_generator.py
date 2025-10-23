@@ -1229,6 +1229,114 @@ class LLVMCodeGenerator(Visitor):
     def visit_functioncall(self, node):
         if node.name.startswith('arr_'):
             return self.visit_array_function_call(node)
+        
+        # Special handling for dict_get with type inference
+
+        if node.name == 'dict_get':
+
+            dict_val = self._load_if_pointer(self.visit(node.args[0]))
+
+            key_val = self._load_if_pointer(self.visit(node.args[1]))
+
+ 
+
+            # Get the inferred return type from semantic analysis
+
+            inferred_type = getattr(node, 'inferred_return_type', None)
+
+ 
+
+            if inferred_type == 'KEYWORD_INT' or inferred_type == 'int':
+
+                func = self.module.get_global("dict_get_int")
+
+                return self.builder.call(func, [dict_val, key_val], 'dict_get_int_result')
+
+            elif inferred_type == 'KEYWORD_FLOAT' or inferred_type == 'float':
+
+                func = self.module.get_global("dict_get_float")
+
+                return self.builder.call(func, [dict_val, key_val], 'dict_get_float_result')
+
+            elif inferred_type == 'KEYWORD_STRING' or inferred_type == 'string':
+
+                func = self.module.get_global("dict_get_string")
+
+                return self.builder.call(func, [dict_val, key_val], 'dict_get_string_result')
+
+            else:
+
+                # Default to dict_get (returns void*)
+
+                func = self.module.get_global("dict_get")
+
+                return self.builder.call(func, [dict_val, key_val], 'dict_get_result')
+
+ 
+
+        # Special handling for dict_set with type inference
+
+        if node.name == 'dict_set':
+
+            dict_val = self._load_if_pointer(self.visit(node.args[0]))
+
+            key_val = self.visit(node.args[1])  # Don't load string pointers
+
+            value_val = self.visit(node.args[2])
+
+ 
+
+            # Get the value type from semantic analysis
+
+            value_type = getattr(node, 'value_type', None)
+
+ 
+
+            # Create the appropriate DictValue wrapper
+
+            if value_type == 'KEYWORD_INT' or value_type == 'int':
+
+                value_val = self._load_if_pointer(value_val)
+
+                new_int_func = self.module.get_global("new_int")
+
+                dict_value = self.builder.call(new_int_func, [value_val], 'dict_value_int')
+
+            elif value_type == 'KEYWORD_FLOAT' or value_type == 'float':
+
+                value_val = self._load_if_pointer(value_val)
+
+                new_float_func = self.module.get_global("new_float")
+
+                dict_value = self.builder.call(new_float_func, [value_val], 'dict_value_float')
+
+            elif value_type == 'KEYWORD_STRING' or value_type == 'string':
+
+                value_val = self._load_if_pointer(value_val)
+
+                new_string_func = self.module.get_global("new_string")
+
+                dict_value = self.builder.call(new_string_func, [value_val], 'dict_value_string')
+
+            else:
+
+                # Default handling
+
+                value_val = self._load_if_pointer(value_val)
+
+                new_int_func = self.module.get_global("new_int")
+
+                dict_value = self.builder.call(new_int_func, [value_val], 'dict_value_default')
+
+ 
+
+            # Call dict_set
+
+            dict_set_func = self.module.get_global("dict_set")
+
+            return self.builder.call(dict_set_func, [dict_val, key_val, dict_value], 'dict_set_result')
+
+       
 
         # Map PIE function names to their actual LLVM function names
         function_name_map = {

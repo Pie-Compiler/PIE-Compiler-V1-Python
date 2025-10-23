@@ -168,3 +168,203 @@ This update successfully:
 5. ✅ Maintained backward compatibility
 
 The PIE compiler now offers a robust set of string manipulation tools suitable for text processing, data parsing, and general string operations.
+
+
+### New Features
+
+ 
+
+#### Improved Dictionary Support with Type Inference ⭐ **NEW!**
+
+ 
+
+The PIE compiler now features an intuitive dictionary syntax with automatic type inference, making key-value data structures much easier to use.
+
+ 
+
+**Key Improvements:**
+
+ 
+
+1. **Automatic Type Inference for `dict_get()`**
+
+   - The compiler infers the return type based on the variable receiving the value
+
+   - No more need for `dict_get_int()`, `dict_get_float()`, `dict_get_string()`
+
+   - Example:
+
+     ```pie
+
+     dict person = {"name": "John", "age": 30};
+
+     string name = dict_get(person, "name");  // Automatically returns string
+
+     int age = dict_get(person, "age");        // Automatically returns int
+
+     ```
+
+ 
+
+2. **Automatic Type Inference for `dict_set()`**
+
+   - The compiler automatically wraps values in the appropriate DictValue type
+
+   - No more need for `new_int()`, `new_float()`, `new_string()`
+
+   - Example:
+
+     ```pie
+
+     dict_set(person, "age", 31);           // Automatically wraps as int
+
+     dict_set(person, "city", "Nairobi");   // Automatically wraps as string
+
+     ```
+
+ 
+
+3. **Simplified Syntax**
+
+   - Less boilerplate code
+
+   - More readable and maintainable
+
+   - Similar to modern languages (JavaScript, Python, etc.)
+
+ 
+
+4. **Backward Compatibility**
+
+   - Old syntax still works (`dict_get_int()`, `new_int()`, etc.)
+
+   - Gradual migration path for existing code
+
+ 
+
+**Implementation Details:**
+
+ 
+
+- **Semantic Analysis**: Added context tracking to infer expected types
+
+  - `expected_type` attribute tracks the type context during analysis
+
+  - Special handling for `dict_get` and `dict_set` in `visit_functioncall()`
+
+ 
+
+- **Code Generation**: LLVM generator creates appropriate type-specific calls
+
+  - `dict_get` → `dict_get_int`, `dict_get_float`, or `dict_get_string`
+
+  - `dict_set` → wraps value with `new_int`, `new_float`, or `new_string`
+
+ 
+
+**Files Modified:**
+
+- `src/frontend/semanticAnalysis.py` - Type inference logic
+
+- `src/backend/llvm_generator.py` - Type-specific code generation
+
+ 
+
+**Files Created:**
+
+- `docs/improved_dictionaries.md` - Comprehensive documentation
+
+- `test_dict_improved.pie` - Test suite for new syntax
+
+- `test_dict_local.pie` - Test with local variables
+
+ 
+
+**Usage Examples:**
+
+ 
+
+```pie
+
+int main() {
+
+    // Create dictionary with mixed types
+
+    dict user = {
+
+        "username": "john_doe",
+
+        "age": 28,
+
+        "score": 95.5
+
+    };
+
+ 
+
+    // Get values with type inference
+
+    string username = dict_get(user, "username");
+
+    int age = dict_get(user, "age");
+
+    float score = dict_get(user, "score");
+
+ 
+
+    // Update values with type inference
+
+    dict_set(user, "age", 29);
+
+    dict_set(user, "score", 98.7);
+
+ 
+
+    // Add new keys
+
+    dict_set(user, "verified", 1);
+
+ 
+
+    return 0;
+
+}
+
+```
+
+ 
+
+**Benefits:**
+
+- ✅ **Less verbose** - No explicit type wrappers needed
+
+- ✅ **More intuitive** - Natural syntax for developers
+
+- ✅ **Type safe** - Compiler enforces type correctness
+
+- ✅ **Fewer errors** - Less boilerplate means fewer mistakes
+
+- ✅ **Better readability** - Code is clearer and easier to understand
+
+ 
+
+**Important Notes:**
+
+- When using dictionaries without an explicit `main()` function, be aware that global variable initializers are processed at program start
+
+- For sequential operations (like dict_set followed by dict_get), use local variables within a `main()` function
+
+- Missing keys return default values: `0` for int, `0.0` for float, `""` for string
+
+ 
+
+## Recent Updates
+
+ 
+
+### Bug Fixes
+
+ 
+
+#### Fixed LLVM Domination Error with String Literals in Conditionals
+
