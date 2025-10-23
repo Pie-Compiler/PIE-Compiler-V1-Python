@@ -312,9 +312,9 @@ if (a > 5 || b < 10) {
     output("At least one condition is true", string);
 }
 if (a < 5 || b < 15) {
-    output("Both conditions are false", string);
-} else {
     output("At least one condition is true", string);
+} else {
+    output("Both conditions are false", string);
 }
 
 // Final summary
