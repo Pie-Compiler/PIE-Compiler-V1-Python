@@ -162,6 +162,12 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(double_type, []), name="pie_e")
         ir.Function(self.module, ir.FunctionType(int_type, []), name="pie_time")
 
+        # Time Library
+        int_type = self.get_llvm_type('int')
+        string_type = self.get_llvm_type('string')
+        ir.Function(self.module, ir.FunctionType(int_type, []), name="pie_time_now")
+        ir.Function(self.module, ir.FunctionType(string_type, [int_type]), name="pie_time_to_local")
+
         # String Library
         string_type = self.get_llvm_type('string')
         int_type = self.get_llvm_type('int')
@@ -1425,6 +1431,8 @@ class LLVMCodeGenerator(Visitor):
             'pi': 'pie_pi',
             'e': 'pie_e',
             'time': 'pie_time',
+            'time_now': 'pie_time_now',
+            'time_to_local': 'pie_time_to_local',
             # String functions
             'strlen': 'pie_strlen',
             'strcmp': 'pie_strcmp',
@@ -1617,6 +1625,10 @@ class LLVMCodeGenerator(Visitor):
     # of creating blocks and using branching instructions.
     def visit_systemoutput(self, node):
         output_type = node.output_type.type_name.replace('KEYWORD_', '').lower()
+        is_bool_output = (output_type == 'bool')
+
+        if is_bool_output:
+            output_type = 'int'
 
         if output_type == 'array':
             array_node = node.expression
@@ -1669,6 +1681,10 @@ class LLVMCodeGenerator(Visitor):
         else:
             # For other types, load if it's a pointer
             output_val = self._load_if_pointer(raw_val)
+
+        if is_bool_output:
+            if isinstance(output_val.type, ir.IntType) and output_val.type.width == 1:
+                output_val = self.builder.zext(output_val, ir.IntType(32))
 
         func_name = f"output_{output_type}"
         output_func = self.module.get_global(func_name)
