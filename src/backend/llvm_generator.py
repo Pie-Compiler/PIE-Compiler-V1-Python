@@ -105,6 +105,8 @@ class LLVMCodeGenerator(Visitor):
             return self.d_array_char_type
         elif type_str == 'dict':
             return self.dict_type
+        elif type_str == 'regex':
+            return ir.IntType(8).as_pointer()  # RegexPattern* is a pointer
         elif type_str == 'void*':
             return ir.IntType(8).as_pointer()
         else:
@@ -216,6 +218,15 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(dict_value_type, [int_type]), name="new_int")
         ir.Function(self.module, ir.FunctionType(dict_value_type, [double_type]), name="new_float")
         ir.Function(self.module, ir.FunctionType(dict_value_type, [string_type]), name="new_string")
+
+        # Regex functions
+        regex_type = ir.IntType(8).as_pointer()  # RegexPattern*
+
+        ir.Function(self.module, ir.FunctionType(regex_type, [string_type]), name="regex_compile")
+
+        ir.Function(self.module, ir.FunctionType(int_type, [regex_type, string_type]), name="regex_match")
+
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [regex_type]), name="regex_free")
 
         # Variable validation functions
         ir.Function(self.module, ir.FunctionType(int_type, [ir.IntType(8).as_pointer()]), name="is_variable_defined")

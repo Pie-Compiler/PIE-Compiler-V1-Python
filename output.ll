@@ -10,16 +10,12 @@ target triple = "x86_64-unknown-linux-gnu"
 %DArrayFloat = type { double*, i64, i64 }
 %DArrayChar = type { i8*, i64, i64 }
 
-@.str0 = internal constant [40 x i8] c"=== Dictionary with Local Variables ===\00"
-@.str1 = internal constant [5 x i8] c"name\00"
-@.str2 = internal constant [5 x i8] c"John\00"
-@.str3 = internal constant [4 x i8] c"age\00"
-@.str4 = internal constant [15 x i8] c"Initial name: \00"
-@.str5 = internal constant [14 x i8] c"Initial age: \00"
-@.str6 = internal constant [14 x i8] c"Updated age: \00"
-@.str7 = internal constant [5 x i8] c"Jane\00"
-@.str8 = internal constant [15 x i8] c"Updated name: \00"
-@.str9 = internal constant [22 x i8] c"=== Test Complete ===\00"
+@username = internal global i8* null
+@.str0 = internal constant [14 x i8] c"john123adsasd\00"
+@user = internal global i8* getelementptr inbounds ([14 x i8], [14 x i8]* @.str0, i32 0, i32 0)
+@.str1 = internal constant [80 x i8] c"(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|0|1|2|3|4|5|6|7|8|9)+>2<21\00"
+@.str2 = internal constant [15 x i8] c"Username valid\00"
+@.str3 = internal constant [33 x i8] c"Username must be 3-20 characters\00"
 
 declare void @input_int(i32*)
 
@@ -161,6 +157,12 @@ declare %DictValue* @new_float(double)
 
 declare %DictValue* @new_string(i8*)
 
+declare i8* @regex_compile(i8*)
+
+declare i32 @regex_match(i8*, i8*)
+
+declare void @regex_free(i8*)
+
 declare i32 @is_variable_defined(i8*)
 
 declare i32 @is_variable_null(i8*)
@@ -267,64 +269,31 @@ declare %DArrayChar* @d_array_char_concat(%DArrayChar*, %DArrayChar*)
 
 define i32 @main() {
 entry:
-  %.2 = bitcast [40 x i8]* @.str0 to i8*
-  call void @output_string(i8* %.2)
-  %person = alloca %Dictionary*, align 8
-  %.4 = call %Dictionary* @dict_create()
-  %.5 = bitcast [5 x i8]* @.str1 to i8*
-  %.6 = bitcast [5 x i8]* @.str2 to i8*
-  %.7 = call %DictValue* @new_string(i8* %.6)
-  call void @dict_set(%Dictionary* %.4, i8* %.5, %DictValue* %.7)
-  %.9 = bitcast [4 x i8]* @.str3 to i8*
-  %.10 = call %DictValue* @new_int(i32 30)
-  call void @dict_set(%Dictionary* %.4, i8* %.9, %DictValue* %.10)
-  store %Dictionary* %.4, %Dictionary** %person, align 8
-  %name1 = alloca i8*, align 8
-  %.13 = load %Dictionary*, %Dictionary** %person, align 8
-  %.14 = bitcast [5 x i8]* @.str1 to i8*
-  %dict_get_string_result = call i8* @dict_get_string(%Dictionary* %.13, i8* %.14)
-  store i8* %dict_get_string_result, i8** %name1, align 8
-  %age1 = alloca i32, align 4
-  %.16 = load %Dictionary*, %Dictionary** %person, align 8
-  %.17 = bitcast [4 x i8]* @.str3 to i8*
-  %dict_get_int_result = call i32 @dict_get_int(%Dictionary* %.16, i8* %.17)
-  store i32 %dict_get_int_result, i32* %age1, align 4
-  %.19 = bitcast [15 x i8]* @.str4 to i8*
-  call void @output_string(i8* %.19)
-  %.21 = load i8*, i8** %name1, align 8
-  call void @output_string(i8* %.21)
-  %.23 = bitcast [14 x i8]* @.str5 to i8*
-  call void @output_string(i8* %.23)
-  %.25 = load i32, i32* %age1, align 4
-  call void @output_int(i32 %.25)
-  %.27 = load %Dictionary*, %Dictionary** %person, align 8
-  %.28 = bitcast [4 x i8]* @.str3 to i8*
-  %dict_value_int = call %DictValue* @new_int(i32 31)
-  call void @dict_set(%Dictionary* %.27, i8* %.28, %DictValue* %dict_value_int)
-  %age2 = alloca i32, align 4
-  %.29 = load %Dictionary*, %Dictionary** %person, align 8
-  %.30 = bitcast [4 x i8]* @.str3 to i8*
-  %dict_get_int_result.1 = call i32 @dict_get_int(%Dictionary* %.29, i8* %.30)
-  store i32 %dict_get_int_result.1, i32* %age2, align 4
-  %.32 = bitcast [14 x i8]* @.str6 to i8*
-  call void @output_string(i8* %.32)
-  %.34 = load i32, i32* %age2, align 4
-  call void @output_int(i32 %.34)
-  %.36 = load %Dictionary*, %Dictionary** %person, align 8
-  %.37 = bitcast [5 x i8]* @.str1 to i8*
-  %.38 = bitcast [5 x i8]* @.str7 to i8*
-  %dict_value_string = call %DictValue* @new_string(i8* %.38)
-  call void @dict_set(%Dictionary* %.36, i8* %.37, %DictValue* %dict_value_string)
-  %name2 = alloca i8*, align 8
-  %.39 = load %Dictionary*, %Dictionary** %person, align 8
-  %.40 = bitcast [5 x i8]* @.str1 to i8*
-  %dict_get_string_result.1 = call i8* @dict_get_string(%Dictionary* %.39, i8* %.40)
-  store i8* %dict_get_string_result.1, i8** %name2, align 8
-  %.42 = bitcast [15 x i8]* @.str8 to i8*
-  call void @output_string(i8* %.42)
-  %.44 = load i8*, i8** %name2, align 8
-  call void @output_string(i8* %.44)
-  %.46 = bitcast [22 x i8]* @.str9 to i8*
-  call void @output_string(i8* %.46)
+  %.2 = bitcast [80 x i8]* @.str1 to i8*
+  %call_tmp = call i8* @regex_compile(i8* %.2)
+  store i8* %call_tmp, i8** @username, align 8
+  %.4 = load i8*, i8** @username, align 8
+  %.5 = load i8*, i8** @user, align 8
+  %call_tmp.1 = call i32 @regex_match(i8* %.4, i8* %.5)
+  %.6 = load i8*, i8** @username, align 8
+  %.7 = load i8*, i8** @user, align 8
+  %call_tmp.2 = call i32 @regex_match(i8* %.6, i8* %.7)
+  %.8 = load i8*, i8** @username, align 8
+  %.9 = load i8*, i8** @user, align 8
+  %call_tmp.3 = call i32 @regex_match(i8* %.8, i8* %.9)
+  %i_cmp_tmp = icmp eq i32 %call_tmp.3, 1
+  br i1 %i_cmp_tmp, label %then, label %else
+
+then:                                             ; preds = %entry
+  %.11 = bitcast [15 x i8]* @.str2 to i8*
+  call void @output_string(i8* %.11)
+  br label %if_cont
+
+else:                                             ; preds = %entry
+  %.14 = bitcast [33 x i8]* @.str3 to i8*
+  call void @output_string(i8* %.14)
+  br label %if_cont
+
+if_cont:                                          ; preds = %else, %then
   ret i32 0
 }

@@ -362,6 +362,96 @@ int tcp_recv(socket sock, string buffer, int size);  // Receive data
 void tcp_close(socket sock);                  // Close socket
 ```
 
+### 10. Regular Expressions
+
+ 
+
+PIE supports **regular expressions** with Kleene syntax and NFA-based matching. ⭐ **NEW!**
+
+ 
+
+**Basic Usage:**
+
+```pie
+
+// Compile a regex pattern
+
+regex pattern = regex_compile("a+.b*");
+
+ 
+
+// Match strings against the pattern
+
+int result = regex_match(pattern, "aabb");
+
+if (result == 1) {
+
+    output("Match found!", string);
+
+}
+
+```
+
+ 
+
+**Operators:**
+
+- **Literals**: `a`, `b`, `1`, etc.
+
+- **Concatenation** (`.`): `a.b` matches `"ab"`
+
+- **OR** (`|`): `a|b` matches `"a"` or `"b"`
+
+- **Kleene Star** (`*`): `a*` matches zero or more `a`'s
+
+- **Positive Closure** (`+`): `a+` matches one or more `a`'s
+
+- **Grouping** (`()`): `(a|b).c` matches `"ac"` or `"bc"`
+
+ 
+
+**Length Constraints:**
+
+- **Exact** (`:n`): `a+:3` matches exactly 3 characters
+
+- **Minimum** (`>n`): `a+>2` matches more than 2 characters
+
+- **Maximum** (`<n`): `a+<5` matches fewer than 5 characters
+
+- **Range** (`>n<m`): `a+>2<6` matches 3-5 characters
+
+ 
+
+**Common Patterns:**
+
+```pie
+
+// Email validation (simplified)
+
+regex email = regex_compile("(a|b|c|...|z|0|1|2|...|9)+.@.(a|b|c|...|z)+>8");
+
+ 
+
+// Phone number (exactly 10 digits)
+
+regex phone = regex_compile("(0|1|2|3|4|5|6|7|8|9)+:10");
+
+ 
+
+// Password (8+ characters)
+
+regex password = regex_compile("(a|b|c|...|z|A|B|C|...|Z|0|1|2|...|9)+>7");
+
+```
+
+ 
+
+See [Regex Specification](docs/regex_specification.md) for complete documentation.
+
+ 
+
+### 11. Standard Library
+
 ### 11. Example Programs
 
 #### Simple Global Program (No explicit main function needed)
@@ -474,3 +564,4 @@ output(result, float, 3);
 1. **Write your PIE program** (e.g., `test.pie`).
 2. **Run the compiler:** `python3 main.py`
 3. **Run your program:** `./program`
+

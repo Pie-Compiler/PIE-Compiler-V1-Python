@@ -14,7 +14,7 @@ class Parser:
             'IDENTIFIER', 'INT_LITERAL', 'FLOAT_LITERAL', 'STRING_LITERAL', 'CHAR_LITERAL',
             'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE', 'KEYWORD_DO',
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
-            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_DICT',
+            'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_DICT','KEYWORD_REGEX',
             'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 'KEYWORD_NULL', 'KEYWORD_EXIT', 'KEYWORD_ARRAY',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
             'SEMICOLON', 'COMMA', 'DOT', 'COLON',
@@ -156,7 +156,37 @@ class Parser:
                 param_types=param_types,
                 params=info['params']
             )
+        # Regex functions
 
+        regex_functions = {
+
+            "regex_compile": {"return_type": "regex", "params": [("string", "pattern")]},
+
+            "regex_match": {"return_type": "int", "params": [("regex", "pattern"), ("string", "str")]},
+
+            "regex_free": {"return_type": "void", "params": [("regex", "pattern")]},
+
+        }
+
+        for name, info in regex_functions.items():
+
+            param_types = [p[0] for p in info['params']]
+
+            self.symbol_table.add_symbol(
+
+                name,
+
+                'function',
+
+                return_type=info['return_type'],
+
+                param_types=param_types,
+
+                params=info['params']
+
+            )
+
+ 
 
         d_array_string_functions = {
             "d_array_string_create": {"return_type": "d_array_string", "params": []},
@@ -423,6 +453,7 @@ class Parser:
                           | KEYWORD_FILE
                           | KEYWORD_SOCKET
                           | KEYWORD_DICT
+                          | KEYWORD_REGEX
                           | KEYWORD_ARRAY'''
         base = canonicalize(p[1])
         p[0] = TypeSpecifier(base)

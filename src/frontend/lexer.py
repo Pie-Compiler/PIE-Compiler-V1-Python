@@ -240,6 +240,7 @@ def build_master_nfa():
         "while": "KEYWORD_WHILE",
         "return": "KEYWORD_RETURN",
         "break": "KEYWORD_BREAK",
+        "regex": "KEYWORD_REGEX",
         "continue": "KEYWORD_CONTINUE",
         "switch": "KEYWORD_SWITCH",
         "case": "KEYWORD_CASE",
