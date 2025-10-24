@@ -646,8 +646,18 @@ class SemanticAnalyzer(Visitor):
             return None
         norm_expr_type = self.type_checker._normalize_type(expr_type)
         norm_expected_type = self.type_checker._normalize_type(expected_type_name)
-        if norm_expr_type and norm_expr_type != norm_expected_type:
+        
+        # Allow automatic type conversion to string for output
+        if norm_expected_type == 'KEYWORD_STRING':
+            # Any basic type can be auto-converted to string for output
+            if norm_expr_type in ['KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_STRING']:
+                # Valid conversion, no error
+                pass
+            elif norm_expr_type and norm_expr_type != norm_expected_type:
+                self.add_error(f"Type mismatch in output: Expression is {expr_type}, but output type is {expected_type_name}")
+        elif norm_expr_type and norm_expr_type != norm_expected_type:
             self.add_error(f"Type mismatch in output: Expression is {expr_type}, but output type is {expected_type_name}")
+        
         if node.precision:
             precision_type = self.visit(node.precision)
             if precision_type != 'KEYWORD_INT':

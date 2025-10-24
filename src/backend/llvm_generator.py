@@ -1,7 +1,7 @@
 import llvmlite.ir as ir
 import llvmlite.binding as llvm
 from frontend.visitor import Visitor
-from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration
+from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration, Identifier
 from frontend.types import TypeInfo
 
 class LLVMCodeGenerator(Visitor):
@@ -556,13 +556,12 @@ class LLVMCodeGenerator(Visitor):
             if node.initializer:
                 init_val = self.visit(node.initializer)
                 
-                # Handle string initialization - if init_val is i8** (pointer to string var), load it to get i8*
-                if isinstance(var_type, ir.PointerType) and var_type == ir.IntType(8).as_pointer():
-                    # var_type is i8* (string)
-                    if isinstance(init_val.type, ir.PointerType):
-                        if init_val.type.pointee == var_type:
-                            # init_val is i8**, load it to get i8*
-                            init_val = self.builder.load(init_val)
+                # Handle variable-to-variable initialization
+                # If init_val is a pointer to the same type as var_type, load it to get the value
+                if isinstance(init_val.type, ir.PointerType):
+                    if init_val.type.pointee == var_type:
+                        # init_val is a pointer to a variable of the target type, load it
+                        init_val = self.builder.load(init_val)
                 
                 self.builder.store(init_val, ptr)
 
@@ -800,13 +799,12 @@ class LLVMCodeGenerator(Visitor):
         # Get the target type
         target_type = ptr.type.pointee if hasattr(ptr.type,'pointee') else ptr.type.pointed_type
         
-        # Handle string assignment - if value is i8** (pointer to string var), load it to get i8*
-        if isinstance(target_type, ir.PointerType) and target_type == ir.IntType(8).as_pointer():
-            # Target is a string (i8*)
-            if isinstance(value_to_store.type, ir.PointerType):
-                if value_to_store.type.pointee == target_type:
-                    # value_to_store is i8**, load it to get i8*
-                    value_to_store = self.builder.load(value_to_store)
+        # Handle variable-to-variable assignment
+        # If value_to_store is a pointer to the same type as target_type, load it to get the value
+        if isinstance(value_to_store.type, ir.PointerType):
+            if value_to_store.type.pointee == target_type:
+                # value_to_store is a pointer to a variable of the target type, load it
+                value_to_store = self.builder.load(value_to_store)
         
         # Handle int to float conversion
         if target_type != value_to_store.type and isinstance(target_type, ir.DoubleType) and isinstance(value_to_store.type, ir.IntType):
@@ -1740,13 +1738,37 @@ class LLVMCodeGenerator(Visitor):
         # Get the raw value first
         raw_val = self.visit(node.expression)
         
-        # For string output, we need to handle both string literals and string variables
+        # For string output, we need to handle loading values for conversion
         if output_type == 'string':
             # If it's a double pointer (string variable), load it to get i8*
             if isinstance(raw_val.type, ir.PointerType) and isinstance(raw_val.type.pointee, ir.PointerType):
                 output_val = self.builder.load(raw_val)
+            # If it's a pointer to a basic type (i32*, double*, i8* for char)
+            elif isinstance(raw_val.type, ir.PointerType):
+                # Check what it points to
+                if raw_val.type.pointee == ir.IntType(8):
+                    # Could be char variable (i8*) or string literal (i8*)
+                    # Only load if it's a char variable (check if identifier with char type)
+                    if isinstance(node.expression, Identifier):
+                        # It's an identifier - check if it's a char variable
+                        symbol = self.symbol_table.lookup_symbol(node.expression.name)
+                        if symbol and symbol.get('type') == 'KEYWORD_CHAR':
+                            # It's a char variable - load it
+                            output_val = self.builder.load(raw_val)
+                        else:
+                            # It's a string variable or other - use as is
+                            output_val = raw_val
+                    else:
+                        # String literal - use as is (already i8*)
+                        output_val = raw_val
+                elif isinstance(raw_val.type.pointee, (ir.IntType, ir.DoubleType)):
+                    # Int or float variable - load the value for conversion
+                    output_val = self.builder.load(raw_val)
+                else:
+                    # Other pointer type - use as is
+                    output_val = raw_val
             else:
-                # It's already an i8* (string literal)
+                # It's already a value
                 output_val = raw_val
         elif output_type == 'char':
             # For char, we always need to load the value (i8) from the pointer (i8*)
@@ -1762,14 +1784,31 @@ class LLVMCodeGenerator(Visitor):
             if isinstance(output_val.type, ir.IntType) and output_val.type.width == 1:
                 output_val = self.builder.zext(output_val, ir.IntType(32))
 
-        func_name = f"output_{output_type}"
+        # Handle automatic type conversions for string output
+        actual_output_type = output_type  # Track what we're actually outputting
+        if output_type == 'string':
+            # If we have a char (i8) but need string (i8*), convert it
+            if isinstance(output_val.type, ir.IntType) and output_val.type.width == 8:
+                char_to_str_func = self.module.get_global("char_to_string")
+                output_val = self.builder.call(char_to_str_func, [output_val], 'char_to_str')
+            # If we have an int (i32) but need string (i8*), convert it
+            elif isinstance(output_val.type, ir.IntType) and output_val.type.width == 32:
+                int_to_str_func = self.module.get_global("int_to_string")
+                output_val = self.builder.call(int_to_str_func, [output_val], 'int_to_str')
+            # If we have a float (double) but need string (i8*), convert it
+            elif isinstance(output_val.type, ir.DoubleType):
+                float_to_str_func = self.module.get_global("float_to_string")
+                output_val = self.builder.call(float_to_str_func, [output_val], 'float_to_str')
+
+        func_name = f"output_{actual_output_type}"
         output_func = self.module.get_global(func_name)
 
         if not output_func:
             raise Exception(f"Runtime function {func_name} not found.")
 
         args = [output_val]
-        if output_type == 'float':
+        # Only add precision if we're actually outputting as float (not converted to string)
+        if actual_output_type == 'float' and output_type == 'float':
             precision = self._load_if_pointer(self.visit(node.precision)) if node.precision else ir.Constant(ir.IntType(32), 2)
             args.append(precision)
 
