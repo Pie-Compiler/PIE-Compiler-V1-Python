@@ -354,9 +354,10 @@ class LLVMCodeGenerator(Visitor):
 
     def generate(self, ast):
         """Generate LLVM IR from the AST."""
-        # First pass: declare global variables and function definitions only
+        # First pass: declare function definitions only
+        # Don't process declarations here - they should be inside functions
         for stmt in ast.statements:
-            if isinstance(stmt, (Declaration, FunctionDefinition)):
+            if isinstance(stmt, FunctionDefinition):
                 self.visit(stmt)
         
         # Create a main function to wrap global statements if needed
@@ -424,25 +425,13 @@ class LLVMCodeGenerator(Visitor):
                         if result_array is not None:  # Only store if we have a result
                             self.builder.store(result_array, self.global_vars[name])
             
-            # Process all statements in order, including deferred initializers
-            # This ensures that declarations with function call initializers are executed
-            # in their original order relative to other statements
+            # Process all statements in order
+            # Since we didn't process declarations in the first pass, they'll be
+            # created as local variables inside this main function
             for stmt in ast.statements:
                 if not isinstance(stmt, FunctionDefinition):
-                    if isinstance(stmt, Declaration):
-                        # Check if this declaration has a deferred initializer
-                        var_name = stmt.identifier
-                        if var_name in self.global_vars:
-                            # Find if there's a deferred initializer for this variable
-                            for deferred_var_name, initializer_node in self.deferred_initializers:
-                                if deferred_var_name == var_name:
-                                    # Execute the deferred initializer now
-                                    init_val = self.visit(initializer_node)
-                                    self.builder.store(init_val, self.global_vars[var_name])
-                                    break
-                    else:
-                        # Process non-declaration statements normally
-                        self.visit(stmt)
+                    # Process all non-function statements (declarations and executable statements)
+                    self.visit(stmt)
             
             # Return 0 from main
             if not self.builder.block.is_terminated:
