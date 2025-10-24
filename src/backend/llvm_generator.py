@@ -185,6 +185,23 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(string_type, [float_type]), name="float_to_string")
         ir.Function(self.module, ir.FunctionType(string_type, [char_type]), name="char_to_string")
         
+        # Type conversion functions (from crypto_lib)
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type]), name="string_to_int")
+        ir.Function(self.module, ir.FunctionType(float_type, [string_type]), name="string_to_float")
+        ir.Function(self.module, ir.FunctionType(char_type, [string_type]), name="string_to_char")
+        ir.Function(self.module, ir.FunctionType(int_type, [char_type]), name="char_to_int")
+        ir.Function(self.module, ir.FunctionType(char_type, [int_type]), name="int_to_char")
+        ir.Function(self.module, ir.FunctionType(float_type, [int_type]), name="int_to_float")
+        ir.Function(self.module, ir.FunctionType(int_type, [float_type]), name="float_to_int")
+        
+        # Cryptography and encoding functions
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type, int_type]), name="caesar_cipher")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type, int_type]), name="caesar_decipher")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="rot13")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type, int_type]), name="char_shift")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="reverse_string")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_type, string_type]), name="xor_cipher")
+        
         # Advanced string utilities
         ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_to_upper")
         ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_to_lower")
@@ -194,12 +211,19 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(string_type, [string_type, ir.IntType(8), ir.IntType(8)]), name="string_replace_char")
         ir.Function(self.module, ir.FunctionType(string_type, [string_type]), name="string_reverse")
         ir.Function(self.module, ir.FunctionType(int_type, [string_type, ir.IntType(8)]), name="string_count_char")
+        ir.Function(self.module, ir.FunctionType(char_type, [string_type, int_type]), name="string_char_at")
+        ir.Function(self.module, ir.FunctionType(string_type.as_pointer(), [string_type, string_type, int_type.as_pointer()]), name="string_split")
+        
+        # String split wrapper that returns DArrayString
+        d_array_string_type = self.module.context.get_identified_type("DArrayString")
+        ir.Function(self.module, ir.FunctionType(d_array_string_type.as_pointer(), [string_type, string_type]), name="string_split_to_array")
 
         # File I/O Library
         file_type = self.get_llvm_type('file')
         ir.Function(self.module, ir.FunctionType(file_type, [string_type, string_type]), name="file_open")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_close")
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type, string_type]), name="file_write")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_flush")
         ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_all")
         ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_line")
 
@@ -782,6 +806,19 @@ class LLVMCodeGenerator(Visitor):
     def visit_returnstatement(self, node):
         if node.value:
             return_val = self.visit(node.value)
+            
+            # Get the expected return type from the current function
+            expected_return_type = self.current_function.ftype.return_type
+            
+            # If we have a pointer but need a non-pointer (or different pointer depth)
+            # we need to load the value
+            if isinstance(return_val.type, ir.PointerType):
+                # Check if the pointee type matches the expected return type
+                if return_val.type.pointee == expected_return_type:
+                    # Load the value (e.g., loading i8* from i8**)
+                    return_val = self.builder.load(return_val)
+                # If return_val.type already matches expected_return_type, use as-is
+            
             self.builder.ret(return_val)
         else:
             self.builder.ret_void()
@@ -1103,6 +1140,13 @@ class LLVMCodeGenerator(Visitor):
                     # For int variables, we can't compare with null - they're always defined
                     # Return false (not null) for int variables
                     return ir.Constant(ir.IntType(1), 0)
+                elif left.type.pointee == ir.IntType(64):  # i64* (file handle pointer)
+                    loaded_left = self.builder.load(left)
+                    null_val = ir.Constant(ir.IntType(64), 0)
+                    return self.builder.icmp_unsigned('==', loaded_left, null_val, 'null_check')
+            elif isinstance(left.type, ir.IntType) and left.type.width == 64:  # i64 (file handle value)
+                null_val = ir.Constant(ir.IntType(64), 0)
+                return self.builder.icmp_unsigned('==', left, null_val, 'null_check')
             else:
                 # Left is not a pointer type, can't be null
                 return ir.Constant(ir.IntType(1), 0)
@@ -1124,6 +1168,13 @@ class LLVMCodeGenerator(Visitor):
                     # For int variables, we can't compare with null - they're always defined
                     # Return false (not null) for int variables
                     return ir.Constant(ir.IntType(1), 0)
+                elif right.type.pointee == ir.IntType(64):  # i64* (file handle pointer)
+                    loaded_right = self.builder.load(right)
+                    null_val = ir.Constant(ir.IntType(64), 0)
+                    return self.builder.icmp_unsigned('==', loaded_right, null_val, 'null_check')
+            elif isinstance(right.type, ir.IntType) and right.type.width == 64:  # i64 (file handle value)
+                null_val = ir.Constant(ir.IntType(64), 0)
+                return self.builder.icmp_unsigned('==', right, null_val, 'null_check')
             else:
                 # Right is not a pointer type, can't be null
                 return ir.Constant(ir.IntType(1), 0)
@@ -1447,7 +1498,7 @@ class LLVMCodeGenerator(Visitor):
             raise Exception(f"Unknown function referenced: {node.name} (mapped to {actual_name})")
 
         args = []
-        for arg in node.args:
+        for i, arg in enumerate(node.args):
             arg_val = self.visit(arg)
             # Only load from pointer if it's not a return value from functions that should return pointers
             # Functions like new_int, new_float, new_string, dict_create should return pointers
@@ -1455,7 +1506,20 @@ class LLVMCodeGenerator(Visitor):
                 # These functions return pointers that should not be dereferenced
                 args.append(arg_val)
             else:
-                args.append(self._load_if_pointer(arg_val))
+                # Check if we need to load based on what the function expects
+                if i < len(func.args):
+                    expected_type = func.args[i].type
+                    # If we have i8* but function expects i8, load it (char variable)
+                    # If we have i8* and function expects i8*, keep it (string)
+                    if isinstance(arg_val.type, ir.PointerType) and arg_val.type.pointee == ir.IntType(8):
+                        if expected_type == ir.IntType(8):  # Function wants char by value
+                            args.append(self.builder.load(arg_val))
+                        else:  # Function wants i8* (string)
+                            args.append(arg_val)
+                    else:
+                        args.append(self._load_if_pointer(arg_val))
+                else:
+                    args.append(self._load_if_pointer(arg_val))
 
         new_args = []
         for i, arg in enumerate(args):
