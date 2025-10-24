@@ -566,6 +566,15 @@ class LLVMCodeGenerator(Visitor):
             # If there's an initializer, visit it and store its value
             if node.initializer:
                 init_val = self.visit(node.initializer)
+                
+                # Handle string initialization - if init_val is i8** (pointer to string var), load it to get i8*
+                if isinstance(var_type, ir.PointerType) and var_type == ir.IntType(8).as_pointer():
+                    # var_type is i8* (string)
+                    if isinstance(init_val.type, ir.PointerType):
+                        if init_val.type.pointee == var_type:
+                            # init_val is i8**, load it to get i8*
+                            init_val = self.builder.load(init_val)
+                
                 self.builder.store(init_val, ptr)
 
     def _evaluate_constant_expression(self, node):
@@ -798,9 +807,22 @@ class LLVMCodeGenerator(Visitor):
         # Fallback
         ptr = self.visit(node.lhs)
         value_to_store = self.visit(node.rhs)
+        
+        # Get the target type
         target_type = ptr.type.pointee if hasattr(ptr.type,'pointee') else ptr.type.pointed_type
+        
+        # Handle string assignment - if value is i8** (pointer to string var), load it to get i8*
+        if isinstance(target_type, ir.PointerType) and target_type == ir.IntType(8).as_pointer():
+            # Target is a string (i8*)
+            if isinstance(value_to_store.type, ir.PointerType):
+                if value_to_store.type.pointee == target_type:
+                    # value_to_store is i8**, load it to get i8*
+                    value_to_store = self.builder.load(value_to_store)
+        
+        # Handle int to float conversion
         if target_type != value_to_store.type and isinstance(target_type, ir.DoubleType) and isinstance(value_to_store.type, ir.IntType):
             value_to_store = self.builder.sitofp(value_to_store, target_type)
+            
         self.builder.store(value_to_store, ptr)
 
     def visit_returnstatement(self, node):
