@@ -390,54 +390,92 @@ class LLVMCodeGenerator(Visitor):
             
             # Initialize global dynamic arrays (create + optional initializer append)
             for array_info in self.global_dynamic_arrays:
-                # Handle both old format (4 items) and new format (5 items)
+                # Handle various formats for backward compatibility
+                is_multidim = False
+                dimensions = 1
+                
                 if len(array_info) == 4:
                     name, element_type_str, init_nodes, is_dynamic = array_info
                     expr_initializer = None
-                else:
+                elif len(array_info) == 5:
                     name, element_type_str, init_nodes, is_dynamic, expr_initializer = array_info
+                elif len(array_info) >= 6:
+                    name, element_type_str, init_nodes, is_dynamic, expr_initializer, is_multidim, dimensions = array_info[:7]
                     
                 if self.debug:
-                    print(f"DEBUG: Processing global array '{name}' with element_type_str='{element_type_str}'")
+                    print(f"DEBUG: Processing global array '{name}' with element_type_str='{element_type_str}', multidim={is_multidim}")
+                
                 if is_dynamic:
-                    create_func = self.module.get_global(f"d_array_{element_type_str}_create")
-                    new_array_ptr = self.builder.call(create_func, [])
-                    self.builder.store(new_array_ptr, self.global_vars[name])
-                    
-                    if init_nodes:
-                        append_func = self.module.get_global(f"d_array_{element_type_str}_append")
-                        array_struct_ptr = new_array_ptr
-                        expected_elem_type = append_func.function_type.args[1]
-                        if self.debug:
-                            print(f"DEBUG: append_func: {append_func.name}, expected_elem_type: {expected_elem_type}")
-                        for val_node in init_nodes:
-                            raw_val = self.visit(val_node)
+                    if is_multidim:
+                        # Multi-dimensional array initialization
+                        outer_create_func = self.module.get_global("d_array_int_create")
+                        outer_array = self.builder.call(outer_create_func, [])
+                        self.builder.store(outer_array, self.global_vars[name])
+                        
+                        if init_nodes:
+                            for row_node in init_nodes:
+                                if hasattr(row_node, 'values'):
+                                    # Create inner array
+                                    inner_create_func = self.module.get_global(f"d_array_{element_type_str}_create")
+                                    inner_array = self.builder.call(inner_create_func, [])
+                                    
+                                    # Append elements to inner array
+                                    append_func = self.module.get_global(f"d_array_{element_type_str}_append")
+                                    expected_elem_type = append_func.function_type.args[1]
+                                    for val_node in row_node.values:
+                                        raw_val = self.visit(val_node)
+                                        val = self._coerce_char_array_element(expected_elem_type, raw_val)
+                                        if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
+                                            val = self.builder.sitofp(val, expected_elem_type)
+                                        if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
+                                            val = self.builder.load(val)
+                                        self.builder.call(append_func, [inner_array, val])
+                                    
+                                    # Store inner array pointer as int in outer array
+                                    inner_as_int = self.builder.ptrtoint(inner_array, ir.IntType(64))
+                                    inner_as_int32 = self.builder.trunc(inner_as_int, ir.IntType(32))
+                                    outer_append_func = self.module.get_global("d_array_int_append")
+                                    self.builder.call(outer_append_func, [outer_array, inner_as_int32])
+                    else:
+                        # Single-dimensional array
+                        create_func = self.module.get_global(f"d_array_{element_type_str}_create")
+                        new_array_ptr = self.builder.call(create_func, [])
+                        self.builder.store(new_array_ptr, self.global_vars[name])
+                        
+                        if init_nodes:
+                            append_func = self.module.get_global(f"d_array_{element_type_str}_append")
+                            array_struct_ptr = new_array_ptr
+                            expected_elem_type = append_func.function_type.args[1]
                             if self.debug:
-                                print(f"DEBUG: Global dynamic array init - raw_val: {raw_val}, type: {raw_val.type}")
-                            val = self._coerce_char_array_element(expected_elem_type, raw_val)
-                            if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
-                                val = self.builder.sitofp(val, expected_elem_type)
-                            # Final safety: if still pointer and expected int8, load
-                            if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
-                                val = self.builder.load(val)
-                            if self.debug:
-                                print(f"DEBUG: About to call append with val: {val}, type: {val.type}, expected: {expected_elem_type}")
-                            self.builder.call(append_func, [array_struct_ptr, val])
-                    elif expr_initializer:
-                        # Handle expression initializers (like array concatenation or array copy)
-                        # Check if this is an identifier (array copy)
-                        if isinstance(expr_initializer, Identifier):
-                            # Call the copy function to create a new array
-                            copy_func = self.module.get_global(f"d_array_{element_type_str}_copy")
-                            source_array_ptr = self.global_vars[expr_initializer.name]
-                            source_array = self.builder.load(source_array_ptr)
-                            new_array_ptr = self.builder.call(copy_func, [source_array])
-                            self.builder.store(new_array_ptr, self.global_vars[name])
-                        else:
-                            # Handle other expression initializers (like array concatenation)
-                            result_array = self.visit(expr_initializer)
-                            if result_array is not None:  # Only store if we have a result
-                                self.builder.store(result_array, self.global_vars[name])
+                                print(f"DEBUG: append_func: {append_func.name}, expected_elem_type: {expected_elem_type}")
+                            for val_node in init_nodes:
+                                raw_val = self.visit(val_node)
+                                if self.debug:
+                                    print(f"DEBUG: Global dynamic array init - raw_val: {raw_val}, type: {raw_val.type}")
+                                val = self._coerce_char_array_element(expected_elem_type, raw_val)
+                                if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
+                                    val = self.builder.sitofp(val, expected_elem_type)
+                                # Final safety: if still pointer and expected int8, load
+                                if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
+                                    val = self.builder.load(val)
+                                if self.debug:
+                                    print(f"DEBUG: About to call append with val: {val}, type: {val.type}, expected: {expected_elem_type}")
+                                self.builder.call(append_func, [array_struct_ptr, val])
+                        elif expr_initializer:
+                            # Handle expression initializers (like array concatenation or array copy)
+                            # Check if this is an identifier (array copy)
+                            if isinstance(expr_initializer, Identifier):
+                                # Call the copy function to create a new array
+                                copy_func = self.module.get_global(f"d_array_{element_type_str}_copy")
+                                source_array_ptr = self.global_vars[expr_initializer.name]
+                                source_array = self.builder.load(source_array_ptr)
+                                new_array_ptr = self.builder.call(copy_func, [source_array])
+                                self.builder.store(new_array_ptr, self.global_vars[name])
+                            else:
+                                # Handle other expression initializers (like array concatenation)
+                                result_array = self.visit(expr_initializer)
+                                if result_array is not None:  # Only store if we have a result
+                                    self.builder.store(result_array, self.global_vars[name])
             
             # Process all statements in order
             # Since we didn't process declarations in the first pass, they'll be
@@ -709,63 +747,137 @@ class LLVMCodeGenerator(Visitor):
         element_type_ir = self.get_llvm_type(node.var_type.type_name)
         is_global = self.builder is None
         
+        # Check if this is a multi-dimensional array
+        dimensions = getattr(node, 'dimensions', 1)
+        is_multidim = dimensions > 1
+        
         if is_dyn:
-            array_ptr_type = self.get_llvm_type(f'd_array_{base}')
-            if is_global:
-                global_var = ir.GlobalVariable(self.module, array_ptr_type, name=var_name)
-                global_var.initializer = ir.Constant(array_ptr_type, None)
-                global_var.linkage = 'internal'
-                self.global_vars[var_name] = global_var
-                self.llvm_var_table[var_name] = global_var
+            # For multi-dimensional arrays, we need arrays of arrays
+            if is_multidim:
+                # Multi-dimensional dynamic arrays are arrays of DArray pointers
+                # For example, int[][] becomes DArrayInt* stored in a DArrayInt
+                # But we'll use a pointer-based approach for now
+                inner_array_ptr_type = self.get_llvm_type(f'd_array_{base}')
                 
-                # Handle different types of initializers
-                init_nodes = []
-                if node.initializer:
-                    if hasattr(node.initializer, 'values'):  # InitializerList
+                if is_global:
+                    # Create a global variable that will hold an array of array pointers
+                    outer_array_ptr_type = self.get_llvm_type(f'd_array_int')  # Use int array to store pointers
+                    global_var = ir.GlobalVariable(self.module, outer_array_ptr_type, name=var_name)
+                    global_var.initializer = ir.Constant(outer_array_ptr_type, None)
+                    global_var.linkage = 'internal'
+                    self.global_vars[var_name] = global_var
+                    self.llvm_var_table[var_name] = global_var
+                    
+                    # Store info for initialization in main
+                    init_nodes = []
+                    if node.initializer and hasattr(node.initializer, 'values'):
                         init_nodes = node.initializer.values
-                    else:  # Expression (like BinaryOp for concatenation)
-                        # For global arrays with expression initializers, we'll handle it in main
-                        init_nodes = []
-                self.global_dynamic_arrays.append((var_name, base, init_nodes, True, node.initializer))
+                    self.global_dynamic_arrays.append((var_name, base, init_nodes, True, node.initializer, is_multidim, dimensions))
+                else:
+                    # Allocate a pointer to hold the outer array
+                    outer_array_ptr_type = self.get_llvm_type(f'd_array_int')  # Array of pointers
+                    ptr = self.builder.alloca(outer_array_ptr_type, name=var_name)
+                    self.llvm_var_table[var_name] = ptr
+                    
+                    if node.initializer and hasattr(node.initializer, 'values'):
+                        # Create the outer array
+                        outer_create_func = self._array_runtime_func('int', 'create')
+                        outer_array = self.builder.call(outer_create_func, [])
+                        self.builder.store(outer_array, ptr)
+                        
+                        # For each row in the initializer
+                        for row_node in node.initializer.values:
+                            if hasattr(row_node, 'values'):  # Should be an InitializerList
+                                # Create inner array for this row
+                                inner_create_func = self._array_runtime_func(base, 'create')
+                                inner_array = self.builder.call(inner_create_func, [])
+                                
+                                # Append elements to the inner array
+                                append_func = self._array_runtime_func(base, 'append')
+                                expected_elem_type = append_func.function_type.args[1]
+                                for val_node in row_node.values:
+                                    raw_val = self.visit(val_node)
+                                    val = self._coerce_char_array_element(expected_elem_type, raw_val)
+                                    if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
+                                        val = self.builder.sitofp(val, expected_elem_type)
+                                    if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
+                                        val = self.builder.load(val)
+                                    self.builder.call(append_func, [inner_array, val])
+                                
+                                # Store the inner array pointer as an integer in the outer array
+                                # Use 64-bit to store pointers on 64-bit systems
+                                inner_as_int = self.builder.ptrtoint(inner_array, ir.IntType(64))
+                                # Store as 64-bit in an int array (but we'll use a special marker)
+                                # Actually, we need to rethink this - we can't store 64-bit values in 32-bit int arrays
+                                # Let's split into two 32-bit values
+                                low_32 = self.builder.trunc(inner_as_int, ir.IntType(32))
+                                high_32 = self.builder.trunc(self.builder.lshr(inner_as_int, ir.Constant(ir.IntType(64), 32)), ir.IntType(32))
+                                outer_append_func = self._array_runtime_func('int', 'append')
+                                self.builder.call(outer_append_func, [outer_array, low_32])
+                                self.builder.call(outer_append_func, [outer_array, high_32])
+                    else:
+                        # Empty multi-dimensional array
+                        outer_create_func = self._array_runtime_func('int', 'create')
+                        outer_array = self.builder.call(outer_create_func, [])
+                        self.builder.store(outer_array, ptr)
             else:
-                ptr = self.builder.alloca(array_ptr_type, name=var_name)
-                self.llvm_var_table[var_name] = ptr
-                
-                if node.initializer:
-                    if hasattr(node.initializer, 'values'):  # InitializerList
+                # Single-dimensional dynamic array (existing code)
+                array_ptr_type = self.get_llvm_type(f'd_array_{base}')
+                if is_global:
+                    global_var = ir.GlobalVariable(self.module, array_ptr_type, name=var_name)
+                    global_var.initializer = ir.Constant(array_ptr_type, None)
+                    global_var.linkage = 'internal'
+                    self.global_vars[var_name] = global_var
+                    self.llvm_var_table[var_name] = global_var
+                    
+                    # Handle different types of initializers
+                    init_nodes = []
+                    if node.initializer:
+                        if hasattr(node.initializer, 'values'):  # InitializerList
+                            init_nodes = node.initializer.values
+                        else:  # Expression (like BinaryOp for concatenation)
+                            # For global arrays with expression initializers, we'll handle it in main
+                            init_nodes = []
+                    self.global_dynamic_arrays.append((var_name, base, init_nodes, True, node.initializer, False, 1))
+                else:
+                    ptr = self.builder.alloca(array_ptr_type, name=var_name)
+                    self.llvm_var_table[var_name] = ptr
+                    
+                    if node.initializer:
+                        if hasattr(node.initializer, 'values'):  # InitializerList
+                            create_func = self._array_runtime_func(base, 'create')
+                            new_array_ptr = self.builder.call(create_func, [])
+                            self.builder.store(new_array_ptr, ptr)
+                            
+                            append_func = self._array_runtime_func(base, 'append')
+                            array_struct_ptr = new_array_ptr
+                            expected_elem_type = append_func.function_type.args[1]
+                            for val_node in node.initializer.values:
+                                raw_val = self.visit(val_node)
+                                val = self._coerce_char_array_element(expected_elem_type, raw_val)
+                                if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
+                                    val = self.builder.sitofp(val, expected_elem_type)
+                                if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
+                                    val = self.builder.load(val)
+                                self.builder.call(append_func, [array_struct_ptr, val])
+                        else:  # Expression (like BinaryOp for concatenation or Identifier for array copy)
+                            # Check if this is an identifier (array copy)
+                            if isinstance(node.initializer, Identifier):
+                                # Call the copy function to create a new array
+                                copy_func = self._array_runtime_func(base, 'copy')
+                                source_array_ptr = self.llvm_var_table[node.initializer.name]
+                                source_array = self.builder.load(source_array_ptr)
+                                new_array_ptr = self.builder.call(copy_func, [source_array])
+                                self.builder.store(new_array_ptr, ptr)
+                            else:
+                                # Visit the expression and store the result (e.g., array concatenation)
+                                result_array = self.visit(node.initializer)
+                                self.builder.store(result_array, ptr)
+                    else:
+                        # Empty array
                         create_func = self._array_runtime_func(base, 'create')
                         new_array_ptr = self.builder.call(create_func, [])
                         self.builder.store(new_array_ptr, ptr)
-                        
-                        append_func = self._array_runtime_func(base, 'append')
-                        array_struct_ptr = new_array_ptr
-                        expected_elem_type = append_func.function_type.args[1]
-                        for val_node in node.initializer.values:
-                            raw_val = self.visit(val_node)
-                            val = self._coerce_char_array_element(expected_elem_type, raw_val)
-                            if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
-                                val = self.builder.sitofp(val, expected_elem_type)
-                            if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
-                                val = self.builder.load(val)
-                            self.builder.call(append_func, [array_struct_ptr, val])
-                    else:  # Expression (like BinaryOp for concatenation or Identifier for array copy)
-                        # Check if this is an identifier (array copy)
-                        if isinstance(node.initializer, Identifier):
-                            # Call the copy function to create a new array
-                            copy_func = self._array_runtime_func(base, 'copy')
-                            source_array_ptr = self.llvm_var_table[node.initializer.name]
-                            source_array = self.builder.load(source_array_ptr)
-                            new_array_ptr = self.builder.call(copy_func, [source_array])
-                            self.builder.store(new_array_ptr, ptr)
-                        else:
-                            # Visit the expression and store the result (e.g., array concatenation)
-                            result_array = self.visit(node.initializer)
-                            self.builder.store(result_array, ptr)
-                else:
-                    # Empty array
-                    create_func = self._array_runtime_func(base, 'create')
-                    new_array_ptr = self.builder.call(create_func, [])
-                    self.builder.store(new_array_ptr, ptr)
         else:
             size = int(node.size.value) if node.size else (len(node.initializer.values) if node.initializer else 0)
             array_type = ir.ArrayType(element_type_ir, size)
@@ -808,13 +920,50 @@ class LLVMCodeGenerator(Visitor):
             ti = sym.get('typeinfo') if sym else None
             if ti and ti.is_dynamic:
                 base = ti.base
-                array_var_ptr = self.llvm_var_table[node.lhs.name]
-                array_struct_ptr = self.builder.load(array_var_ptr)
-                index_val = self._load_if_pointer(self.visit(node.lhs.key))
-                value_val = self._load_if_pointer(self.visit(node.rhs))
-                set_func = self._array_runtime_func(base, 'set')
-                self.builder.call(set_func, [array_struct_ptr, index_val, value_val])
-                return
+                dimensions = getattr(ti, 'dimensions', 1)
+                num_indices = len(node.lhs.indices) if hasattr(node.lhs, 'indices') else 1
+                
+                # Multi-dimensional array assignment
+                if dimensions > 1 and num_indices > 1:
+                    # Get the outer array
+                    array_var_ptr = self.llvm_var_table[node.lhs.name]
+                    outer_array = self.builder.load(array_var_ptr)
+                    
+                    # Get first dimension - pointers stored as two consecutive ints
+                    first_index = self._load_if_pointer(self.visit(node.lhs.indices[0]))
+                    # Calculate actual index (2 ints per pointer)
+                    actual_index = self.builder.mul(first_index, ir.Constant(ir.IntType(32), 2))
+                    
+                    get_func = self._array_runtime_func('int', 'get')
+                    low_32 = self.builder.call(get_func, [outer_array, actual_index], 'ptr_low')
+                    high_index = self.builder.add(actual_index, ir.Constant(ir.IntType(32), 1))
+                    high_32 = self.builder.call(get_func, [outer_array, high_index], 'ptr_high')
+                    
+                    # Reconstruct 64-bit pointer
+                    low_64 = self.builder.zext(low_32, ir.IntType(64))
+                    high_64 = self.builder.zext(high_32, ir.IntType(64))
+                    high_shifted = self.builder.shl(high_64, ir.Constant(ir.IntType(64), 32))
+                    inner_ptr_as_int64 = self.builder.or_(low_64, high_shifted)
+                    
+                    # Convert int back to pointer
+                    inner_array_type = self.get_llvm_type(f'd_array_{base}')
+                    inner_array = self.builder.inttoptr(inner_ptr_as_int64, inner_array_type, 'inner_array')
+                    
+                    # Set in second dimension
+                    second_index = self._load_if_pointer(self.visit(node.lhs.indices[1]))
+                    value_val = self._load_if_pointer(self.visit(node.rhs))
+                    set_func = self._array_runtime_func(base, 'set')
+                    self.builder.call(set_func, [inner_array, second_index, value_val])
+                    return
+                else:
+                    # Single-dimensional dynamic array
+                    array_var_ptr = self.llvm_var_table[node.lhs.name]
+                    array_struct_ptr = self.builder.load(array_var_ptr)
+                    index_val = self._load_if_pointer(self.visit(node.lhs.key))
+                    value_val = self._load_if_pointer(self.visit(node.rhs))
+                    set_func = self._array_runtime_func(base, 'set')
+                    self.builder.call(set_func, [array_struct_ptr, index_val, value_val])
+                    return
         # Fallback
         ptr = self.visit(node.lhs)
         value_to_store = self.visit(node.rhs)
@@ -1333,11 +1482,50 @@ class LLVMCodeGenerator(Visitor):
         # Handle dynamic arrays
         if ti and ti.is_dynamic:
             base = ti.base
-            array_var_ptr = self.llvm_var_table[node.name]
-            array_struct_ptr = self.builder.load(array_var_ptr)
-            index_val = self._load_if_pointer(self.visit(node.key))
-            get_func = self._array_runtime_func(base, 'get')
-            return self.builder.call(get_func, [array_struct_ptr, index_val], 'dyn_idx_tmp')
+            dimensions = getattr(ti, 'dimensions', 1)
+            num_indices = len(node.indices) if hasattr(node, 'indices') else 1
+            
+            # Multi-dimensional array access
+            if dimensions > 1:
+                # Get the outer array (contains pointers to inner arrays split across two ints)
+                array_var_ptr = self.llvm_var_table[node.name]
+                outer_array = self.builder.load(array_var_ptr)
+                
+                # Access first dimension - pointers are stored as two consecutive ints
+                first_index = self._load_if_pointer(self.visit(node.indices[0]))
+                # Calculate actual index (2 ints per pointer)
+                actual_index = self.builder.mul(first_index, ir.Constant(ir.IntType(32), 2))
+                
+                get_func = self._array_runtime_func('int', 'get')
+                low_32 = self.builder.call(get_func, [outer_array, actual_index], 'ptr_low')
+                high_index = self.builder.add(actual_index, ir.Constant(ir.IntType(32), 1))
+                high_32 = self.builder.call(get_func, [outer_array, high_index], 'ptr_high')
+                
+                # Reconstruct 64-bit pointer
+                low_64 = self.builder.zext(low_32, ir.IntType(64))
+                high_64 = self.builder.zext(high_32, ir.IntType(64))
+                high_shifted = self.builder.shl(high_64, ir.Constant(ir.IntType(64), 32))
+                inner_ptr_as_int64 = self.builder.or_(low_64, high_shifted)
+                
+                # Convert int back to pointer
+                inner_array_type = self.get_llvm_type(f'd_array_{base}')
+                inner_array = self.builder.inttoptr(inner_ptr_as_int64, inner_array_type, 'inner_array')
+                
+                if num_indices == 1:
+                    # Return the inner array pointer directly (for cases like graph[0])
+                    return inner_array
+                else:
+                    # Access second dimension
+                    second_index = self._load_if_pointer(self.visit(node.indices[1]))
+                    get_inner_func = self._array_runtime_func(base, 'get')
+                    return self.builder.call(get_inner_func, [inner_array, second_index], 'elem')
+            else:
+                # Single-dimensional dynamic array
+                array_var_ptr = self.llvm_var_table[node.name]
+                array_struct_ptr = self.builder.load(array_var_ptr)
+                index_val = self._load_if_pointer(self.visit(node.key))
+                get_func = self._array_runtime_func(base, 'get')
+                return self.builder.call(get_func, [array_struct_ptr, index_val], 'dyn_idx_tmp')
         
         # Handle static arrays
         array_ptr = self.llvm_var_table[node.name]
@@ -1351,6 +1539,35 @@ class LLVMCodeGenerator(Visitor):
         func_name = node.name
         args = node.args
         array_node = args[0]
+        
+        # Handle arr_size on subscript access (e.g., arr_size(graph[0]))
+        if isinstance(array_node, SubscriptAccess):
+            # This is accessing a sub-array (like graph[0])
+            sub_array_ptr = self.visit(array_node)
+            # sub_array_ptr is already the inner array pointer
+            sym = self.symbol_table.lookup_symbol(array_node.name)
+            ti = sym.get('typeinfo') if sym else None
+            base = ti.base if ti else 'int'
+            
+            op_map = {'arr_push':'append','arr_pop':'pop','arr_size':'size','arr_contains':'contains','arr_indexof':'indexof','arr_avg':'avg'}
+            suffix = op_map.get(func_name)
+            if not suffix:
+                raise Exception(f"Unknown array function: {func_name}")
+            c_func = self._array_runtime_func(base, suffix)
+            call_args = [sub_array_ptr]
+            
+            if func_name != 'arr_avg':
+                for arg_node in args[1:]:
+                    raw_arg_val = self.visit(arg_node)
+                    if base == 'char' and func_name in ['arr_contains', 'arr_indexof']:
+                        expected_elem_type = c_func.function_type.args[len(call_args)]
+                        arg_val = self._coerce_char_array_element(expected_elem_type, raw_arg_val)
+                    else:
+                        arg_val = self._load_if_pointer(raw_arg_val)
+                    call_args.append(arg_val)
+            return self.builder.call(c_func, call_args, f'{func_name}_call')
+        
+        # Normal array function call
         array_var_ptr = self.visit(array_node)
         array_struct_ptr = self.builder.load(array_var_ptr)
         sym = self.symbol_table.lookup_symbol(array_node.name)
@@ -1911,8 +2128,39 @@ class LLVMCodeGenerator(Visitor):
         return self.builder.call(pop_func, [array_val])
 
     def visit_arraysize(self, node):
-        array_ptr = self.visit(node.array)
-        array_val = self.builder.load(array_ptr)
+        result = self.visit(node.array)
+        
+        # Check if this is a multi-dimensional array (not a subscript access)
+        is_multidim_outer = False
+        if isinstance(node.array, Identifier):
+            sym = self.symbol_table.lookup_symbol(node.array.name)
+            ti = sym.get('typeinfo') if sym else None
+            if ti and getattr(ti, 'dimensions', 1) > 1:
+                is_multidim_outer = True
+        
+        # For multi-dimensional arrays accessed via subscript (e.g., graph[0]),
+        # result is already the inner array pointer
+        # For simple array variables, result is a pointer to the array pointer
+        
+        # Check if we need to load or if we already have the array struct pointer
+        if isinstance(result.type, ir.PointerType):
+            # Check if it points to one of our array types
+            pointee = result.type.pointee if hasattr(result.type, 'pointee') else None
+            if pointee in [self.d_array_int_type, self.d_array_string_type, 
+                          self.d_array_float_type, self.d_array_char_type]:
+                # result is a pointer to an array pointer, load it
+                array_val = self.builder.load(result)
+            elif result.type in [self.d_array_int_type, self.d_array_string_type,
+                                self.d_array_float_type, self.d_array_char_type]:
+                # result is already the array struct pointer
+                array_val = result
+            else:
+                # Assume it needs loading
+                array_val = self.builder.load(result)
+        else:
+            # Not a pointer at all, use as-is
+            array_val = result
+            
         array_type = array_val.type
         if array_type == self.d_array_int_type:
             size_func = self.module.get_global("d_array_int_size")
@@ -1924,7 +2172,15 @@ class LLVMCodeGenerator(Visitor):
             size_func = self.module.get_global("d_array_char_size")
         else:
             raise Exception(f"Unsupported array type for size: {array_type}")
-        return self.builder.call(size_func, [array_val])
+        
+        size_result = self.builder.call(size_func, [array_val])
+        
+        # If this is a multi-dimensional outer array, divide by 2 since we store
+        # each pointer as two integers
+        if is_multidim_outer:
+            size_result = self.builder.sdiv(size_result, ir.Constant(ir.IntType(32), 2))
+        
+        return size_result
 
     def visit_arrayavg(self, node):
         array_ptr = self.visit(node.array)

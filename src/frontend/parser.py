@@ -432,7 +432,9 @@ class Parser:
                                 | type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON
                                 | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON'''
+                                | type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON
+                                | type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON
+                                | type_specifier IDENTIFIER multi_brackets SEMICOLON'''
         # Simple variable decl
         if len(p) == 4:
             p[0] = Declaration(p[1], p[2])
@@ -451,6 +453,15 @@ class Parser:
         # Empty dynamic array: type id [ ] ;
         elif len(p) == 6 and p[3] == '[' and p[4] == ']':
             p[0] = ArrayDeclaration(p[1], p[2], initializer=None, is_dynamic=True)
+        # Multi-dimensional array with initializer: type id [][] = init ;
+        elif len(p) == 7 and p[4] == '=':
+            # p[3] is multi_brackets (list of dimension info)
+            dims = len(p[3])
+            p[0] = ArrayDeclaration(p[1], p[2], initializer=p[5], is_dynamic=True, dimensions=dims, dimension_sizes=[None] * dims)
+        # Multi-dimensional empty array: type id [][] ;
+        elif len(p) == 5:
+            dims = len(p[3])
+            p[0] = ArrayDeclaration(p[1], p[2], initializer=None, is_dynamic=True, dimensions=dims, dimension_sizes=[None] * dims)
     
     def p_type_specifier(self, p):
         '''type_specifier : primitive_type
@@ -475,6 +486,14 @@ class Parser:
     def p_array_type(self, p):
         'array_type : primitive_type LBRACKET RBRACKET'
         p[0] = TypeSpecifier(p[1].type_name, is_array=True)
+    
+    def p_multi_brackets(self, p):
+        '''multi_brackets : LBRACKET RBRACKET LBRACKET RBRACKET
+                         | multi_brackets LBRACKET RBRACKET'''
+        if len(p) == 5:  # First two brackets
+            p[0] = [None, None]  # Two dimensions with unknown sizes
+        else:  # Additional bracket pair
+            p[0] = p[1] + [None]
     
     def p_assignment_statement(self, p):
         '''assignment_statement : left_hand_side ASSIGN expression SEMICOLON'''
@@ -753,8 +772,18 @@ class Parser:
         p[0] = (p[1], p[3]) # Keep as tuple for DictionaryLiteral
 
     def p_subscript_access(self, p):
-        '''subscript_access : IDENTIFIER LBRACKET expression RBRACKET'''
-        p[0] = SubscriptAccess(p[1], p[3])
+        '''subscript_access : IDENTIFIER LBRACKET expression RBRACKET
+                           | subscript_access LBRACKET expression RBRACKET'''
+        if len(p) == 5 and isinstance(p[1], str):
+            # Single dimension: id[expr]
+            p[0] = SubscriptAccess(p[1], p[3], indices=[p[3]])
+        elif len(p) == 5:
+            # Multi-dimension: subscript[expr]
+            # p[1] is already a SubscriptAccess, extend its indices
+            p[1].indices.append(p[3])
+            p[1].key = p[3]  # Keep last index as key for backward compatibility
+            p[0] = p[1]
+
     
     def p_error(self, p):
         if p:

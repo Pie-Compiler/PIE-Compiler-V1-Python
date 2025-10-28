@@ -22,13 +22,19 @@ class TypeInfo:
     base: str                 # canonical base type (int,float,char,string,bool,file,socket,dict)
     is_array: bool = False    # static array flag
     is_dynamic: bool = False  # dynamic array flag ([] form)
-    size: int | None = None   # static size if known
+    size: int | None = None   # static size if known (for 1D arrays or first dimension)
+    dimensions: int = 1       # number of array dimensions (1 for 1D, 2 for 2D, etc.)
+    dimension_sizes: list | None = None  # list of sizes for each dimension (for multi-dim arrays)
 
     @property
     def kind(self):
         if self.is_array or self.is_dynamic:
             return 'array'
         return 'scalar'
+    
+    @property
+    def is_multidimensional(self):
+        return self.dimensions > 1
 
     def element_base(self):
         return self.base if self.kind == 'array' else None
@@ -36,6 +42,10 @@ class TypeInfo:
     def describe(self):
         if self.kind == 'array':
             if self.is_dynamic:
-                return f"dynamic {self.base}[]"
+                brackets = '[]' * self.dimensions
+                return f"dynamic {self.base}{brackets}"
+            if self.is_multidimensional and self.dimension_sizes:
+                dims = ']['.join(str(s) if s is not None else '?' for s in self.dimension_sizes)
+                return f"{self.base}[{dims}]"
             return f"{self.base}[{self.size if self.size is not None else '?'}]"
         return self.base

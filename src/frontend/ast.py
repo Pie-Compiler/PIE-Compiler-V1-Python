@@ -27,10 +27,12 @@ class Declaration(Statement):
         self.initializer = initializer
 
 class ArrayDeclaration(Declaration):
-    def __init__(self, var_type, identifier, size=None, initializer=None, is_dynamic=False):
+    def __init__(self, var_type, identifier, size=None, initializer=None, is_dynamic=False, dimensions=1, dimension_sizes=None):
         super().__init__(var_type, identifier, initializer)
         self.size = size
         self.is_dynamic = is_dynamic
+        self.dimensions = dimensions  # Number of dimensions (1, 2, 3, etc.)
+        self.dimension_sizes = dimension_sizes or ([] if size is None else [size])  # List of sizes for each dimension
 
 class Assignment(Statement):
     def __init__(self, lhs, rhs):
@@ -121,9 +123,10 @@ class FunctionCallStatement(Statement):
 
 
 class SubscriptAccess(Expression):
-    def __init__(self, name, key):
+    def __init__(self, name, key, indices=None):
         self.name = name
-        self.key = key
+        self.key = key  # For single-dimensional access (backward compatibility)
+        self.indices = indices if indices is not None else [key]  # List of index expressions for multi-dimensional
         self.element_type = None # To be filled in by semantic analysis
 
 class InitializerList(Expression):
