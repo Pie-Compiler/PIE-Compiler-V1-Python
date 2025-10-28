@@ -131,35 +131,49 @@ class SemanticAnalyzer(Visitor):
         if self.symbol_table.lookup_symbol_current_scope(node.identifier):
             self.add_error(f"Array '{node.identifier}' already defined in this scope.")
             return None
-        size = None
+
+        sizes = []
+        #This part is tricky because the parser doesn't directly support multiple size expressions.
+        #We'll assume for now that if node.size is a list, it contains the dimensions.
         if node.size:
-            if isinstance(node.size, Primary) and node.size.value.isdigit():
-                size = int(node.size.value)
+            if isinstance(node.size, list):
+                for size_expr in node.size:
+                    if isinstance(size_expr, Primary) and size_expr.value.isdigit():
+                        sizes.append(int(size_expr.value))
+                    else:
+                        self.add_error("Array sizes must be constant integers.")
+            elif isinstance(node.size, Primary) and node.size.value.isdigit():
+                sizes.append(int(node.size.value))
             else:
-                self.add_error("Array size must be a constant integer.")
+                self.add_error("Array size must be a constant integer or a list of constant integers for multidimensional arrays.")
+
         if node.initializer:
             if isinstance(node.initializer, InitializerList):
-                # Handle initializer list
-                init_list_exprs = node.initializer.values
-                if size is None and not node.is_dynamic:
-                    size = len(init_list_exprs)
-                if size is not None and not node.is_dynamic and size < len(init_list_exprs):
-                    self.add_error(f"Too many initializers for array '{node.identifier}'")
-                for expr in init_list_exprs:
-                    expr_type = self.visit(expr)
-                    if not self.type_checker.is_compatible(element_type, expr_type):
-                        self.add_error(f"Type mismatch in initializer for array '{node.identifier}'. Expected {element_type}, got {expr_type}")
+                def check_initializer(sub_initializer, level):
+                    if not isinstance(sub_initializer, InitializerList):
+                        expr_type = self.visit(sub_initializer)
+                        if not self.type_checker.is_compatible(element_type, expr_type):
+                            self.add_error(f"Type mismatch in initializer for array '{node.identifier}'. Expected {element_type}, got {expr_type}")
+                        return 1
+
+                    if level < len(sizes) and len(sub_initializer.values) > sizes[level]:
+                        self.add_error(f"Too many initializers for dimension {level + 1} of array '{node.identifier}'")
+
+                    max_depth = 0
+                    for item in sub_initializer.values:
+                        depth = check_initializer(item, level + 1)
+                        if max_depth == 0:
+                            max_depth = depth
+                        elif max_depth != depth:
+                            self.add_error(f"Inconsistent nesting in initializer for array '{node.identifier}'")
+                    return max_depth + 1
+
+                check_initializer(node.initializer, 0)
             else:
-                # Handle expression initializer (like array concatenation)
-                expr_type = self.visit(node.initializer)
-                if expr_type == 'array':
-                    # For array concatenation, check that the element types match
-                    if hasattr(node.initializer, 'element_type') and node.initializer.element_type != element_type:
-                        self.add_error(f"Type mismatch in array initialization: Cannot assign array of {node.initializer.element_type} to array of {element_type}")
-                else:
-                    self.add_error(f"Invalid initializer for array '{node.identifier}'. Expected array or initializer list, got {expr_type}")
-                    return None
-        ti = TypeInfo(base=element_type, is_dynamic=node.is_dynamic, is_array=not node.is_dynamic, size=size)
+                self.add_error(f"Invalid initializer for array '{node.identifier}'. Expected an initializer list.")
+                return None
+
+        ti = TypeInfo(base=element_type, is_dynamic=node.is_dynamic, is_array=True, size=sizes if sizes else None, dimensions=len(sizes) if sizes else 1)
         self.symbol_table.add_symbol(node.identifier, ti, is_initialized=True)
         return None
 
@@ -208,9 +222,23 @@ class SemanticAnalyzer(Visitor):
         if not arr_info:
             self.add_error(f"Undefined array: '{node.name}'")
             return None
-        key_type = self.visit(node.key)
-        if key_type != 'KEYWORD_INT':
-            self.add_error("Array index must be an integer.")
+
+        if arr_info.dimensions < len(node.keys):
+            self.add_error(f"Too many indices for array '{node.name}'. Expected {arr_info.dimensions}, got {len(node.keys)}.")
+            return None
+
+        for key_expr in node.keys:
+            key_type = self.visit(key_expr)
+            if key_type != 'KEYWORD_INT':
+                self.add_error("Array indices must be integers.")
+
+        # If the number of keys is less than the dimensions, it's a slice (not fully supported yet, but we can return an array type)
+        if len(node.keys) < arr_info.dimensions:
+            # This would be a place to handle array slicing in the future
+            # For now, we'll consider it an access that results in a lower-dimensional array
+            # This is a simplification and may need refinement
+            return 'array'
+
         node.element_type = 'KEYWORD_' + arr_info.base.upper()
         return node.element_type
 

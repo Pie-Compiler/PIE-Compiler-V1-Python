@@ -121,9 +121,9 @@ class FunctionCallStatement(Statement):
 
 
 class SubscriptAccess(Expression):
-    def __init__(self, name, key):
+    def __init__(self, name, keys):
         self.name = name
-        self.key = key
+        self.keys = keys
         self.element_type = None # To be filled in by semantic analysis
 
 class InitializerList(Expression):

@@ -19,10 +19,11 @@ def canonicalize(type_token: str) -> str:
 
 @dataclass
 class TypeInfo:
-    base: str                 # canonical base type (int,float,char,string,bool,file,socket,dict)
-    is_array: bool = False    # static array flag
-    is_dynamic: bool = False  # dynamic array flag ([] form)
-    size: int | None = None   # static size if known
+    base: str
+    is_array: bool = False
+    is_dynamic: bool = False
+    size: int | list[int] | None = None
+    dimensions: int = 1
 
     @property
     def kind(self):

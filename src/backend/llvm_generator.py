@@ -1,7 +1,7 @@
 import llvmlite.ir as ir
 import llvmlite.binding as llvm
 from frontend.visitor import Visitor
-from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration, Identifier
+from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration, Identifier, InitializerList
 from frontend.types import TypeInfo
 
 class LLVMCodeGenerator(Visitor):
@@ -650,6 +650,29 @@ class LLVMCodeGenerator(Visitor):
         # For now, return a default value - use int32 as it's the most common
         return ir.Constant(ir.IntType(32), 0)
 
+    def _create_nested_constant(self, init_node, expected_type):
+        """Recursively create a nested LLVM Constant for array initializers."""
+        if not isinstance(init_node, InitializerList):
+            # Base case: a single value
+            const = self._evaluate_constant_expression(init_node)
+            # Coerce type if necessary (e.g., int literal for float array)
+            if const.type != expected_type:
+                if isinstance(expected_type, ir.DoubleType) and isinstance(const.type, ir.IntType):
+                    return ir.Constant(expected_type, float(const.constant))
+            return const
+
+        # Recursive case: a list of initializers for a sub-array
+        values = []
+        sub_expected_type = expected_type.element
+        for sub_node in init_node.values:
+            values.append(self._create_nested_constant(sub_node, sub_expected_type))
+
+        # Pad with zeros if the initializer is shorter than the array dimension
+        while len(values) < expected_type.count:
+            values.append(ir.Constant(sub_expected_type, None)) # zeroinitializer for the element type
+
+        return ir.Constant(expected_type, values)
+
     def _is_function_call_initializer(self, node):
         """Check if an initializer node contains a function call or references global variables."""
         # Check if the node's class name indicates it's a function call
@@ -689,13 +712,15 @@ class LLVMCodeGenerator(Visitor):
     def visit_arraydeclaration(self, node):
         var_name = node.identifier
         sym = self.symbol_table.lookup_symbol(var_name)
-        ti = sym.get('typeinfo') if sym else None
-        base = ti.base if ti else node.var_type.type_name.replace('KEYWORD_','').lower()
-        is_dyn = ti.is_dynamic if ti else node.is_dynamic
-        element_type_ir = self.get_llvm_type(node.var_type.type_name)
+        ti = sym.get('typeinfo')
+        base_type_str = ti.base
+        is_dyn = ti.is_dynamic
+        element_type_ir = self.get_llvm_type(base_type_str)
         is_global = self.builder is None
-        
+
         if is_dyn:
+            # Dynamic array logic remains the same for now (1D)
+            base = ti.base if ti else node.var_type.type_name.replace('KEYWORD_','').lower()
             array_ptr_type = self.get_llvm_type(f'd_array_{base}')
             if is_global:
                 global_var = ir.GlobalVariable(self.module, array_ptr_type, name=var_name)
@@ -704,67 +729,43 @@ class LLVMCodeGenerator(Visitor):
                 self.global_vars[var_name] = global_var
                 self.llvm_var_table[var_name] = global_var
                 
-                # Handle different types of initializers
                 init_nodes = []
-                if node.initializer:
-                    if hasattr(node.initializer, 'values'):  # InitializerList
-                        init_nodes = node.initializer.values
-                    else:  # Expression (like BinaryOp for concatenation)
-                        # For global arrays with expression initializers, we'll handle it in main
-                        init_nodes = []
+                if node.initializer and hasattr(node.initializer, 'values'):
+                    init_nodes = node.initializer.values
                 self.global_dynamic_arrays.append((var_name, base, init_nodes, True, node.initializer))
             else:
                 ptr = self.builder.alloca(array_ptr_type, name=var_name)
                 self.llvm_var_table[var_name] = ptr
-                
+                create_func = self._array_runtime_func(base, 'create')
+                new_array_ptr = self.builder.call(create_func, [])
+                self.builder.store(new_array_ptr, ptr)
                 if node.initializer:
-                    if hasattr(node.initializer, 'values'):  # InitializerList
-                        create_func = self._array_runtime_func(base, 'create')
-                        new_array_ptr = self.builder.call(create_func, [])
-                        self.builder.store(new_array_ptr, ptr)
-                        
+                    if hasattr(node.initializer, 'values'):
                         append_func = self._array_runtime_func(base, 'append')
-                        array_struct_ptr = new_array_ptr
-                        expected_elem_type = append_func.function_type.args[1]
                         for val_node in node.initializer.values:
                             raw_val = self.visit(val_node)
-                            val = self._coerce_char_array_element(expected_elem_type, raw_val)
-                            if val.type != expected_elem_type and isinstance(expected_elem_type, ir.DoubleType) and isinstance(val.type, ir.IntType):
-                                val = self.builder.sitofp(val, expected_elem_type)
-                            if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
-                                val = self.builder.load(val)
-                            self.builder.call(append_func, [array_struct_ptr, val])
-                    else:  # Expression (like BinaryOp for concatenation)
-                        # Visit the expression and store the result
+                            val = self._coerce_char_array_element(append_func.function_type.args[1], raw_val)
+                            self.builder.call(append_func, [new_array_ptr, val])
+                    else:
                         result_array = self.visit(node.initializer)
                         self.builder.store(result_array, ptr)
-                else:
-                    # Empty array
-                    create_func = self._array_runtime_func(base, 'create')
-                    new_array_ptr = self.builder.call(create_func, [])
-                    self.builder.store(new_array_ptr, ptr)
         else:
-            size = int(node.size.value) if node.size else (len(node.initializer.values) if node.initializer else 0)
-            array_type = ir.ArrayType(element_type_ir, size)
+            # --- Static Multidimensional Array Logic ---
+            dimensions = ti.size
+            if not dimensions:
+                 raise ValueError(f"Static array '{var_name}' has no dimensions.")
+
+            array_type = element_type_ir
+            for dim in reversed(dimensions):
+                array_type = ir.ArrayType(array_type, dim)
+
+            initializer = None
+            if node.initializer:
+                initializer = self._create_nested_constant(node.initializer, array_type)
+            elif is_global:
+                initializer = ir.Constant(array_type, None) # Zeroinitializer
+
             if is_global:
-                zero_list = []
-                if node.initializer:
-                    init_vals = []
-                    for v in node.initializer.values:
-                        init_vals.append(self.visit(v))
-                    # Only support ints/floats/chars simple constants here
-                    while len(init_vals) < size:
-                        if isinstance(element_type_ir, ir.IntType):
-                            init_vals.append(ir.Constant(element_type_ir, 0))
-                        elif isinstance(element_type_ir, ir.DoubleType):
-                            init_vals.append(ir.Constant(element_type_ir, 0.0))
-                    initializer = ir.Constant(array_type, init_vals)
-                else:
-                    if isinstance(element_type_ir, ir.IntType):
-                        zero_list = [ir.Constant(element_type_ir, 0) for _ in range(size)]
-                    elif isinstance(element_type_ir, ir.DoubleType):
-                        zero_list = [ir.Constant(element_type_ir, 0.0) for _ in range(size)]
-                    initializer = ir.Constant(array_type, zero_list)
                 global_var = ir.GlobalVariable(self.module, array_type, name=var_name)
                 global_var.initializer = initializer
                 global_var.linkage = 'internal'
@@ -773,44 +774,25 @@ class LLVMCodeGenerator(Visitor):
             else:
                 ptr = self.builder.alloca(array_type, name=var_name)
                 self.llvm_var_table[var_name] = ptr
-                if node.initializer:
-                    for i, v in enumerate(node.initializer.values):
-                        val = self.visit(v)
-                        index_ptr = self.builder.gep(ptr, [ir.Constant(ir.IntType(32),0), ir.Constant(ir.IntType(32), i)])
-                        self.builder.store(val, index_ptr)
+                if initializer:
+                    self.builder.store(initializer, ptr)
 
     def visit_assignment(self, node):
-        if isinstance(node.lhs, SubscriptAccess):
-            sym = self.symbol_table.lookup_symbol(node.lhs.name)
-            ti = sym.get('typeinfo') if sym else None
-            if ti and ti.is_dynamic:
-                base = ti.base
-                array_var_ptr = self.llvm_var_table[node.lhs.name]
-                array_struct_ptr = self.builder.load(array_var_ptr)
-                index_val = self._load_if_pointer(self.visit(node.lhs.key))
-                value_val = self._load_if_pointer(self.visit(node.rhs))
-                set_func = self._array_runtime_func(base, 'set')
-                self.builder.call(set_func, [array_struct_ptr, index_val, value_val])
-                return
-        # Fallback
-        ptr = self.visit(node.lhs)
         value_to_store = self.visit(node.rhs)
+        ptr = self.visit(node.lhs) # This will return a pointer to the location
+
+        # The visit methods for Identifier and SubscriptAccess already return pointers (l-values)
+        # So, we just need to load the r-value if it's a pointer and then store.
         
-        # Get the target type
-        target_type = ptr.type.pointee if hasattr(ptr.type,'pointee') else ptr.type.pointed_type
+        loaded_value = self._load_if_pointer(value_to_store)
         
-        # Handle variable-to-variable assignment
-        # If value_to_store is a pointer to the same type as target_type, load it to get the value
-        if isinstance(value_to_store.type, ir.PointerType):
-            if value_to_store.type.pointee == target_type:
-                # value_to_store is a pointer to a variable of the target type, load it
-                value_to_store = self.builder.load(value_to_store)
+        # Handle type coercion (e.g., int to float)
+        target_pointee_type = ptr.type.pointee
+        if loaded_value.type != target_pointee_type:
+            if isinstance(target_pointee_type, ir.DoubleType) and isinstance(loaded_value.type, ir.IntType):
+                loaded_value = self.builder.sitofp(loaded_value, target_pointee_type)
         
-        # Handle int to float conversion
-        if target_type != value_to_store.type and isinstance(target_type, ir.DoubleType) and isinstance(value_to_store.type, ir.IntType):
-            value_to_store = self.builder.sitofp(value_to_store, target_type)
-            
-        self.builder.store(value_to_store, ptr)
+        self.builder.store(loaded_value, ptr)
 
     def visit_returnstatement(self, node):
         if node.value:
@@ -1265,61 +1247,21 @@ class LLVMCodeGenerator(Visitor):
 
     def visit_subscriptaccess(self, node):
         sym = self.symbol_table.lookup_symbol(node.name)
-        ti = sym.get('typeinfo') if sym else None
-        
-        # Handle dictionary access
-        if sym and sym.get('type') == 'KEYWORD_DICT':
-            dict_var_ptr = self.llvm_var_table[node.name]
-            dict_val = self.builder.load(dict_var_ptr)
-            key_val = self.visit(node.key)  # Don't load string pointers
-            
-            # Check if key exists first
-            dict_has_key_func = self.module.get_global("dict_has_key")
-            key_exists = self.builder.call(dict_has_key_func, [dict_val, key_val], 'key_exists')
-            
-            # Create a conditional block for safe access
-            current_block = self.builder.block
-            safe_block = self.current_function.append_basic_block('dict_safe_access')
-            error_block = self.current_function.append_basic_block('dict_key_error')
-            merge_block = self.current_function.append_basic_block('dict_merge')
-            
-            # Check if key exists
-            self.builder.cbranch(key_exists, safe_block, error_block)
-            
-            # Safe access block - key exists
-            self.builder.position_at_end(safe_block)
-            dict_get_func = self.module.get_global("dict_get")
-            safe_result = self.builder.call(dict_get_func, [dict_val, key_val], 'dict_value')
-            self.builder.branch(merge_block)
-            
-            # Error block - key doesn't exist
-            self.builder.position_at_end(error_block)
-            # For now, return NULL (could be enhanced with runtime error handling)
-            dict_value_create_null_func = self.module.get_global("dict_value_create_null")
-            error_result = self.builder.call(dict_value_create_null_func, [], 'null_value')
-            self.builder.branch(merge_block)
-            
-            # Merge block
-            self.builder.position_at_end(merge_block)
-            phi = self.builder.phi(self.dict_value_type, 'dict_access_result')
-            phi.add_incoming(safe_result, safe_block)
-            phi.add_incoming(error_result, error_block)
-            
-            return phi
-        
-        # Handle dynamic arrays
-        if ti and ti.is_dynamic:
-            base = ti.base
-            array_var_ptr = self.llvm_var_table[node.name]
-            array_struct_ptr = self.builder.load(array_var_ptr)
-            index_val = self._load_if_pointer(self.visit(node.key))
-            get_func = self._array_runtime_func(base, 'get')
-            return self.builder.call(get_func, [array_struct_ptr, index_val], 'dyn_idx_tmp')
-        
-        # Handle static arrays
+        ti = sym.get('typeinfo')
+
+        # This method should return a pointer (l-value) to the element.
         array_ptr = self.llvm_var_table[node.name]
-        key_val = self._load_if_pointer(self.visit(node.key))
-        return self.builder.gep(array_ptr, [ir.Constant(ir.IntType(32),0), key_val], inbounds=True)
+
+        # The indices for GEP must include a zero for the initial pointer dereference.
+        indices = [ir.Constant(ir.IntType(32), 0)]
+        for key_node in node.keys:
+            index_val = self._load_if_pointer(self.visit(key_node))
+            # Ensure index is i32 if it's not already
+            if index_val.type != ir.IntType(32):
+                index_val = self.builder.sext(index_val, ir.IntType(32))
+            indices.append(index_val)
+
+        return self.builder.gep(array_ptr, indices, inbounds=True, name=f"{node.name}_idx")
 
     def visit_functioncallstatement(self, node):
         self.visit(node.function_call)

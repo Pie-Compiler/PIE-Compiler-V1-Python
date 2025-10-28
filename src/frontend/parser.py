@@ -426,31 +426,55 @@ class Parser:
         p[0] = BreakStatement()
     
     def p_declaration_statement(self, p):
-        '''declaration_statement : type_specifier IDENTIFIER SEMICOLON
-                                | type_specifier IDENTIFIER ASSIGN expression SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON
-                                | type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON'''
-        # Simple variable decl
-        if len(p) == 4:
-            p[0] = Declaration(p[1], p[2])
-        # Simple variable with initializer
-        elif len(p) == 6 and p[3] == '=':
-            p[0] = Declaration(p[1], p[2], p[4])
-        # Static array with size, no initializer: type id [ expr ] ;
-        elif len(p) == 7 and p[3] == '[' and p[5] == ']':
-            p[0] = ArrayDeclaration(p[1], p[2], size=p[4])
-        # Static array with size and initializer: type id [ expr ] = init ;
-        elif len(p) == 9 and p[3] == '[' and p[5] == ']' and p[6] == '=':
-            p[0] = ArrayDeclaration(p[1], p[2], size=p[4], initializer=p[7], is_dynamic=False)
-        # Dynamic array with initializer: type id [ ] = init ; (can be initializer_list or expression)
-        elif len(p) == 8 and p[3] == '[' and p[4] == ']' and p[5] == '=':
-            p[0] = ArrayDeclaration(p[1], p[2], initializer=p[6], is_dynamic=True)
-        # Empty dynamic array: type id [ ] ;
-        elif len(p) == 6 and p[3] == '[' and p[4] == ']':
-            p[0] = ArrayDeclaration(p[1], p[2], initializer=None, is_dynamic=True)
+        '''declaration_statement : type_specifier IDENTIFIER array_specifier_opt SEMICOLON
+                                | type_specifier IDENTIFIER array_specifier_opt ASSIGN expression SEMICOLON'''
+
+        is_array = p[3] is not None
+
+        if not is_array:
+            if len(p) == 4:
+                p[0] = Declaration(p[1], p[2])
+            else:
+                p[0] = Declaration(p[1], p[2], initializer=p[5])
+            return
+
+        sizes, is_dynamic_decl = p[3]
+
+        # An empty size list [] means dynamic, e.g. int arr[]
+        is_dynamic = is_dynamic_decl or (not sizes)
+
+        if len(p) == 5: # No initializer
+            p[0] = ArrayDeclaration(p[1], p[2], size=sizes, is_dynamic=is_dynamic)
+        else: # With initializer
+            p[0] = ArrayDeclaration(p[1], p[2], size=sizes, initializer=p[5], is_dynamic=is_dynamic)
+
+    def p_array_specifier_opt(self, p):
+        '''array_specifier_opt : array_specifier
+                              | empty'''
+        p[0] = p[1]
+
+    def p_array_specifier(self, p):
+        '''array_specifier : LBRACKET expression RBRACKET
+                           | array_specifier LBRACKET expression RBRACKET
+                           | LBRACKET RBRACKET
+                           | array_specifier LBRACKET RBRACKET'''
+        is_dynamic = len(p) == 3 and p[1] == '[' and p[2] == ']'
+
+        if len(p) > 1 and p[1] == '[' and p[2] == ']': # int arr[]
+            p[0] = ([], True)
+            return
+
+        if len(p) > 1 and p[1] == '[' and p[3] == ']': # int arr[5]
+             p[0] = ([p[2]], False)
+             return
+
+        # Recursive cases
+        prev_sizes, is_dynamic_decl = p[1]
+
+        if is_dynamic: # e.g. int arr[5][]
+            p[0] = (prev_sizes, True)
+        else: # e.g. int arr[5][10]
+            p[0] = (prev_sizes + [p[3]], is_dynamic_decl)
     
     def p_type_specifier(self, p):
         '''type_specifier : primitive_type
@@ -753,8 +777,20 @@ class Parser:
         p[0] = (p[1], p[3]) # Keep as tuple for DictionaryLiteral
 
     def p_subscript_access(self, p):
-        '''subscript_access : IDENTIFIER LBRACKET expression RBRACKET'''
-        p[0] = SubscriptAccess(p[1], p[3])
+        '''subscript_access : IDENTIFIER subscript_specifier_list'''
+        p[0] = SubscriptAccess(p[1], p[2])
+
+    def p_subscript_specifier_list(self, p):
+        '''subscript_specifier_list : subscript_specifier
+                                   | subscript_specifier_list subscript_specifier'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + [p[2]]
+
+    def p_subscript_specifier(self, p):
+        '''subscript_specifier : LBRACKET expression RBRACKET'''
+        p[0] = p[2]
     
     def p_error(self, p):
         if p:
