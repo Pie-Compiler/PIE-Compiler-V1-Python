@@ -17,7 +17,6 @@
 // output("--- Caesar Cipher ---", string);
 // string secret_message = "ATTACK AT DAWN";
 // string encrypted = caesar_cipher(secret_message, 7);
-// output("Original: " + secret_message, string);
 // output("Encrypted: " + encrypted, string);
 // string decrypted = caesar_decipher(encrypted, 7);
 // output("Decrypted: " + decrypted, string);
