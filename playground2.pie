@@ -1,7 +1,9 @@
+// Seed the random number generator with current time for true randomness
+srand(time());
 int scores[]=[];
 int limit=10;
 while(limit>0){
-	int randomNumber=rand_range(1,99);
+	int randomNumber=rand_range(666,1000);
 	sleep(1);
 	output("I have chosen a random number: "+randomNumber,string);
 	arr_push(scores,randomNumber);
@@ -19,4 +21,54 @@ for(int i=0;i<arr_size(scores);i=i+1){
 output("The sum of the numbers is "+sum,string);
 
 //To filter out even numbers
+int evenNumbers[]=[];
+int oddNumbers[]=[];
+for(int i=0;i<arr_size(scores);i=i+1){
+	if(scores[i]%2==0){
+		output("Even number found: "+scores[i],string);
+		arr_push(evenNumbers,scores[i]);
+	}else{
+		output("Odd number found: "+scores[i],string);
+		arr_push(oddNumbers,scores[i]);
+	}
+}
 
+//number of even numbers
+output("Total even numbers found: "+arr_size(evenNumbers),string);
+output("Even numbers are: ",string);
+output(evenNumbers,array);
+output("Total odd numbers found: "+arr_size(oddNumbers),string);
+output("Odd numbers are: ",string);
+output(oddNumbers,array);
+
+//which was the highest number?
+int highest=scores[0];
+for(int i=1;i<arr_size(scores);i=i+1){
+	if(scores[i]>highest){
+		highest=scores[i];
+	}
+}
+output("The highest number generated was: "+highest,string);
+
+//were there any duplicates?
+int duplicatesFound=0;
+for(int i=0;i<arr_size(scores);i=i+1){
+	for(int j=i+1;j<arr_size(scores);j=j+1){
+		if(scores[i]==scores[j]){
+			output("Duplicate number found: "+scores[i],string);
+			duplicatesFound=1;
+		}
+	}
+}
+if(duplicatesFound==0){
+	output("No duplicate numbers were found",string);
+}
+
+//more even or odd?
+if(arr_size(evenNumbers)>arr_size(oddNumbers)){
+	output("There were more even numbers generated",string);
+}else if(arr_size(oddNumbers)>arr_size(evenNumbers)){
+	output("There were more odd numbers generated",string);
+}else{
+	output("There were equal even and odd numbers generated",string);
+}

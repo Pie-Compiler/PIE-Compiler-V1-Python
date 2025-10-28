@@ -170,7 +170,7 @@ class SemanticAnalyzer(Visitor):
                         if not self.type_checker.is_compatible(element_type, expr_type):
                             self.add_error(f"Type mismatch in initializer for array '{node.identifier}'. Expected {element_type}, got {expr_type}")
             else:
-                # Handle expression initializer (like array concatenation or identifier)
+                # Handle expression initializer (like array concatenation, identifier, or subscript access)
                 expr_type = self.visit(node.initializer)
                 if expr_type == 'array':
                     # Check if this is an identifier referring to another array
@@ -179,6 +179,15 @@ class SemanticAnalyzer(Visitor):
                         source_sym = self.symbol_table.lookup_symbol(node.initializer.name)
                         if source_sym:
                             source_ti = source_sym.get('typeinfo')
+                            if source_ti and source_ti.base != element_type:
+                                self.add_error(f"Type mismatch in array initialization: Cannot assign array of {source_ti.base} to array of {element_type}")
+                    # Check if this is a subscript access on a multi-dimensional array
+                    elif isinstance(node.initializer, SubscriptAccess):
+                        # Get the symbol info for the source array
+                        source_sym = self.symbol_table.lookup_symbol(node.initializer.name)
+                        if source_sym:
+                            source_ti = source_sym.get('typeinfo')
+                            # For multi-dimensional arrays, subscript access returns an array of the base type
                             if source_ti and source_ti.base != element_type:
                                 self.add_error(f"Type mismatch in array initialization: Cannot assign array of {source_ti.base} to array of {element_type}")
                     # For array concatenation, check that the element types match

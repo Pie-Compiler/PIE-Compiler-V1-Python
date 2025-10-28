@@ -1,0 +1,1 @@
+- Pop operations only reduce the array when they are called within a function. Calling them globally works but does not reduce their size.

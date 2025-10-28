@@ -1,7 +1,7 @@
 import llvmlite.ir as ir
 import llvmlite.binding as llvm
 from frontend.visitor import Visitor
-from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration, Identifier
+from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration, Identifier, FunctionCallStatement
 from frontend.types import TypeInfo
 
 class LLVMCodeGenerator(Visitor):
@@ -358,8 +358,13 @@ class LLVMCodeGenerator(Visitor):
 
     def generate(self, ast):
         """Generate LLVM IR from the AST."""
-        # First pass: declare function definitions only
-        # Don't process declarations here - they should be inside functions
+        # First pass: process global declarations (variables, arrays, etc.) only
+        for stmt in ast.statements:
+            if isinstance(stmt, (Declaration, ArrayDeclaration)):
+                # Process global declarations
+                self.visit(stmt)
+        
+        # Second pass: declare function definitions
         for stmt in ast.statements:
             if isinstance(stmt, FunctionDefinition):
                 self.visit(stmt)
@@ -431,11 +436,13 @@ class LLVMCodeGenerator(Visitor):
                                             val = self.builder.load(val)
                                         self.builder.call(append_func, [inner_array, val])
                                     
-                                    # Store inner array pointer as int in outer array
+                                    # Store inner array pointer as two 32-bit integers in outer array
                                     inner_as_int = self.builder.ptrtoint(inner_array, ir.IntType(64))
-                                    inner_as_int32 = self.builder.trunc(inner_as_int, ir.IntType(32))
+                                    low_32 = self.builder.trunc(inner_as_int, ir.IntType(32))
+                                    high_32 = self.builder.trunc(self.builder.lshr(inner_as_int, ir.Constant(ir.IntType(64), 32)), ir.IntType(32))
                                     outer_append_func = self.module.get_global("d_array_int_append")
-                                    self.builder.call(outer_append_func, [outer_array, inner_as_int32])
+                                    self.builder.call(outer_append_func, [outer_array, low_32])
+                                    self.builder.call(outer_append_func, [outer_array, high_32])
                     else:
                         # Single-dimensional array
                         create_func = self.module.get_global(f"d_array_{element_type_str}_create")
@@ -462,7 +469,7 @@ class LLVMCodeGenerator(Visitor):
                                     print(f"DEBUG: About to call append with val: {val}, type: {val.type}, expected: {expected_elem_type}")
                                 self.builder.call(append_func, [array_struct_ptr, val])
                         elif expr_initializer:
-                            # Handle expression initializers (like array concatenation or array copy)
+                            # Handle expression initializers (like array concatenation, array copy, or subscript access)
                             # Check if this is an identifier (array copy)
                             if isinstance(expr_initializer, Identifier):
                                 # Call the copy function to create a new array
@@ -471,19 +478,37 @@ class LLVMCodeGenerator(Visitor):
                                 source_array = self.builder.load(source_array_ptr)
                                 new_array_ptr = self.builder.call(copy_func, [source_array])
                                 self.builder.store(new_array_ptr, self.global_vars[name])
+                            # Check if this is a subscript access (e.g., nested[0])
+                            elif isinstance(expr_initializer, SubscriptAccess):
+                                # Visit the subscript access to get the inner array pointer
+                                source_array = self.visit(expr_initializer)
+                                # Call the copy function to create a new array
+                                copy_func = self.module.get_global(f"d_array_{element_type_str}_copy")
+                                new_array_ptr = self.builder.call(copy_func, [source_array])
+                                self.builder.store(new_array_ptr, self.global_vars[name])
                             else:
                                 # Handle other expression initializers (like array concatenation)
                                 result_array = self.visit(expr_initializer)
                                 if result_array is not None:  # Only store if we have a result
                                     self.builder.store(result_array, self.global_vars[name])
             
-            # Process all statements in order
-            # Since we didn't process declarations in the first pass, they'll be
-            # created as local variables inside this main function
+            # Process deferred initializers (for global variables that depend on function calls or other variables)
+            for var_name, initializer_node in self.deferred_initializers:
+                init_val = self.visit(initializer_node)
+                # Load the value if it's a pointer to another variable
+                if isinstance(init_val.type, ir.PointerType):
+                    global_var_type = self.global_vars[var_name].type.pointee
+                    if init_val.type.pointee == global_var_type:
+                        init_val = self.builder.load(init_val)
+                self.builder.store(init_val, self.global_vars[var_name])
+            
+            # Process all non-function statements (declarations have already been processed,
+            # but we need to process executable statements like loops, conditionals, function calls)
             for stmt in ast.statements:
                 if not isinstance(stmt, FunctionDefinition):
-                    # Process all non-function statements (declarations and executable statements)
-                    self.visit(stmt)
+                    # Skip declarations that were already processed
+                    if not isinstance(stmt, (Declaration, ArrayDeclaration)):
+                        self.visit(stmt)
             
             # Return 0 from main
             if not self.builder.block.is_terminated:
@@ -538,7 +563,12 @@ class LLVMCodeGenerator(Visitor):
         self.builder = ir.IRBuilder(entry_block)
 
         # 4. Allocate space for parameters and store their initial values
-        self.llvm_var_table.clear() # Clear vars for new function scope
+        # Save global variables before clearing for new function scope
+        saved_globals = {k: v for k, v in self.llvm_var_table.items() if k in self.global_vars}
+        self.llvm_var_table.clear()
+        # Restore global variables
+        self.llvm_var_table.update(saved_globals)
+        
         for i, arg in enumerate(self.current_function.args):
             param_name = func_symbol['params'][i][1]
             arg.name = param_name
@@ -711,6 +741,10 @@ class LLVMCodeGenerator(Visitor):
         if class_name in ['ArrayIndexOf', 'ArrayContains', 'ArrayPush', 'ArrayPop', 'ArraySize', 'ArrayAvg', 'SystemOutput', 'FunctionCall', 'DictionaryLiteral', 'SubscriptAccess']:
             return True
         
+        # Check if it's an Identifier referring to another variable (including globals)
+        if class_name == 'Identifier':
+            return True
+        
         # Check if it's a BinaryOp that references global variables
         if class_name == 'BinaryOp':
             return self._contains_global_reference(node)
@@ -860,13 +894,21 @@ class LLVMCodeGenerator(Visitor):
                                 if isinstance(expected_elem_type, ir.IntType) and expected_elem_type.width == 8 and isinstance(val.type, ir.PointerType):
                                     val = self.builder.load(val)
                                 self.builder.call(append_func, [array_struct_ptr, val])
-                        else:  # Expression (like BinaryOp for concatenation or Identifier for array copy)
+                        else:  # Expression (like BinaryOp for concatenation, Identifier for array copy, or SubscriptAccess)
                             # Check if this is an identifier (array copy)
                             if isinstance(node.initializer, Identifier):
                                 # Call the copy function to create a new array
                                 copy_func = self._array_runtime_func(base, 'copy')
                                 source_array_ptr = self.llvm_var_table[node.initializer.name]
                                 source_array = self.builder.load(source_array_ptr)
+                                new_array_ptr = self.builder.call(copy_func, [source_array])
+                                self.builder.store(new_array_ptr, ptr)
+                            # Check if this is a subscript access (e.g., nested[0])
+                            elif isinstance(node.initializer, SubscriptAccess):
+                                # Visit the subscript access to get the inner array pointer
+                                source_array = self.visit(node.initializer)
+                                # Call the copy function to create a new array
+                                copy_func = self._array_runtime_func(base, 'copy')
                                 new_array_ptr = self.builder.call(copy_func, [source_array])
                                 self.builder.store(new_array_ptr, ptr)
                             else:
@@ -925,8 +967,13 @@ class LLVMCodeGenerator(Visitor):
                 
                 # Multi-dimensional array assignment
                 if dimensions > 1 and num_indices > 1:
-                    # Get the outer array
-                    array_var_ptr = self.llvm_var_table[node.lhs.name]
+                    # Get the outer array - check both local and global var tables
+                    if node.lhs.name in self.llvm_var_table:
+                        array_var_ptr = self.llvm_var_table[node.lhs.name]
+                    elif node.lhs.name in self.global_vars:
+                        array_var_ptr = self.global_vars[node.lhs.name]
+                    else:
+                        raise Exception(f"Unknown variable: {node.lhs.name}")
                     outer_array = self.builder.load(array_var_ptr)
                     
                     # Get first dimension - pointers stored as two consecutive ints
@@ -956,8 +1003,13 @@ class LLVMCodeGenerator(Visitor):
                     self.builder.call(set_func, [inner_array, second_index, value_val])
                     return
                 else:
-                    # Single-dimensional dynamic array
-                    array_var_ptr = self.llvm_var_table[node.lhs.name]
+                    # Single-dimensional dynamic array - check both local and global var tables
+                    if node.lhs.name in self.llvm_var_table:
+                        array_var_ptr = self.llvm_var_table[node.lhs.name]
+                    elif node.lhs.name in self.global_vars:
+                        array_var_ptr = self.global_vars[node.lhs.name]
+                    else:
+                        raise Exception(f"Unknown variable: {node.lhs.name}")
                     array_struct_ptr = self.builder.load(array_var_ptr)
                     index_val = self._load_if_pointer(self.visit(node.lhs.key))
                     value_val = self._load_if_pointer(self.visit(node.rhs))
@@ -1441,7 +1493,13 @@ class LLVMCodeGenerator(Visitor):
         
         # Handle dictionary access
         if sym and sym.get('type') == 'KEYWORD_DICT':
-            dict_var_ptr = self.llvm_var_table[node.name]
+            # Check both local and global var tables
+            if node.name in self.llvm_var_table:
+                dict_var_ptr = self.llvm_var_table[node.name]
+            elif node.name in self.global_vars:
+                dict_var_ptr = self.global_vars[node.name]
+            else:
+                raise Exception(f"Unknown variable: {node.name}")
             dict_val = self.builder.load(dict_var_ptr)
             key_val = self.visit(node.key)  # Don't load string pointers
             
@@ -1488,7 +1546,13 @@ class LLVMCodeGenerator(Visitor):
             # Multi-dimensional array access
             if dimensions > 1:
                 # Get the outer array (contains pointers to inner arrays split across two ints)
-                array_var_ptr = self.llvm_var_table[node.name]
+                # Check both local and global var tables
+                if node.name in self.llvm_var_table:
+                    array_var_ptr = self.llvm_var_table[node.name]
+                elif node.name in self.global_vars:
+                    array_var_ptr = self.global_vars[node.name]
+                else:
+                    raise Exception(f"Unknown variable: {node.name}")
                 outer_array = self.builder.load(array_var_ptr)
                 
                 # Access first dimension - pointers are stored as two consecutive ints
@@ -1520,15 +1584,25 @@ class LLVMCodeGenerator(Visitor):
                     get_inner_func = self._array_runtime_func(base, 'get')
                     return self.builder.call(get_inner_func, [inner_array, second_index], 'elem')
             else:
-                # Single-dimensional dynamic array
-                array_var_ptr = self.llvm_var_table[node.name]
+                # Single-dimensional dynamic array - check both local and global var tables
+                if node.name in self.llvm_var_table:
+                    array_var_ptr = self.llvm_var_table[node.name]
+                elif node.name in self.global_vars:
+                    array_var_ptr = self.global_vars[node.name]
+                else:
+                    raise Exception(f"Unknown variable: {node.name}")
                 array_struct_ptr = self.builder.load(array_var_ptr)
                 index_val = self._load_if_pointer(self.visit(node.key))
                 get_func = self._array_runtime_func(base, 'get')
                 return self.builder.call(get_func, [array_struct_ptr, index_val], 'dyn_idx_tmp')
         
-        # Handle static arrays
-        array_ptr = self.llvm_var_table[node.name]
+        # Handle static arrays - check both local and global var tables
+        if node.name in self.llvm_var_table:
+            array_ptr = self.llvm_var_table[node.name]
+        elif node.name in self.global_vars:
+            array_ptr = self.global_vars[node.name]
+        else:
+            raise Exception(f"Unknown variable: {node.name}")
         key_val = self._load_if_pointer(self.visit(node.key))
         return self.builder.gep(array_ptr, [ir.Constant(ir.IntType(32),0), key_val], inbounds=True)
 
