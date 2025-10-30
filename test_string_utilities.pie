@@ -1,0 +1,100 @@
+// Test new string utilities in PIE compiler
+
+output("=== Testing New String Utilities ===", string);
+
+// Test string_to_upper
+string original = "Hello World";
+string upper = string_to_upper(original);
+output("Original: ", string);
+output(original, string);
+output("Uppercase: ", string);
+output(upper, string);
+
+// Test string_to_lower
+string lower = string_to_lower(original);
+output("Lowercase: ", string);
+output(lower, string);
+
+// Test string_trim
+string padded = "   spaces around   ";
+string trimmed = string_trim(padded);
+output("Padded: [", string);
+output(padded, string);
+output("]", string);
+output("Trimmed: [", string);
+output(trimmed, string);
+output("]", string);
+
+// Test string_substring
+string text = "The quick brown fox";
+string sub = string_substring(text, 4, 5);
+output("Original text: ", string);
+output(text, string);
+output("Substring (4, 5): ", string);
+output(sub, string);
+
+// Test string_index_of
+int index = string_index_of(text, "quick");
+output("Index of 'quick': ", string);
+output(index, int);
+
+int not_found = string_index_of(text, "lazy");
+output("Index of 'lazy': ", string);
+output(not_found, int);
+
+// Test string_replace_char
+string with_spaces = "hello world test";
+string with_underscores = string_replace_char(with_spaces, ' ', '_');
+output("Original: ", string);
+output(with_spaces, string);
+output("With underscores: ", string);
+output(with_underscores, string);
+
+// Test string_reverse
+string forward = "PIE";
+string backward = string_reverse(forward);
+output("Forward: ", string);
+output(forward, string);
+output("Backward: ", string);
+output(backward, string);
+
+// Test string_count_char
+string sentence = "hello world";
+int count_l = string_count_char(sentence, 'l');
+int count_o = string_count_char(sentence, 'o');
+output("Sentence: ", string);
+output(sentence, string);
+output("Count of 'l': ", string);
+output(count_l, int);
+output("Count of 'o': ", string);
+output(count_o, int);
+
+// Test existing string utilities
+output("=== Testing Existing String Utilities ===", string);
+
+// Test string_contains
+int contains_result = string_contains(text, "fox");
+if (contains_result == 1) {
+    output("Text contains 'fox'", string);
+}
+
+// Test string_starts_with
+int starts_result = string_starts_with(text, "The");
+if (starts_result == 1) {
+    output("Text starts with 'The'", string);
+}
+
+// Test string_ends_with
+int ends_result = string_ends_with(text, "fox");
+if (ends_result == 1) {
+    output("Text ends with 'fox'", string);
+}
+
+// Test string_is_empty
+string empty = "";
+int empty_result = string_is_empty(empty);
+if (empty_result == 1) {
+    output("Empty string detected", string);
+}
+
+output("=== All String Utility Tests Complete ===", string);

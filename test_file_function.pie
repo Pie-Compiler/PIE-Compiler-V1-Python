@@ -1,0 +1,32 @@
+// Test file I/O in function
+
+string read_file_contents(string filename) {
+    file f = file_open(filename, "r");
+    if (f == null) {
+        return "Error opening file";
+    }
+    string content = file_read_all(f);
+    file_close(f);
+    return content;
+}
+
+void code(){
+    // Test 1: Write a file
+    output("Writing to file...", string);
+    file f1 = file_open("test.txt", "w");
+    if (f1 == null) {
+        output("Error: Cannot create file", string);
+        return;
+    }
+    file_write(f1, "Hello from PIE!");
+    file_close(f1);
+    output("File written successfully", string);
+    
+    // Test 2: Read from function
+    output("Reading file from function...", string);
+    string content = read_file_contents("test.txt");
+    output("Content: " + content, string);
+    
+}
+
+code();

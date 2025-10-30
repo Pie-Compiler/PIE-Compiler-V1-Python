@@ -1,0 +1,14 @@
+float x = pow(2, 3);
+float y = sqrt(16);
+float z = sin(3.14159);
+float w = cos(0);
+float a = floor(3.7);
+float b = ceil(3.2);
+int r = rand();
+output("2 to the power of 3 is: " + x, string);
+output("Square root of 16 is: " + y, string);
+output("Sine of PI is: " + z, string);
+output("Cosine of 0 is: " + w, string);
+output("Floor of 3.7 is: " + a, string);
+output("Ceil of 3.2 is: " + b, string);
+output("Random number is: " + r, string);

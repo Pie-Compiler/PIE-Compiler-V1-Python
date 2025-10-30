@@ -1,0 +1,17 @@
+// Test increment and decrement operators
+int x = 5;
+
+output("Initial x:", string);
+output(x, int);
+
+// Test in for loop
+for(int i = 0; i < 3; i++){
+    output("Iteration:", string);
+    output(i, int);
+}
+
+// Test decrement
+output("Countdown:", string);
+for(int j = 5; j > 0; j--){
+    output(j, int);
+}

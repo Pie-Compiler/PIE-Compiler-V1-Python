@@ -1,0 +1,113 @@
+// Comprehensive test for null and undefined variable validation
+
+// Test 1: Basic null literal handling
+string username = "John Doe";
+if(username == null){
+    output("Username is null", string);
+} else {
+    output("Username is not null: ", string);
+    output(username, string);
+}
+
+// Test 2: Variable initialization checking
+int age;
+// age is declared but not initialized
+
+int num = 20;
+if(num > 22){
+    age = 20;  // age gets initialized here
+}
+
+// Now check if age is null (undefined)
+if(age == null){
+    output("Age is null/undefined", string);
+} else {
+    output("Age is defined: ", string);
+    output(age, int);
+}
+
+// Test 3: Using the new validation functions
+string config_value;
+if(is_variable_defined(config_value) == 1){
+    output("config_value is defined", string);
+} else {
+    output("config_value is not defined", string);
+}
+
+if(is_variable_null(config_value) == 1){
+    output("config_value is null", string);
+} else {
+    output("config_value is not null", string);
+}
+
+// Test 4: Dictionary with null checking
+dict settings = {"theme": "dark", "debug": 1};
+
+// Check if dictionary keys exist before accessing
+if(dict_key_exists(settings, "theme") == 1){
+    string theme = dict_get_string(settings, "theme");
+    if(theme == null){
+        output("Theme value is null", string);
+    } else {
+        output("Theme: ", string);
+        output(theme, string);
+    }
+} else {
+    output("Theme key not found", string);
+}
+
+// Test 5: Array with null checking
+int[] numbers = {1, 2, 3, 4, 5};
+if(numbers == null){
+    output("Numbers array is null", string);
+} else {
+    output("Numbers array is defined", string);
+    output("First element: ", string);
+    output(numbers[0], int);
+}
+
+// Test 6: Function parameter validation
+string process_string(string input){
+    if(input == null){
+        return "null input";
+    }
+    return input;
+}
+
+string result1 = process_string("hello");
+string result2 = process_string(null);
+
+output("Result 1: ", string);
+output(result1, string);
+output("Result 2: ", string);
+output(result2, string);
+
+// Test 7: Complex null checking scenarios
+string optional_config;
+int timeout = 30;
+
+if(optional_config == null){
+    output("Using default config", string);
+} else {
+    output("Custom config: ", string);
+    output(optional_config, string);
+}
+
+if(timeout == null){
+    output("Timeout not set", string);
+} else {
+    output("Timeout: ", string);
+    output(timeout, int);
+}
+
+// Test 8: Null in expressions
+string name = null;
+string greeting;
+
+if(name == null){
+    greeting = "Hello, Guest";
+} else {
+    greeting = "Hello, " + name;
+}
+
+output(greeting, string);

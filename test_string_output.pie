@@ -1,0 +1,8 @@
+string name = "John";
+output("Name: ",string);
+output(name,string);
+output("\n",string);
+
+output("Direct string: ",string);
+output("Hello World",string);
+output("\n",string);

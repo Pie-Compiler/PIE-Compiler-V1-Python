@@ -1,0 +1,32 @@
+// Test string-to-integer comparisons using strlen
+
+string short_str = "hi";
+string long_str = "hello world";
+
+// Test string length < int
+if(short_str < 5){
+    output("Short string length is less than 5", string);
+} else {
+    output("Short string length is not less than 5", string);
+}
+
+// Test int < string length
+if(3 < long_str){
+    output("3 is less than long string length", string);
+} else {
+    output("3 is not less than long string length", string);
+}
+
+// Test string length <= int
+if(short_str <= 2){
+    output("Short string length is less than or equal to 2", string);
+} else {
+    output("Short string length is not less than or equal to 2", string);
+}
+
+// Test int >= string length
+if(15 >= short_str){
+    output("15 is greater than or equal to short string length", string);
+} else {
+    output("15 is not greater than or equal to short string length", string);
+}

@@ -1,0 +1,35 @@
+// Test automatic type conversion in output function
+
+char myChar = 'A';
+int myInt = 42;
+float myFloat = 3.14;
+string myString = "Hello";
+
+output("Testing char to string: ",string);
+output(myChar,string);
+output("\n",string);
+
+output("Testing int to string: ",string);
+output(myInt,string);
+output("\n",string);
+
+output("Testing float to string: ",string);
+output(myFloat,string);
+output("\n",string);
+
+output("Testing string to string: ",string);
+output(myString,string);
+output("\n",string);
+
+// Also test with literals
+output("Literal char: ",string);
+output('X',string);
+output("\n",string);
+
+output("Literal int: ",string);
+output(99,string);
+output("\n",string);
+
+output("Literal float: ",string);
+output(2.71,string);
+output("\n",string);

@@ -1,0 +1,20 @@
+char grade(int g){
+    switch(g){
+        case 90:
+            return 'A';
+        case 80:
+            return 'B';
+        case 70:
+            return 'C';
+        case 60:
+            return 'D';
+        default:
+            return 'F';
+    }
+}
+
+output(grade(90),char);
+output(grade(80),char);
+output(grade(70),char);
+output(grade(60),char);
+output(grade(50),char);

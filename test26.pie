@@ -1,0 +1,23 @@
+int duration = 12; //seconds
+void writeLog(string message) {
+    file log = file_open("app.log", "a");
+    
+    int timestamp = time_now();
+    string timeStr = time_to_local(timestamp);
+    
+    string entry = "[" + timeStr + "] " + message;
+    file_write(log, entry);
+    file_flush(log);  // Ensure data is written
+    file_close(log);
+}
+while (duration > 0) {
+    output("Event in " + duration + " seconds...", string);
+    writeLog("Event in " + duration + " seconds...");
+    sleep(1);
+    duration = duration - 1;
+    int timestamp = time_now();
+    string timeStr = time_to_local(timestamp);
+    
+    writeLog("[" + timeStr + "] Event occurred");
+}
+writeLog("Event monitoring ended.");

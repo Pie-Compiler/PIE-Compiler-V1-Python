@@ -1,0 +1,35 @@
+// Static arrays with size and initializer
+// int static_num[3] = [1, 2, 3];
+
+// // Dynamic arrays with initializer  
+string names[] = ["Alice", "Bob", "Charlie"];
+int numbers[] = [1, 2, 3];
+float avgs[] = [4.2, 2.4];
+char grades[] = ['A', 'B', 'C', 'D'];
+
+// // Empty dynamic arrays
+int oob[];
+oob[9]=9;
+
+string strings[];
+arr_push(strings,"Names");
+arr_push(strings,"Name2");
+string popped=arr_pop(strings);
+strings[0]="Hello";
+
+output(strings,array);
+arr_push(strings,"John");
+
+strings[0]="Tanys";
+
+output(strings,array);
+
+output(oob,array);
+
+int numbers2[]=[1,2,3];
+
+// Array functions with precision
+float myAVG=arr_avg(avgs, 2);
+
+// Array output formatting
+output(names, array);

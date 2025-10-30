@@ -1,0 +1,24 @@
+// Simple null checking test
+
+string username = "John Doe";
+
+if(username == null){
+    output("null", string);
+} else {
+    output("not null", string);
+}
+
+int age;
+int num = 20;
+
+if(num > 22){
+    age = 20;
+}
+
+if(age == null){
+    output("null", string);
+} else {
+    output("not null", string);
+}
+
+output(username, string);

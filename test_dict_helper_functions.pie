@@ -1,0 +1,24 @@
+// Test the new_* helper functions
+dict config = dict_create();
+
+void prepare(){
+// Set values using dict_set and new_* functions
+dict_set(config, "max_users", new_int(100));
+dict_set(config, "timeout", new_float(30.5));
+dict_set(config, "host", new_string("localhost"));
+
+// Retrieve and output the values
+int max_users = dict_get_int(config, "max_users");
+float timeout = dict_get_float(config, "timeout");
+string host = dict_get_string(config, "host");
+
+output("Max users: ", string);
+output(max_users, int);
+output("Timeout: ", string);  
+output(timeout, float);
+output("Host: ", string);
+output(host, string);
+
+}
+
+prepare();

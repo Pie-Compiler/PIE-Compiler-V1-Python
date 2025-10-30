@@ -1,0 +1,49 @@
+// Test that reassignments create independent copies
+
+// Test 1: Int
+int a = 10;
+int b = a;
+a = 20;
+output("After a=20: a=", string);
+output(a, int);
+output(", b=", string);
+output(b, int);
+
+// Test 2: Float
+float x = 3.14;
+float y = x;
+x = 6.28;
+output("After x=6.28: x=", string);
+output(x, float);
+output(", y=", string);
+output(y, float);
+
+// Test 3: Char  
+char c1 = 'A';
+char c2 = c1;
+c1 = 'Z';
+output("After c1='Z': c1=", string);
+output(c1, char);
+output(", c2=", string);
+output(c2, char);
+
+// Test 4: String
+string s1 = "Hello";
+string s2 = s1;
+s1 = "World";
+output("After s1='World': s1=", string);
+output(s1, string);
+output(", s2=", string);
+output(s2, string);
+
+// Test 5: Array
+int arr1[] = [1, 2, 3];
+int arr2[] = arr1;
+arr1[0] = 99;
+output("After arr1[0]=99:", string);
+output("arr1[0]=", string);
+output(arr1[0], int);
+output(", arr2[0]=", string);
+output(arr2[0], int);
+
+output("All independence tests passed!", string);

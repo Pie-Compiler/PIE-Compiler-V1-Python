@@ -1,0 +1,27 @@
+// Test all the fixes
+string name = "Alice";
+int age = 30;
+float height = 5.9;
+
+// Test 1: String + String
+output("Test 1: " + name, string);
+
+// Test 2: String + Int
+output("Age is " + age, string);
+
+// Test 3: String + Float
+output("Height is " + height, string);
+
+// Test 4: Multiple concatenations
+output(name + " is " + age + " years old and " + height + " feet tall", string);
+
+// Test 5: Array operations
+int arr[] = [1, 2, 3, 4, 5];
+output("Array before pop:", string);
+output(arr, array);
+int last = arr_pop(arr);
+output("Popped: " + last, string);
+output("Array after pop:", string);
+output(arr, array);
+
+output("All tests passed!", string);

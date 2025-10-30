@@ -1,0 +1,4 @@
+// Test arr_size output
+string names[] = ["Alice", "Bob", "Charlie"];
+arr_push(names, "David");
+output(arr_size(names), int);

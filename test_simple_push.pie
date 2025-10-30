@@ -1,0 +1,6 @@
+char grades[] = ['A', 'B'];
+arr_push(grades, 'E');
+
+output(grades,array);
+
+output(grades[1],char);

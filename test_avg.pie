@@ -1,0 +1,3 @@
+// Test arr_avg 
+int avg_nums[] = [10, 20, 30];
+output(arr_avg(avg_nums, 2), float);

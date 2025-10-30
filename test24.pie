@@ -1,0 +1,73 @@
+// Number to words converter (0-99)
+int num;
+string tens_word;
+string ones_word;
+
+string prompt = "Enter a number between 0 and 99:";
+string error = "Invalid number!";
+output(prompt, string);
+input(num, int);
+string answer="Number in words: ";
+
+if(num < 0 || num > 99){
+    output(error, string);
+}else{
+
+    // Special cases (0-19)
+    if(num == 0){ answer =answer+ "zero"; }
+    if(num == 1){ answer =answer+ "one"; }
+    if(num == 2){ answer =answer+ "two"; }
+    if(num == 3){ answer =answer+ "three"; }
+    if(num == 4){ answer =answer+ "four"; }
+    if(num == 5){ answer =answer+ "five"; }
+    if(num == 6){ answer =answer+ "six"; }
+    if(num == 7){ answer =answer+ "seven"; }
+    if(num == 8){ answer =answer+ "eight"; }
+    if(num == 9){ answer =answer+ "nine"; }
+    if(num == 10){ answer =answer+ "ten"; }
+    if(num == 11){ answer =answer+ "eleven"; }
+    if(num == 12){ answer =answer+ "twelve"; }
+    if(num == 13){ answer =answer+ "thirteen"; }
+    if(num == 14){ answer =answer+ "fourteen"; }
+    if(num == 15){ answer =answer+ "fifteen"; }
+    if(num == 16){ answer =answer+ "sixteen"; }
+    if(num == 17){ answer =answer+ "seventeen"; }
+    if(num == 18){ answer =answer+ "eighteen"; }
+    if(num == 19){ answer =answer+ "nineteen"; }
+
+    // 20-99
+    if(num >= 20){
+        int tens = float_to_int(num / 10);
+        int ones = float_to_int(num % 10);
+
+        // Map tens
+        if(tens == 2){ tens_word = "twenty"; }
+        if(tens == 3){ tens_word = "thirty"; }
+        if(tens == 4){ tens_word = "forty"; }
+        if(tens == 5){ tens_word = "fifty"; }
+        if(tens == 6){ tens_word = "sixty"; }
+        if(tens == 7){ tens_word = "seventy"; }
+        if(tens == 8){ tens_word = "eighty"; }
+        if(tens == 9){ tens_word = "ninety"; }
+
+        // Map ones
+        if(ones == 1){ ones_word = "one"; }
+        if(ones == 2){ ones_word = "two"; }
+        if(ones == 3){ ones_word = "three"; }
+        if(ones == 4){ ones_word = "four"; }
+        if(ones == 5){ ones_word = "five"; }
+        if(ones == 6){ ones_word = "six"; }
+        if(ones == 7){ ones_word = "seven"; }
+        if(ones == 8){ ones_word = "eight"; }
+        if(ones == 9){ ones_word = "nine"; }
+
+        answer = answer + tens_word;
+
+        // If ones digit is not zero, also output ones
+        if(ones != 0){
+            answer = answer + " " + ones_word;
+        }
+
+        output(answer, string);
+    }
+}

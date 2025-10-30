@@ -1,0 +1,15 @@
+int numbers[] = [15, 32, 8, 47, 23, 91, 12, 56];
+int evenNumbers[] = [];
+
+// Filter even numbers
+for (int i = 0; i < arr_size(numbers); i++) {
+    if (numbers[i] % 2 == 0) {
+        arr_push(evenNumbers, numbers[i]);
+    }
+}
+
+output("Even numbers:", string);
+// for (int i = 0; i < arr_size(evenNumbers); i++) {
+//     output(evenNumbers[i], int);
+// }
+output(evenNumbers, array);

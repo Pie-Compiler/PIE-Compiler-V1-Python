@@ -1,0 +1,14 @@
+int arr[] = [109, 23, 30, 40, 50];
+output(arr,array);
+int size = arr_size(arr);
+output(size, int);
+int contains = arr_contains(arr, 20);
+output(contains, int);
+int index = arr_indexof(arr, 30);
+output(index, int);
+output(arr,array);
+int last = arr_pop(arr);
+output(last, int);
+output(arr,array);
+float average = arr_avg(arr);
+output(average, float, 3);

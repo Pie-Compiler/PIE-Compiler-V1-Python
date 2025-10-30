@@ -1,0 +1,13 @@
+int main() {
+    string message = "Hello from PIE!";
+    output(message, string);
+    
+    int x = 10;
+    int y = 20;
+    int result = x + y;
+    
+    output("The sum is: ", string);
+    output(result, int);
+    
+    return 0;
+}

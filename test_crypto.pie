@@ -1,0 +1,90 @@
+// Test type conversion and crypto functions
+
+// Test type conversions
+output("=== Type Conversions ===", string);
+
+// String to int
+string num_str = "42";
+int num = string_to_int(num_str);
+output("string_to_int('42'): ", string);
+output(num, int);
+
+// String to float
+string float_str = "3.14";
+float pi_val = string_to_float(float_str);
+output("string_to_float('3.14'): ", string);
+output(pi_val, float, 2);
+
+// String to char
+string char_str = "Hello";
+char first = string_to_char(char_str);
+output("string_to_char('Hello'): ", string);
+output(first, char);
+
+// Char to int (ASCII value)
+char letter = 'A';
+int ascii_val = char_to_int(letter);
+output("char_to_int('A'): ", string);
+output(ascii_val, int);
+
+// Int to char
+int code = 66;
+char from_code = int_to_char(code);
+output("int_to_char(66): ", string);
+output(from_code, char);
+
+// Int to float
+int whole = 42;
+float decimal = int_to_float(whole);
+output("int_to_float(42): ", string);
+output(decimal, float, 2);
+
+// Float to int
+float decimal_num = 3.99;
+int truncated = float_to_int(decimal_num);
+output("float_to_int(3.99): ", string);
+output(truncated, int);
+
+output("", string);
+output("=== Caesar Cipher ===", string);
+
+string message = "Hello World";
+string encrypted = caesar_cipher(message, 3);
+output("Original: ", string);
+output(message, string);
+output("Encrypted (shift 3): ", string);
+output(encrypted, string);
+
+string decrypted = caesar_decipher(encrypted, 3);
+output("Decrypted: ", string);
+output(decrypted, string);
+
+output("", string);
+output("=== Character Shift (Alien Converter) ===", string);
+
+string earthling = "Greetings from Earth!";
+string alienling = char_shift(earthling, 3);
+output("Earthling: ", string);
+output(earthling, string);
+output("Alienling: ", string);
+output(alienling, string);
+
+// Decrypt by shifting back
+string back_to_earth = char_shift(alienling, -3);
+output("Back to Earth: ", string);
+output(back_to_earth, string);
+
+output("", string);
+output("=== ROT13 ===", string);
+
+string secret = "SECRET MESSAGE";
+string rot13_encoded = rot13(secret);
+output("Original: ", string);
+output(secret, string);
+output("ROT13: ", string);
+output(rot13_encoded, string);
+
+// ROT13 again to decrypt (it's symmetric)
+string rot13_decoded = rot13(rot13_encoded);
+output("Decoded: ", string);
+output(rot13_decoded, string);

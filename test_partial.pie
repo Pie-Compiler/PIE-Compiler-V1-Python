@@ -1,0 +1,10 @@
+// Test PIE file for arrays
+
+// Static array
+int static_num[3] = [1, 2, 3];
+
+// Dynamic arrays
+string names[] = ["Alice", "Bob", "Charlie"];
+int numbers[] = [1, 2, 3];
+float avgs[] = [4.2, 2.4];
+char grades[] = ['A', 'B', 'C', 'D'];

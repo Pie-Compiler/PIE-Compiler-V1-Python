@@ -1,0 +1,7 @@
+// Test file to verify both arrays and dictionaries work
+int numbers[] = [1, 2, 3];
+arr_push(numbers, 4);
+output(arr_size(numbers), int); // Should output 4
+
+dict people = {"Alice": 25, "Bob": 30};
+output(dict_get_int(people, "Alice"), int); // Should output 25

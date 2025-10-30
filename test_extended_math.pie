@@ -1,0 +1,107 @@
+// Extended Math Library Test
+float pi_val = pi();
+float e_val = e();
+float angle = pi_val / 4.0;  // 45 degrees
+
+// // Trigonometric functions
+float sin_val = sin(angle);
+float cos_val = cos(angle);
+float tan_val = tan(angle);
+
+// // Inverse trigonometric functions
+float asin_val = asin(0.5);
+float acos_val = acos(0.5);
+float atan_val = atan(1.0);
+
+// Logarithmic and exponential functions
+float log_val = log(e_val);      // should be 1.0
+float log10_val = log10(10.0);   // should be 1.0
+float exp_val = exp(1.0);        // should be e
+
+// Rounding functions
+float round_up = round(3.6);
+float round_down = round(3.4);
+
+// Absolute values
+float abs_neg = abs(-5.5);
+int abs_int_neg = abs_int(-10);
+
+// Min/max functions
+float min_val = min(3.5, 7.2);
+float max_val = max(3.5, 7.2);
+int min_int_val = min_int(5, 12);
+int max_int_val = max_int(5, 12);
+
+// Random functions with seed
+srand(42);
+int rand1 = rand();
+int rand2 = rand_range(1, 10);
+
+// Time function
+int current_time = time();
+
+// Output results
+output_string("Math Library Test Results:\n");
+output_string("Constants: pi=");
+output_float(pi_val, 3);
+output_string(", e=");
+output_float(e_val, 3);
+output_string("\n");
+
+output_string("Trigonometric (pi/4): sin=");
+output_float(sin_val, 3);
+output_string(", cos=");
+output_float(cos_val, 3);
+output_string(", tan=");
+output_float(tan_val, 3);
+output_string("\n");
+
+output_string("Inverse trig: asin(0.5)=");
+output_float(asin_val, 3);
+output_string(", acos(0.5)=");
+output_float(acos_val, 3);
+output_string(", atan(1)=");
+output_float(atan_val, 3);
+output_string("\n");
+
+output_string("Logarithms: ln(e)=");
+output_float(log_val, 3);
+output_string(", log10(10)=");
+output_float(log10_val, 3);
+output_string(", exp(1)=");
+output_float(exp_val, 3);
+output_string("\n");
+
+output_string("Rounding: round(3.6)=");
+output_float(round_up, 1);
+output_string(", round(3.4)=");
+output_float(round_down, 1);
+output_string("\n");
+
+output_string("Absolute: abs(-5.5)=");
+output_float(abs_neg, 1);
+output_string(", abs_int(-10)=");
+output_int(abs_int_neg);
+output_string("\n");
+
+output_string("Min/Max: min(3.5,7.2)=");
+output_float(min_val, 1);
+output_string(", max(3.5,7.2)=");
+output_float(max_val, 1);
+output_string("\n");
+
+output_string("Min/Max int: min_int(5,12)=");
+output_int(min_int_val);
+output_string(", max_int(5,12)=");
+output_int(max_int_val);
+output_string("\n");
+
+output_string("Random (seed=42): rand()=");
+output_int(rand1);
+output_string(", rand_range(1,10)=");
+output_int(rand2);
+output_string("\n");
+
+output_string("Current time: ");
+output_int(current_time);
+output_string("\n");

@@ -1,0 +1,37 @@
+string text = "apple,banana,cherry,date";
+
+string parts[] = [];
+
+string remaining = text;  // Work with a copy
+string delimiter = "a";
+
+int delimPosition = string_index_of(remaining, delimiter);
+
+// Keep splitting while we find commas
+while (delimPosition != -1) {
+    // Extract the part before the delimiter
+    if(delimPosition > 0){
+        string part = string_substring(remaining, 0, delimPosition);
+        arr_push(parts, part);
+    }
+
+    // Update remaining to everything after the delimiter
+    int remainingLen = strlen(remaining);
+    remaining = string_substring(remaining, delimPosition + 1, remainingLen - delimPosition - 1);
+    
+    // Look for next delimiter
+    delimPosition = string_index_of(remaining, delimiter);
+}
+
+// Add the last part (after the last delimiter)
+if (strlen(remaining) > 0) {
+    arr_push(parts, remaining);
+}
+
+output("Testing string_split implementation:\n", string);
+output("Split parts:\n", string);
+output(parts, array);
+
+output("\nNumber of parts: ", string);
+output(arr_size(parts), int);
+output("\n", string);

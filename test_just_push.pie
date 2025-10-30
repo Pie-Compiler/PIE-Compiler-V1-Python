@@ -1,0 +1,44 @@
+// Test just dynamic arrays and then arr_push
+string names[] = ["Alice", "Bob", "Charlie"];
+int numbers[] = [1, 2, 3];
+float avgs[] = [4.21999, 2.4];
+char grades[] = ['A', 'B', 'C', 'D'];
+
+// arr_push
+arr_push(names, "David");
+arr_push(numbers, 4);
+arr_push(avgs, 3.3);
+arr_push(grades, 'E');
+
+output("Before pushing grade:", string);
+output(grades,array);
+
+output(names[1],string);
+output(numbers[2],int);
+output(avgs[0],float,1);
+output(grades[3],char);
+
+
+// // Output results
+output("Names:", string);
+for(int i = 0; i < arr_size(names); i=i+1){
+    output(names[i], string);
+}
+
+if(arr_contains(names, "Charlie XCX ")){
+    output("Charlie is in the names array", string);
+} else {
+    output("Charlie is NOT in the names array", string);
+}
+output("Numbers:", string);
+for(int i = 0; i < arr_size(numbers); i++){
+    output(numbers[i], int);
+}
+output("Averages:", string);
+for(int i = 0; i < arr_size(avgs); i++){
+    output(avgs[i], float);
+}
+output("Grades:", string);
+for(int i = 0; i < arr_size(grades); i++){
+    output(grades[i], char);
+}

@@ -1,0 +1,11 @@
+float a = round(3.6);
+float b = abs(-5.5);
+int c = abs_int(-10);
+
+output_string("round(3.6)=");
+output_float(a, 1);
+output_string(", abs(-5.5)=");
+output_float(b, 1);
+output_string(", abs_int(-10)=");
+output_int(c);
+output_string("\n");

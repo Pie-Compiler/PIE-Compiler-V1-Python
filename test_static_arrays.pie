@@ -1,0 +1,5 @@
+// Test static arrays to isolate the issue
+int static_array[3] = [10, 20, 30];
+
+output(static_array[0], int);
+output(static_array[2], int);

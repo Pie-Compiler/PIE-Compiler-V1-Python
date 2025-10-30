@@ -1,0 +1,38 @@
+int n=5;
+int p=n;
+output("int n: ",string);
+output(n,int);
+output(", int p: ",string);
+output(p,int);
+output("\n",string);
+
+float x=3.14;
+float y=x;
+output("float x: ",string);
+output(x,float);
+output(", float y: ",string);
+output(y,float);
+output("\n",string);
+
+char a='A';
+char b=a;
+output("char a: ",string);
+output(a,char);
+output(", char b: ",string);
+output(b,char);
+output("\n",string);
+
+string firstname="John";
+string copy=firstname;
+output("string firstname: ",string);
+output(firstname,string);
+output(", string copy: ",string);
+output(copy,string);
+output("\n",string);
+
+int arr1[] = [10, 20, 30];
+int arr2[] = arr1;
+output("Array arr1: ",string);
+output(arr1, array);
+output(", Array arr2: ",string);
+output(arr2, array);

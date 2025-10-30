@@ -1,0 +1,11 @@
+ float calculateTotal(float prices[]) {
+       float total = 0.0;
+       for (int i = 0; i < arr_size(prices); i++) {
+           total = total + prices[i];
+       }
+       return total;
+   }
+float prices[] = [19.99, 5.49, 3.50, 12.75];
+    output("Total price: ", string);
+    output(calculateTotal(prices), float);
+    output("\n", string);

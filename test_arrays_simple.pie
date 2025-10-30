@@ -1,0 +1,17 @@
+// Simple test without static arrays or array printing
+string names[] = ["Alice", "Bob"];
+int numbers[] = [1, 2, 3];
+
+arr_push(names, "Charlie");
+arr_push(numbers, 4);
+
+output(arr_size(names), int);
+output(arr_size(numbers), int);
+
+// Test concatenation
+int arr1[] = [10, 20];
+int arr2[] = [30, 40];
+int arr3[] = arr1 + arr2;
+output(arr_size(arr3), int);
+output(arr3[0], int);
+output(arr3[3], int);

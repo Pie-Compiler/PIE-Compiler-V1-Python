@@ -1,0 +1,15 @@
+int graph[][] = [
+    [0, 1, 0, 0, 1],
+    [1, 0, 1, 1, 0]
+];
+
+void test() {
+    output("In function test", string);
+    int val = graph[0][1];
+    output("Got value: ", string);
+    output(val, int);
+}
+
+output("Before calling test", string);
+test();
+output("After calling test", string);

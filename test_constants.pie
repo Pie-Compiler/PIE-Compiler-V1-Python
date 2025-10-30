@@ -1,0 +1,8 @@
+float pi_val = pi();
+float e_val = e();
+
+output_string("Constants: pi=");
+output_float(pi_val, 3);
+output_string(", e=");
+output_float(e_val, 3);
+output_string("\n");

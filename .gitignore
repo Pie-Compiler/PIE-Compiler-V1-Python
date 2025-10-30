@@ -1,7 +1,7 @@
 test.pie
 ./venv/
 venv
-*test*.pie
+# *test*.pie
 /__pycache__*
 *__pycache__*
 output.ll

@@ -1,0 +1,62 @@
+// Comprehensive multi-dimensional array test
+
+// Test 1: Basic 2D array creation and access
+int matrix[][] = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+
+output("Test 1: Basic 2D array", string);
+output("matrix[0][0] = ", string);
+output(matrix[0][0], int);
+output("matrix[1][2] = ", string);
+output(matrix[1][2], int);
+output("matrix[2][1] = ", string);
+output(matrix[2][1], int);
+
+// Test 2: Array size operations
+output("Test 2: Array sizes", string);
+output("Outer size: ", string);
+output(arr_size(matrix), int);
+output("Row 0 size: ", string);
+output(arr_size(matrix[0]), int);
+
+// Test 3: Copying rows from nested arrays
+int row1[] = matrix[1];
+output("Test 3: Row copying", string);
+output("Copied row1, size: ", string);
+output(arr_size(row1), int);
+output("row1[0] = ", string);
+output(row1[0], int);
+output("row1[1] = ", string);
+output(row1[1], int);
+output("row1[2] = ", string);
+output(row1[2], int);
+
+// Test 4: Modifying copied row doesn't affect original
+row1[1] = 99;
+output("Test 4: Independence check", string);
+output("After row1[1] = 99:", string);
+output("row1[1] = ", string);
+output(row1[1], int);
+output("matrix[1][1] = ", string);
+output(matrix[1][1], int);
+
+// Test 5: Global access from function
+void printRow(int idx) {
+    output("Row ", string);
+    output(idx, int);
+    output(": [", string);
+    output(matrix[idx][0], int);
+    output(matrix[idx][1], int);
+    output(matrix[idx][2], int);
+    output("]", string);
+}
+
+output("Test 5: Function access", string);
+printRow(0);
+printRow(1);
+printRow(2);
+
+output("All tests passed!", string);

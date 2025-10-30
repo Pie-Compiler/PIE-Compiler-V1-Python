@@ -1,0 +1,33 @@
+void test_flush() {
+    file f = file_open("flush_test.txt", "w");
+    
+    if (f == null) {
+        output("Error: Could not open file\n", string);
+        return;
+    }
+    
+    file_write(f, "Line 1\n");
+    file_flush(f);  // Flush after first line
+    
+    file_write(f, "Line 2\n");
+    file_flush(f);  // Flush after second line
+    
+    file_close(f);
+    
+    // Read back the file to verify
+    file r = file_open("flush_test.txt", "r");
+    if (r != null) {
+        string content = file_read_all(r);
+        output("File contents:\n", string);
+        output(content, string);
+        file_close(r);
+    }
+}
+
+int main() {
+    test_flush();
+    return 0;
+}
+
+
+

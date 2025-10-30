@@ -1,0 +1,62 @@
+it main function), all variables are global. Let me test with an explicit main function:
+
+// Test dictionary with local variables
+
+ 
+
+int main() {
+
+    output("=== Dictionary with Local Variables ===", string);
+
+ 
+
+    // Create dictionary
+
+    dict person = {"name": "John", "age": 30};
+
+ 
+
+    // Get initial values
+
+    string name1 = dict_get(person, "name");
+
+    int age1 = dict_get(person, "age");
+
+ 
+
+    output("Initial name: ", string);
+
+    output(name1, string);
+
+    output("Initial age: ", string);
+
+    output(age1, int);
+
+ 
+
+    // Update age
+
+    dict_set(person, "age", 31);
+
+ 
+
+    // Get updated age
+
+    int age2 = dict_get(person, "age");
+
+    output("Updated age: ", string);
+
+    output(age2, int);
+
+    dict_set(person, "name", "Jane");
+    string name2 = dict_get(person, "name");
+    output("Updated name: ", string);
+    output(name2, string);
+
+    output("=== Test Complete ===", string);
+
+ 
+
+    return 0;
+
+}

@@ -1,0 +1,18 @@
+char myChar = 'X';
+string myString = "Test";
+
+output("Char as char: ",string);
+output(myChar,char);
+output("\n",string);
+
+output("Char as string: ",string);
+output(myChar,string);
+output("\n",string);
+
+output("String literal: ",string);
+output("Hello",string);
+output("\n",string);
+
+output("String variable: ",string);
+output(myString,string);
+output("\n",string);

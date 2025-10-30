@@ -1,0 +1,21 @@
+// Global style program - no explicit main function
+string name = "PIE Programming Language";
+int version = 1;
+
+output("Welcome to ", string);
+output(name, string);
+output(" v", string);
+output(version, int);
+
+int x = 5;
+int y = 10;
+int sum;
+
+output("Computing ", string);
+output(x, int);
+output(" + ", string);
+output(y, int);
+output(" = ", string);
+
+sum = x + y;  // This assignment will be executed in main
+output(sum, int);

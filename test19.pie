@@ -1,0 +1,18 @@
+float x=pow(2,3);
+
+output(x,float,2);
+
+if(x>5 && x!=8){
+    output("Foo",string);
+}
+
+int sqr(int y){
+    return y*y;
+}
+
+output("Enter a number",string);
+int num;
+
+input(num,int);
+
+output(sqr(num),int);

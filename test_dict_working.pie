@@ -1,0 +1,18 @@
+// Dictionary test using only global scope and statements 
+// The key is to not try to read from dictionary before setting values
+
+// This should work because dictionary literals are handled properly
+dict person = {"name": "Alice", "age": 25, "score": 95.5};
+
+// These will work because they're retrieving from the initialized dictionary
+string name = dict_get_string(person, "name");
+int age = dict_get_int(person, "age"); 
+float score = dict_get_float(person, "score");
+
+// Output the retrieved values
+output("Person name: ", string);
+output(name, string);
+output("Age: ", string);
+output(age, int);
+output("Score: ", string);
+output(score, float);

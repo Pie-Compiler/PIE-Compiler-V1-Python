@@ -1,0 +1,18 @@
+// Test sleep with time markers
+output("Test 1: Sleep for 1 second", string);
+output("Start time: (check system clock)", string);
+sleep(1);
+output("End time: (should be ~1 second later)", string);
+
+output("", string);
+output("Test 2: Sleep for 3 seconds with countdown", string);
+output("3...", string);
+sleep(1);
+output("2...", string);
+sleep(1);
+output("1...", string);
+sleep(1);
+output("Go!", string);
+
+output("", string);
+output("All sleep tests completed!", string);

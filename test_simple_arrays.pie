@@ -1,0 +1,5 @@
+// Simple array test without concatenation
+string names[] = ["Alice", "Bob"];
+int numbers[] = [1, 2, 3];
+arr_push(names, "Charlie");
+output(arr_size(names), int);

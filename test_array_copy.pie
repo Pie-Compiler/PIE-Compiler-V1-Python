@@ -1,0 +1,24 @@
+int original[] = [1, 2, 3, 4, 5];
+int copy[] = original;
+
+output("Original array:", string);
+output(original, array);
+
+output("Copied array:", string);
+output(copy, array);
+
+output("Modifying copy...", string);
+arr_push(copy, 6);
+arr_push(copy, 7);
+
+output("Original array after modification:", string);
+output(original, array);
+
+output("Copy array after modification:", string);
+output(copy, array);
+
+output("Size of original: ", string);
+output(arr_size(original), int);
+
+output("Size of copy: ", string);
+output(arr_size(copy), int);

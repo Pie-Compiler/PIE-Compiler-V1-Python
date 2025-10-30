@@ -1,0 +1,38 @@
+float x=pow(2,3);
+
+output(x,float,2);
+
+if(x>5 && x!=8){
+    output("Foo",string);
+}
+
+int sqr(int y){
+    return y*y;
+}
+
+// Test with smaller numbers to avoid overflow
+output("Enter a number (recommend < 46340 to avoid overflow): ",string);
+int num;
+
+input(num,int);
+
+output("Square of ",string);
+output(num,int);
+output(" is ",string);
+output(sqr(num),int);
+output("\n",string);
+
+// For large numbers, use floating-point arithmetic
+float sqr_float(float y){
+    return y*y;
+}
+
+output("Enter a large number for float calculation: ",string);
+float big_num;
+input(big_num,float);
+
+output("Square of ",string);
+output(big_num,float,1);
+output(" is ",string);
+output(sqr_float(big_num),float,1);
+output("\n",string);

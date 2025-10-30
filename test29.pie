@@ -1,0 +1,12 @@
+//a function that takes an array of integers and returns a new array containing only the even numbers from the input array
+int getEvenNumbers[](int numbers[]) {
+    int evens[] = [];
+    int i = 0;
+    while (i < array_length(numbers)) {
+        if (numbers[i] % 2 == 0) {
+            arr_push(evens, numbers[i]);
+        }
+        i = i + 1;
+    }
+    return evens;
+}

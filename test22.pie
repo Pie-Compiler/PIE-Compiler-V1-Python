@@ -1,0 +1,14 @@
+//A PIE File to test file I/O 
+string filename="mydata.txt";
+
+// Test with d_array_string type
+file f1=file_open(filename,"r");
+d_array_string data=file_read_lines(f1);
+output(data[0],string);
+file_close(f1);
+
+// // Test with a second file to show it works
+// file f2=file_open(filename,"r");
+// d_array_string data2=file_read_lines(f2);
+// output(data2[1],string);
+// file_close(f2);

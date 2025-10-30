@@ -1,0 +1,24 @@
+int graph[][] = [
+    [0, 1, 0, 0, 1],
+    [1, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1],
+    [0, 1, 0, 0, 1],
+    [1, 0, 1, 1, 0]
+];
+
+output("2D Array created successfully", string);
+
+output("Accessing graph[0][1]: ", string);
+output(graph[0][1], int);
+
+output("Accessing graph[2][4]: ", string);
+output(graph[2][4], int);
+
+output("Size of graph (outer): ", string);
+output(arr_size(graph), int);
+
+output("Size of graph[0] (first row): ", string);
+output(arr_size(graph[0]), int);
+
+output("Size of graph[1] (second row): ", string);
+output(arr_size(graph[1]), int);

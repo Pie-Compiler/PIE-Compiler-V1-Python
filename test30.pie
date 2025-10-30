@@ -1,0 +1,31 @@
+// Stack using dynamic array
+
+string simple(){
+	return "hello";
+}
+
+void main(){
+int stack[] = [];
+
+// Push operations
+arr_push(stack, 10);
+arr_push(stack, 20);
+arr_push(stack, 30);
+
+output("Stack size: ", string);
+output(arr_size(stack), int);  // 3
+
+// Pop operations
+int top = arr_pop(stack);  // 30
+int next = arr_pop(stack); // 20
+
+output("Remaining size: ", string);
+output(arr_size(stack), int);  // 1
+
+output(stack,array);
+
+string greeting=simple();
+
+output(greeting, string);
+}
+

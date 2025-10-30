@@ -1,0 +1,23 @@
+int state=0;
+int numbers[]=[];
+int num;
+while(state!=1){
+    output("Please enter a number",string);
+    input(num,int);
+    arr_push(numbers,num);
+    output("Continue? \n 0:Yes \n 1:No",string);
+    input(state,int);
+}
+int sum=0;
+int arrsize;
+arrsize=arr_size(numbers);
+for(int i=0;i<arrsize;i=i+1){
+    sum=sum+numbers[i];
+}
+
+output("The sum of the numbers is ",string);
+output(sum,int);
+output(numbers,array);
+float average;
+average=arr_avg(numbers);
+output(average,float);

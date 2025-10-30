@@ -1,0 +1,29 @@
+// Simple string comparison test
+
+string name1 = "John";
+string name2 = "John";
+string name3 = "Jane";
+
+if(name1 == name2){
+    output("Equal", string);
+} else {
+    output("Not equal", string);
+}
+
+if(name1 == name3){
+    output("Equal", string);
+} else {
+    output("Not equal", string);
+}
+
+if(name1 < name3){
+    output("name1 comes before name3", string);
+} else {
+    output("name1 does not come before name3", string);
+}
+
+if(name3 > name1){
+    output("name3 comes after name1", string);
+} else {
+    output("name3 does not come after name1", string);
+}

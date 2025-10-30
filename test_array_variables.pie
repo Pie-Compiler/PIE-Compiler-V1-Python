@@ -1,0 +1,75 @@
+// Comprehensive test for array methods with variables
+
+// Different variable types
+int target_num = 42;
+string target_name = "Bob";
+char target_grade = 'B';
+float target_score = 85.5;
+
+// Arrays
+int numbers[] = [10, 20, 42, 30];
+string names[] = ["Alice", "Bob", "Charlie"];
+char grades[] = ['A', 'B', 'C'];
+float scores[] = [78.5, 85.5, 92.0];
+
+// Test arr_contains with variables
+output("Testing arr_contains with variables:", string);
+if(arr_contains(numbers, target_num)){
+    output("Found target number!", string);
+}
+
+if(arr_contains(names, target_name)){
+    output("Found target name!", string);
+}
+
+if(arr_contains(grades, target_grade)){
+    output("Found target grade!", string);
+}
+
+if(arr_contains(scores, target_score)){
+    output("Found target score!", string);
+}
+
+// Test arr_indexof with variables
+output("Testing arr_indexof with variables:", string);
+int num_index = arr_indexof(numbers, target_num);
+output("Target number index:", string);
+output(num_index, int);
+
+int name_index = arr_indexof(names, target_name);
+output("Target name index:", string);
+output(name_index, int);
+
+int grade_index = arr_indexof(grades, target_grade);
+output("Target grade index:", string);
+output(grade_index, int);
+
+int score_index = arr_indexof(scores, target_score);
+output("Target score index:", string);
+output(score_index, int);
+
+// Test arr_push with variables
+string new_name = "David";
+int new_number = 50;
+char new_grade = 'D';
+float new_score = 67.0;
+
+arr_push(names, new_name);
+arr_push(numbers, new_number);
+arr_push(grades, new_grade);
+arr_push(scores, new_score);
+
+output("After pushing variables:", string);
+output("Names:", string);
+output(names, array);
+output("Numbers:", string);
+output(numbers, array);
+output("Grades:", string);
+output(grades, array);
+output("Scores:", string);
+output(scores, array);
+
+//test arr_pop
+float popped=arr_pop(scores); //should remove last value and return it
+output(popped,float,1);
+output(scores,array);

@@ -1,0 +1,36 @@
+// String null checking 
+string username = "John Doe";
+if(username == null){
+    output("Username is null", string);
+} else {
+    output("Username is not null: ", string);
+    output(username, string);
+}
+
+// Int variable checking (returns false for null) 
+int age;
+if(age == null && age==0){
+    output("Age is null/undefined", string);
+} else {
+    output("Age is defined: ", string);
+    output(age, int);
+}
+
+// Dictionary validation 
+dict config = {"server": "localhost"};
+if(dict_key_exists(config, "server") == 1){
+    string server = dict_get_string(config, "server");
+    output(server, string);
+} else {
+    output("Server not configured", string);
+}
+
+string name;
+
+if(name==null){
+    output("null",string);
+} else {
+    output("not null",string);
+}
+
+//output(name,string);

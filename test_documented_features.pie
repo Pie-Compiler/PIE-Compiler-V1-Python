@@ -1,0 +1,98 @@
+// Comprehensive test of type conversions and cryptography
+// Based on documentation in docs/advanced-features.md
+
+int main() {
+    output("=== PIE Type Conversion & Crypto Test ===", string);
+    output("", string);
+    
+    // ========================================
+    // TYPE CONVERSIONS
+    // ========================================
+    
+    output("--- String to Integer ---", string);
+    string pos = "42";
+    string neg = "-123";
+    string invalid = "abc";
+    output(string_to_int(pos), int);      // 42
+    output(string_to_int(neg), int);      // -123
+    output(string_to_int(invalid), int);  // 0
+    output("", string);
+    
+    output("--- String to Float ---", string);
+    string pi_str = "3.14159";
+    float pi_val = string_to_float(pi_str);
+    output(pi_val, float, 5);  // 3.14159
+    output("", string);
+    
+    output("--- String to Char ---", string);
+    string word = "Hello";
+    char first = string_to_char(word);
+    output(first, char);  // H
+    output("", string);
+    
+    output("--- Char to Int (ASCII) ---", string);
+    char a = 'A';
+    char z = 'Z';
+    output(char_to_int(a), int);  // 65
+    output(char_to_int(z), int);  // 90
+    output("", string);
+    
+    output("--- Int to Char ---", string);
+    int code65 = 65;
+    int code90 = 90;
+    output(int_to_char(code65), char);  // A
+    output(int_to_char(code90), char);  // Z
+    output("", string);
+    
+    output("--- Numeric Conversions ---", string);
+    int whole = 42;
+    float from_int = int_to_float(whole);
+    output(from_int, float, 2);  // 42.00
+    
+    float decimal = 3.99;
+    int truncated = float_to_int(decimal);
+    output(truncated, int);  // 3 (truncated, not rounded)
+    output("", string);
+    
+    // ========================================
+    // CRYPTOGRAPHY
+    // ========================================
+    
+    output("--- Caesar Cipher ---", string);
+    string msg = "HELLO WORLD";
+    string enc = caesar_cipher(msg, 3);
+    string dec = caesar_decipher(enc, 3);
+    output("Original: " + msg, string);
+    output("Encrypted: " + enc, string);
+    output("Decrypted: " + dec, string);
+    output("", string);
+    
+    output("--- ROT13 (Symmetric) ---", string);
+    string secret = "SECRET";
+    string rot = rot13(secret);
+    string back = rot13(rot);
+    output("Original: " + secret, string);
+    output("ROT13: " + rot, string);
+    output("Back: " + back, string);
+    output("", string);
+    
+    output("--- Character Shift ---", string);
+    string earth = "Hello!";
+    string alien = char_shift(earth, 5);
+    string earth2 = char_shift(alien, -5);
+    output("Earth: " + earth, string);
+    output("Alien: " + alien, string);
+    output("Earth again: " + earth2, string);
+    output("", string);
+    
+    output("--- String Reverse ---", string);
+    string forward = "HELLO";
+    string backward = reverse_string(forward);
+    output("Forward: " + forward, string);
+    output("Backward: " + backward, string);
+    output("", string);
+    
+    output("=== All Tests Complete ===", string);
+    
+    return 0;
+}

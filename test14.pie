@@ -1,0 +1,70 @@
+//static array syntax
+//datatype varname[size(int)];
+//datatype varname[size(int)]=[...values]; -->check for excessive values
+//assigning
+int num[3];
+num=[1,2,3];
+char vowels[5]=['a','e','i','o','u'];
+
+
+
+//Declaring a dynamic array
+//datatype varname[]
+//datatype varname[]=[values....]
+string names[] = ["Alice", "Bob", "Charlie"];
+int numbers[]=[1,2,3];
+char grades[]=['A','B','C','D'];
+
+//appending values
+//arr_push(arrName,variable|literal)) ->automatially pushes to the next index ->returns void
+string testName="Fred";
+arr_push(names,testName);
+arr_push(numbers,34);
+
+//also support popping values arr_pop(arrName) ->removes last item ->returns the popped item
+int lastNum=arr_pop(numbers);
+
+//index accessing
+numbers[0]; //->returns 1
+numbers[2]=55; // 3 is replaced with 55
+numbers[23]; //returns null since the value does not exist
+numbers[23]=34; //creates indixces from 3-22 and sets them as null, sets index 23 as 34;
+
+//getting size
+arr_size(grades); //-->returns 4
+
+//printing arrays (just set the datatype in output to array)
+output(names,array)
+//Prints the values in a new line with the index
+/*
+[0]:"Alice",
+[1]:"Bob",
+[2]:"Charlie",
+*/
+
+//array methods
+
+//arr_contains (array,variable|literal) -->returns boolean
+arr_contains(numbers,99); //->returns false
+
+//arr_indexof (array,value|literal) -->returns an index if found , -1 if not found
+arr_indexof(numbers,2); //-->returns 1
+arr_indexof(names,"Joyce"); //-->returns -1
+
+//concatenating arrays (datatypes for arrays must be the same)
+int arr1[]=[2,3];
+int arr2[]=[4,5];
+int arr3[]=arr1+arr2;
+
+output(arr3,array); //prints values in both arr1 and arr2
+
+//some special methods for only float and int arrays
+//the arr_avg method returns a float
+//arr_avg(array,precision(optional)-defaults to 4dp)
+int nums[]=[2,3];
+arr_avg(numbers); //-->returns 2.5000
+arr_avg(numbers,2); //returns 2.50
+float avgs[]=[4.2,2.4];
+arr_avg(avgs); //->returns 3.3000
+
+//static arrays support the same methods except appening, poping etc or any that needs dynamic allocation

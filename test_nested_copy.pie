@@ -1,0 +1,25 @@
+int nested[][] = [
+    [1, 2, 3],
+    [4, 5],
+    [6, 7, 8, 9]
+];
+
+output("Nested array created", string);
+
+int row0[] = nested[0];
+output("Row 0 copied, size: ", string);
+output(arr_size(row0), int);
+
+output("Row 0 contents:", string);
+for (int i = 0; i < arr_size(row0); i = i + 1) {
+    output(row0[i], int);
+}
+
+int row2[] = nested[2];
+output("Row 2 copied, size: ", string);
+output(arr_size(row2), int);
+
+output("Row 2 contents:", string);
+for (int i = 0; i < arr_size(row2); i = i + 1) {
+    output(row2[i], int);
+}

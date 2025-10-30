@@ -1,0 +1,16 @@
+string name="test23.pie";
+int version=23;
+
+output(name,string);
+
+string testString="This is a test PIE file for version 23.";
+
+string upperCaseString=string_to_upper(testString);
+output("Original String: "+testString,string );
+output("Uppercase String: "+upperCaseString,string );
+
+string reversedString=string_reverse(testString);
+output("Reversed String: "+reversedString,string );
+
+string replacedString=string_replace_char(testString,'e','a');
+output("Replaced String: "+replacedString,string );

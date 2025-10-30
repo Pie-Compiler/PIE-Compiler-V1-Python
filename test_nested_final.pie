@@ -1,0 +1,41 @@
+int nested[][] = [
+    [1, 2, 3],
+    [4, 5],
+    [6, 7, 8, 9]
+];
+
+output("Testing nested array row extraction:", string);
+
+// Test copying row 0
+int row0[] = nested[0];
+output("Row 0: [", string);
+output(row0[0], int);
+output(row0[1], int);
+output(row0[2], int);
+output("]", string);
+
+// Test copying row 1
+int row1[] = nested[1];
+output("Row 1: [", string);
+output(row1[0], int);
+output(row1[1], int);
+output("]", string);
+
+// Test copying row 2
+int row2[] = nested[2];
+output("Row 2: [", string);
+output(row2[0], int);
+output(row2[1], int);
+output(row2[2], int);
+output(row2[3], int);
+output("]", string);
+
+// Verify sizes
+output("Sizes: row0=", string);
+output(arr_size(row0), int);
+output(", row1=", string);
+output(arr_size(row1), int);
+output(", row2=", string);
+output(arr_size(row2), int);
+
+output("All tests passed!", string);

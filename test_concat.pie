@@ -1,0 +1,5 @@
+// Test array concatenation
+int arr1[] = [10, 20];
+int arr2[] = [30, 40];
+int arr3[] = arr1 + arr2;
+output(arr_size(arr3), int);

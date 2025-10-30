@@ -1,0 +1,27 @@
+// Test the dictionary functions correctly 
+dict config = dict_create();
+
+void main_logic() {
+    // Set values using dict_set and new_* functions
+    dict_set(config, "max_users", new_int(100));
+    dict_set(config, "timeout", new_float(12));
+    dict_set(config, "host", new_string("localhost"));
+
+    // Retrieve and output the values 
+    int max_users = dict_get_int(config, "max_users");
+    float timeout = dict_get_float(config, "timeout");
+    string host = dict_get_string(config, "host");
+
+    if(timeout>20){
+        output("Max timeout is greater than 20",string);
+    }
+
+    output("Max users: ", string);
+    output(max_users, int);
+    output("Timeout: ", string);  
+    output(timeout, float);
+    output("Host: ", string);
+    output(host, string);
+}
+
+main_logic();

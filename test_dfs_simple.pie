@@ -1,0 +1,31 @@
+int graph[][] = [
+    [0, 1, 0, 0, 1],
+    [1, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1],
+    [0, 1, 0, 0, 1],
+    [1, 0, 1, 1, 0]
+];
+
+int visited[] = [0, 0, 0, 0, 0];
+
+void dfs(int node) {
+    visited[node] = 1;
+    output("Visiting node: ", string);
+    output(node, int);
+    
+    int size = arr_size(graph[node]);
+    output("Neighbors: ", string);
+    output(size, int);
+    
+    for (int neighbor = 0; neighbor < arr_size(graph[node]); neighbor = neighbor + 1) {
+        int edge = graph[node][neighbor];
+        int vis = visited[neighbor];
+        if (edge == 1 && vis == 0) {
+            dfs(neighbor);
+        }
+    }
+}
+
+output("Starting DFS from node 0", string);
+dfs(0);
+output("DFS complete!", string);

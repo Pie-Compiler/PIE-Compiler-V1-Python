@@ -1,0 +1,28 @@
+//Read an entire file and display it
+string filename="my_entries.txt";
+file entriesFile=file_open(filename,"a");
+string prompt="Enter something";
+string prompt2="Continue ? (y->1/n->0)";
+int state=0;
+file readingFile=file_open(filename,"r");
+while(state==0){
+    output(prompt,string);
+    string userInput;
+    input(userInput,string);
+    output(userInput,string);
+    //write it to the file
+    file_write(entriesFile,(userInput+"\n"));
+    //Read and display the file
+    string fileContents=file_read_all(readingFile);
+    output(fileContents,string);
+    // ask user to continue
+    output(prompt2,string);
+    int userChoice;
+    input(userChoice,int);
+    int stop=0;
+    if(userChoice==stop){
+        state=state+1;
+    }
+}
+file_close(entriesFile);
+output("Program complete",string);

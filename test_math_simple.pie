@@ -1,0 +1,25 @@
+// Simple Math Library Test
+float pi_val = pi();
+float e_val = e();
+float angle = pi_val / 4.0;  // 45 degrees
+
+// Trigonometric functions
+float sin_val = sin(angle);
+float cos_val = cos(angle);
+float tan_val = tan(angle);
+
+// Output results
+output_string("Math Library Test Results:\n");
+output_string("Constants: pi=");
+output_float(pi_val, 3);
+output_string(", e=");
+output_float(e_val, 3);
+output_string("\n");
+
+output_string("Trigonometric (pi/4): sin=");
+output_float(sin_val, 3);
+output_string(", cos=");
+output_float(cos_val, 3);
+output_string(", tan=");
+output_float(tan_val, 3);
+output_string("\n");

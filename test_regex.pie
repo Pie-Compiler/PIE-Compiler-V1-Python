@@ -1,0 +1,252 @@
+// Test regex functionality in PIE
+
+ 
+
+int main() {
+
+    output("=== Testing PIE Regex Support ===", string);
+
+ 
+
+    // Test 1: Simple literal
+
+    output("Test 1: Simple literal", string);
+
+    regex lit = regex_compile("a");
+
+    int r1 = regex_match(lit, "a");
+
+    int r2 = regex_match(lit, "b");
+
+    output("Match 'a': ", string);
+
+    output(r1, int);  // Should be 1
+
+    output("Match 'b': ", string);
+
+    output(r2, int);  // Should be 0
+
+ 
+
+    // Test 2: Concatenation
+
+    output("Test 2: Concatenation", string);
+
+    regex concat = regex_compile("a.b");
+
+    int r3 = regex_match(concat, "ab");
+
+    int r4 = regex_match(concat, "a");
+
+    output("Match 'ab': ", string);
+
+    output(r3, int);  // Should be 1
+
+    output("Match 'a': ", string);
+
+    output(r4, int);  // Should be 0
+
+ 
+
+    // Test 3: OR operator
+
+    output("Test 3: OR operator", string);
+
+    regex or_pattern = regex_compile("a|b");
+
+    int r5 = regex_match(or_pattern, "a");
+
+    int r6 = regex_match(or_pattern, "b");
+
+    int r7 = regex_match(or_pattern, "c");
+
+    output("Match 'a': ", string);
+
+    output(r5, int);  // Should be 1
+
+    output("Match 'b': ", string);
+
+    output(r6, int);  // Should be 1
+
+    output("Match 'c': ", string);
+
+    output(r7, int);  // Should be 0
+
+ 
+
+    // Test 4: Kleene star
+
+    output("Test 4: Kleene star", string);
+
+    regex star = regex_compile("a*");
+
+    int r8 = regex_match(star, "");
+
+    int r9 = regex_match(star, "a");
+
+    int r10 = regex_match(star, "aaa");
+
+    output("Match '': ", string);
+
+    output(r8, int);  // Should be 1
+
+    output("Match 'a': ", string);
+
+    output(r9, int);  // Should be 1
+
+    output("Match 'aaa': ", string);
+
+    output(r10, int);  // Should be 1
+
+ 
+
+    // Test 5: Positive closure
+
+    output("Test 5: Positive closure", string);
+
+    regex plus = regex_compile("a+");
+
+    int r11 = regex_match(plus, "");
+
+    int r12 = regex_match(plus, "a");
+
+    int r13 = regex_match(plus, "aaa");
+
+    output("Match '': ", string);
+
+    output(r11, int);  // Should be 0
+
+    output("Match 'a': ", string);
+
+    output(r12, int);  // Should be 1
+
+    output("Match 'aaa': ", string);
+
+    output(r13, int);  // Should be 1
+
+ 
+
+    // Test 6: Exact length constraint
+
+    output("Test 6: Exact length", string);
+
+    regex exact = regex_compile("a+:3");
+
+    int r14 = regex_match(exact, "aa");
+
+    int r15 = regex_match(exact, "aaa");
+
+    int r16 = regex_match(exact, "aaaa");
+
+    if (r16 == 1) {
+        output("Debug: 'aaaa' matched exact length regex when it should not have.", string);
+    }
+
+    output("Match 'aa': ", string);
+
+    output(r14, int);  // Should be 0
+
+    output("Match 'aaa': ", string);
+
+    output(r15, int);  // Should be 1
+
+    output("Match 'aaaa': ", string);
+
+    output(r16, int);  // Should be 0
+
+ 
+
+    // Test 7: Minimum length constraint
+
+    output("Test 7: Minimum length", string);
+
+    regex min_len = regex_compile("a+>2");
+
+    int r17 = regex_match(min_len, "aa");
+
+    int r18 = regex_match(min_len, "aaa");
+
+    output("Match 'aa': ", string);
+
+    output(r17, int);  // Should be 0
+
+    output("Match 'aaa': ", string);
+
+    output(r18, int);  // Should be 1
+
+ 
+
+    // Test 8: Maximum length constraint
+
+    output("Test 8: Maximum length", string);
+
+    regex max_len = regex_compile("a+<5");
+
+    int r19 = regex_match(max_len, "aaaa");
+
+    int r20 = regex_match(max_len, "aaaaa");
+
+    output("Match 'aaaa': ", string);
+
+    output(r19, int);  // Should be 1
+
+    output("Match 'aaaaa': ", string);
+
+    output(r20, int);  // Should be 0
+
+ 
+
+    // Test 9: Complex pattern
+
+    output("Test 9: Complex pattern", string);
+
+    regex complex = regex_compile("(a|b).c+");
+
+    int r21 = regex_match(complex, "ac");
+
+    int r22 = regex_match(complex, "bc");
+
+    int r23 = regex_match(complex, "accc");
+
+    int r24 = regex_match(complex, "dc");
+
+    output("Match 'ac': ", string);
+
+    output(r21, int);  // Should be 1
+
+    output("Match 'bc': ", string);
+
+    output(r22, int);  // Should be 1
+
+    output("Match 'accc': ", string);
+
+    output(r23, int);  // Should be 1
+
+    output("Match 'dc': ", string);
+
+    output(r24, int);  // Should be 0
+
+ 
+
+    output("=== All Regex Tests Complete ===", string);
+
+    regex username = regex_compile("(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|0|1|2|3|4|5|6|7|8|9)+>2<21");
+
+   string user = "john123adsasd";
+
+ 
+
+    if (regex_match(username, user) == 1) {
+
+        output("Username valid", string);
+
+    } else {
+
+        output("Username must be 3-20 characters", string);
+
+    }
+
+
+    return 0;
+
+}

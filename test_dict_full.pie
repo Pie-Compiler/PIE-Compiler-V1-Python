@@ -1,0 +1,11 @@
+dict person = {"name": "John Doe", "age": 30, "height": 5.9};
+
+// Test retrieving values
+string name = dict_get_string(person, "name");
+int age = dict_get_int(person, "age");
+float height = dict_get_float(person, "height");
+
+// Output the values
+output(name, string);
+output(age, int);
+output(height, float);

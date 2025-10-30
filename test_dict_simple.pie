@@ -1,0 +1,9 @@
+// Simple dictionary test without new functions
+
+dict person = {"name": "John Doe", "age": 30};
+
+string username = dict_get_string(person, "name");
+output(username, string);
+
+int age = dict_get_int(person, "age");
+output(age, int);

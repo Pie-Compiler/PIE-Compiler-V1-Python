@@ -1,0 +1,4 @@
+char myChar = 'A';
+output("Char as string: ",string);
+output(myChar,string);
+output("\n",string);

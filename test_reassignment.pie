@@ -1,0 +1,39 @@
+int n=5;
+int p=0;
+p=n;
+output("After p=n: p=",string);
+output(p,int);
+output("\n",string);
+
+n=10;
+output("After n=10: n=",string);
+output(n,int);
+output(", p=",string);
+output(p,int);
+output("\n",string);
+
+p=n;
+output("After p=n again: p=",string);
+output(p,int);
+output("\n",string);
+
+float x=2.5;
+float y=0.0;
+y=x;
+output("After y=x: y=",string);
+output(y,float);
+output("\n",string);
+
+string s1="Hello";
+string s2="World";
+s2=s1;
+output("After s2=s1: s2=",string);
+output(s2,string);
+output("\n",string);
+
+char c1='X';
+char c2='Y';
+c2=c1;
+output("After c2=c1: c2=",string);
+output(c2,char);
+output("\n",string);

@@ -1,0 +1,40 @@
+// Demonstration of variable reassignment and automatic type conversion in output
+
+output("=== Variable Reassignment Test ===\n",string);
+
+int x = 10;
+int y = x;
+output("int x = 10, y = x: y = ",string);
+output(y,string);
+output("\n",string);
+
+float a = 5.5;
+float b = a;
+output("float a = 5.5, b = a: b = ",string);
+output(b,string);
+output("\n",string);
+
+char c1 = 'Z';
+char c2 = c1;
+output("char c1 = Z, c2 = c1: c2 = ",string);
+output(c2,string);
+output("\n",string);
+
+string s1 = "Hello World";
+string s2 = s1;
+output("string s1 = Hello World, s2 = s1: s2 = ",string);
+output(s2,string);
+output("\n\n",string);
+
+output("=== Automatic Type Conversion in Output ===\n",string);
+output("Char A as string: ",string);
+output('A',string);
+output("\n",string);
+
+output("Int 42 as string: ",string);
+output(42,string);
+output("\n",string);
+
+output("Float 3.14159 as string: ",string);
+output(3.14159,string);
+output("\n",string);

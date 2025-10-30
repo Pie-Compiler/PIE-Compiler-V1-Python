@@ -1,0 +1,6 @@
+dict myDict = dict_create();
+dict_set(myDict, "name", new_string("Jules"));
+dict_set(myDict, "age", new_int(30));
+
+string name = dict_get_string(myDict, "name");
+int age = dict_get_int(myDict, "age");

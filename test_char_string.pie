@@ -1,0 +1,5 @@
+char grades[] = ['A', 'B'];
+string names[] = ["Alice", "Bob"];
+
+char test='A';
+output(test,char);

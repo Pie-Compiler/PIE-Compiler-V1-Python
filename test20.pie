@@ -1,0 +1,17 @@
+dict person = {"name": "John Doe", "age": 30};
+
+string username=dict_get_string(person,"names");
+string empty="";
+// if(username==""){
+//     output("undefined",string);
+// }
+
+if(username==empty){
+    output("username is empty",string);
+}
+
+if(username==null){
+    output("null",string);
+}
+
+output(username,string);

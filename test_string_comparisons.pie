@@ -1,0 +1,183 @@
+// Comprehensive test for string comparisons and operations
+
+// Test 1: Basic string equality comparisons
+string name1 = "John Doe";
+string name2 = "John Doe";
+string name3 = "Jane Doe";
+
+if(name1 == name2){
+    output("name1 equals name2", string);
+} else {
+    output("name1 does not equal name2", string);
+}
+
+if(name1 == name3){
+    output("name1 equals name3", string);
+} else {
+    output("name1 does not equal name3", string);
+}
+
+if(name1 != name3){
+    output("name1 does not equal name3 (correct!)", string);
+} else {
+    output("name1 equals name3 (incorrect!)", string);
+}
+
+// Test 2: String ordering comparisons
+string alpha1 = "apple";
+string alpha2 = "banana";
+string alpha3 = "cherry";
+
+if(alpha1 < alpha2){
+    output("apple comes before banana (correct!)", string);
+} else {
+    output("apple does not come before banana", string);
+}
+
+if(alpha2 > alpha1){
+    output("banana comes after apple (correct!)", string);
+} else {
+    output("banana does not come after apple", string);
+}
+
+if(alpha1 <= alpha2){
+    output("apple is less than or equal to banana", string);
+} else {
+    output("apple is not less than or equal to banana", string);
+}
+
+if(alpha2 >= alpha1){
+    output("banana is greater than or equal to apple", string);
+} else {
+    output("banana is not greater than or equal to apple", string);
+}
+
+// Test 3: String length comparisons
+string short_str = "hi";
+string long_str = "hello world";
+
+if(short_str < 5){
+    output("Short string length is less than 5", string);
+} else {
+    output("Short string length is not less than 5", string);
+}
+
+if(long_str > 5){
+    output("Long string length is greater than 5", string);
+} else {
+    output("Long string length is not greater than 5", string);
+}
+
+if(short_str <= 2){
+    output("Short string length is less than or equal to 2", string);
+} else {
+    output("Short string length is not less than or equal to 2", string);
+}
+
+// Test 4: String utility functions
+string text = "Hello World Programming";
+string search = "World";
+string prefix = "Hello";
+string suffix = "Programming";
+
+if(string_contains(text, search) == 1){
+    output("Text contains 'World'", string);
+} else {
+    output("Text does not contain 'World'", string);
+}
+
+if(string_starts_with(text, prefix) == 1){
+    output("Text starts with 'Hello'", string);
+} else {
+    output("Text does not start with 'Hello'", string);
+}
+
+if(string_ends_with(text, suffix) == 1){
+    output("Text ends with 'Programming'", string);
+} else {
+    output("Text does not end with 'Programming'", string);
+}
+
+if(string_is_empty("") == 1){
+    output("Empty string is empty", string);
+} else {
+    output("Empty string is not empty", string);
+}
+
+if(string_is_empty(text) == 0){
+    output("Non-empty string is not empty", string);
+} else {
+    output("Non-empty string is empty", string);
+}
+
+// Test 5: Complex string validation scenarios
+string username = "john_doe_123";
+string password = "secret123";
+
+// Validate username format
+if(string_starts_with(username, "john") == 1){
+    output("Username starts with 'john'", string);
+} else {
+    output("Username does not start with 'john'", string);
+}
+
+if(string_contains(username, "_") == 1){
+    output("Username contains underscore", string);
+} else {
+    output("Username does not contain underscore", string);
+}
+
+if(string_ends_with(username, "123") == 1){
+    output("Username ends with '123'", string);
+} else {
+    output("Username does not end with '123'", string);
+}
+
+// Validate password strength
+if(string_contains(password, "secret") == 1){
+    output("Password contains 'secret'", string);
+} else {
+    output("Password does not contain 'secret'", string);
+}
+
+if(password > 8){
+    output("Password is longer than 8 characters", string);
+} else {
+    output("Password is not longer than 8 characters", string);
+}
+
+// Test 6: String comparison in conditional logic
+string user_role = "admin";
+string access_level = "read";
+
+if(user_role == "admin"){
+    output("User has admin privileges", string);
+    if(access_level == "read"){
+        output("Access level is read", string);
+    } else if(access_level == "write"){
+        output("Access level is write", string);
+    } else {
+        output("Unknown access level", string);
+    }
+} else if(user_role == "user"){
+    output("User has standard privileges", string);
+} else {
+    output("Unknown user role", string);
+}
+
+// Test 7: String concatenation with comparison
+string first = "Hello";
+string second = "World";
+string combined = first + second;
+
+if(combined == "HelloWorld"){
+    output("String concatenation works correctly", string);
+} else {
+    output("String concatenation failed", string);
+}
+
+if(combined > "Hello"){
+    output("Combined string is longer than 'Hello'", string);
+} else {
+    output("Combined string is not longer than 'Hello'", string);
+}

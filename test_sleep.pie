@@ -1,0 +1,10 @@
+// Test sleep function
+output("Starting test...", string);
+output("Sleeping for 2 seconds", string);
+sleep(2);
+output("Awake after 2 seconds!", string);
+
+int seconds = 1;
+output("Sleeping for " + seconds + " second", string);
+sleep(seconds);
+output("Done!", string);

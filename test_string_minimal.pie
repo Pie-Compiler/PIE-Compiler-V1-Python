@@ -1,0 +1,2 @@
+string name = "test";
+output(name, string);

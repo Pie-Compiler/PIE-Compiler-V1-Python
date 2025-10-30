@@ -1,0 +1,39 @@
+// Test return statements for all types
+
+int returnInt() {
+    int x = 42;
+    return x;
+}
+
+float returnFloat() {
+    float y = 3.14;
+    return y;
+}
+
+char returnChar() {
+    char c = 'Z';
+    return c;
+}
+
+string returnString() {
+    string s = "Returned String";
+    return s;
+}
+
+string returnStringConcat() {
+    string a = "Hello";
+    string b = " ";
+    string c = "PIE";
+    return a + b + c;
+}
+
+output("Int: ", string);
+output(returnInt(), int);
+output("Float: ", string);
+output(returnFloat(), float, 2);
+output("Char: ", string);
+output(returnChar(), char);
+output("String: ", string);
+output(returnString(), string);
+output("String concat: ", string);
+output(returnStringConcat(), string);

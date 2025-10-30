@@ -1,0 +1,31 @@
+// Test various string return scenarios
+
+string greeting(string name) {
+    return "Hello, " + name + "!";
+}
+
+string emptyString() {
+    return "";
+}
+
+string multiConcat() {
+    string a = "Part1";
+    string b = "Part2";
+    string c = "Part3";
+    return a + b + c;
+}
+
+string repeatWord(string word, int times) {
+    string result = "";
+    int i = 0;
+    while(i < times) {
+        result = result + word + " ";
+        i = i + 1;
+    }
+    return result;
+}
+
+output(greeting("World"), string);
+output(emptyString() + "Test", string);
+output(multiConcat(), string);
+output(repeatWord("PIE", 4), string);
