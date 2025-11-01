@@ -19,11 +19,12 @@ PIE is a statically-typed, compiled programming language that combines the simpl
 - 🚀 **LLVM-Based Compilation** - Fast, optimized native code generation
 - 📝 **C-Like Syntax** - Familiar and easy to learn for C/C++ programmers
 - 🎯 **Static Typing** - Catch errors at compile-time with type safety
-- 📚 **Rich Standard Library** - Math, strings, file I/O, networking, and more
+- � **Module System** - Import standard libraries and create reusable modules
+- �📚 **Rich Standard Library** - Math, strings, file I/O, networking, HTTP, JSON, and more
 - 🔄 **Dynamic Arrays** - Built-in support for growable arrays
 - 📖 **Dictionaries** - Hash maps with automatic type inference
 - 🔍 **Regular Expressions** - Pattern matching with Kleene syntax
-- 🌐 **Network Support** - TCP sockets for network programming
+- 🌐 **Network Support** - TCP sockets and HTTP for network programming
 - 📁 **File I/O** - Comprehensive file handling capabilities
 
 ## Quick Start
@@ -99,6 +100,7 @@ Sum:
 Comprehensive documentation is available in the `docs/` directory:
 
 - **[Language Reference](docs/language-reference.md)** - Complete language syntax and features
+- **[Module System Guide](docs/module-system.md)** - Creating and using modules
 - **[Standard Library](docs/standard-library.md)** - All built-in functions and their usage
 - **[Examples & Tutorials](docs/examples.md)** - Practical examples and sample programs
 - **[Advanced Features](docs/advanced-features.md)** - Dictionaries, regex, networking, and more
@@ -166,6 +168,26 @@ int fibonacci(int n) {
 
 int result = fibonacci(10);
 output(result, int);
+```
+
+#### Modules
+```pie
+// Import standard library modules
+import http;
+import json;
+
+// Use module functions with dot notation
+string response = http.get("https://api.example.com/data");
+json.object data = json.parse(response);
+
+// Create your own modules (mathutils.pie)
+export int square(int x) {
+    return x * x;
+}
+
+// Use custom modules
+import mathutils;
+int result = mathutils.square(5);  // Returns 25
 ```
 
 ## Examples
@@ -290,6 +312,9 @@ int is_match = regex_match(email_pattern, "user@example");
 #### File I/O
 ```pie
 file f = file_open("data.txt", "w");
+// file_write accepts string expressions (concatenation, variables, etc.)
+int count = 42;
+file_write(f, "Count: " + count + "\n");
 file_write(f, "Hello, File!");
 file_close(f);
 

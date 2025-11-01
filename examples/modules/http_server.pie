@@ -1,0 +1,108 @@
+// Simple HTTP Server Example with JSON
+// This example demonstrates the PIE module system
+// NOTE: This is a design example - full implementation pending
+
+import http;
+import json;
+
+void handle_request(http.request req, http.response res) {
+    // Handle GET request to /api/users
+    if (req.method == "GET" && req.path == "/api/users") {
+        // Create JSON array of users
+        json.array users = json.create_array();
+        
+        // Create user objects
+        json.object user1 = json.create_object();
+        json.set_string(user1, "name", "Alice");
+        json.set_int(user1, "age", 30);
+        json.set_string(user1, "role", "Engineer");
+        
+        json.object user2 = json.create_object();
+        json.set_string(user2, "name", "Bob");
+        json.set_int(user2, "age", 25);
+        json.set_string(user2, "role", "Designer");
+        
+        json.object user3 = json.create_object();
+        json.set_string(user3, "name", "Charlie");
+        json.set_int(user3, "age", 35);
+        json.set_string(user3, "role", "Manager");
+        
+        // Add users to array
+        json.array_push_object(users, user1);
+        json.array_push_object(users, user2);
+        json.array_push_object(users, user3);
+        
+        // Convert to JSON string
+        string response_body = json.stringify(users);
+        
+        // Send response
+        res.status(http.HTTP_OK);
+        res.header("Content-Type", "application/json");
+        res.send(response_body);
+        
+        output("Sent user list", string);
+    }
+    // Handle GET request to /api/health
+    else if (req.method == "GET" && req.path == "/api/health") {
+        json.object health = json.create_object();
+        json.set_string(health, "status", "ok");
+        json.set_int(health, "uptime", 3600);
+        
+        string response_body = json.stringify(health);
+        
+        res.status(http.HTTP_OK);
+        res.header("Content-Type", "application/json");
+        res.send(response_body);
+    }
+    // Handle POST request to /api/users
+    else if (req.method == "POST" && req.path == "/api/users") {
+        // Parse incoming JSON
+        json.object new_user = json.parse(req.body);
+        
+        if (new_user != null) {
+            string name = json.get_string(new_user, "name");
+            int age = json.get_int(new_user, "age");
+            
+            output("Creating user: " + name + ", age: " + age, string);
+            
+            // Create response
+            json.object response_obj = json.create_object();
+            json.set_string(response_obj, "message", "User created");
+            json.set_string(response_obj, "name", name);
+            
+            string response_body = json.stringify(response_obj);
+            
+            res.status(http.HTTP_CREATED);
+            res.header("Content-Type", "application/json");
+            res.send(response_body);
+        } else {
+            res.status(http.HTTP_BAD_REQUEST);
+            res.send("Invalid JSON");
+        }
+    }
+    // 404 Not Found
+    else {
+        json.object error = json.create_object();
+        json.set_string(error, "error", "Not found");
+        json.set_string(error, "path", req.path);
+        
+        string response_body = json.stringify(error);
+        
+        res.status(http.HTTP_NOT_FOUND);
+        res.header("Content-Type", "application/json");
+        res.send(response_body);
+    }
+}
+
+int main() {
+    output("Starting PIE HTTP Server on port 8080...", string);
+    output("Available endpoints:", string);
+    output("  GET  /api/users  - List all users", string);
+    output("  POST /api/users  - Create a user", string);
+    output("  GET  /api/health - Health check", string);
+    
+    // Start the HTTP server
+    http.listen(8080, handle_request);
+    
+    return 0;
+}

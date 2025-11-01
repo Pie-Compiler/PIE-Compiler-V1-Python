@@ -25,6 +25,7 @@ class Declaration(Statement):
         self.var_type = var_type
         self.identifier = identifier
         self.initializer = initializer
+        self.is_exported = False  # For user-defined modules
 
 class ArrayDeclaration(Declaration):
     def __init__(self, var_type, identifier, size=None, initializer=None, is_dynamic=False, dimensions=1, dimension_sizes=None):
@@ -79,12 +80,21 @@ class ReturnStatement(Statement):
     def __init__(self, value=None):
         self.value = value
 
+class ImportStatement(Statement):
+    def __init__(self, module_name, alias=None, items=None):
+        self.module_name = module_name  # e.g., "http" or "std.math"
+        self.alias = alias               # e.g., "h" in "import http as h"
+        self.items = items or []         # e.g., ["get", "post"] in "from http import get, post"
+        self.resolved_path = None        # Filled by module resolver
+        self.module_info = None          # Filled by module resolver
+
 class FunctionDefinition(Statement):
     def __init__(self, return_type, name, params, body):
         self.return_type = return_type
         self.name = name
         self.params = params
         self.body = body
+        self.is_exported = False  # For user-defined modules
 
 class Parameter(Node):
     def __init__(self, param_type, name):

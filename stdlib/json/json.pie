@@ -1,0 +1,143 @@
+// PIE JSON Module Interface
+// This file defines the high-level PIE interface for JSON operations
+// The actual implementation is in runtime/pie_json.c using the jansson library
+
+// JSON Object and Array types (opaque - implemented in C as json_t*)
+// These are opaque pointers to C structures
+
+// JSON Parsing and Serialization
+
+// Parse a JSON string into a JSON object
+// Returns null if parsing fails
+// Example: json.object obj = json.parse("{\"name\":\"Alice\",\"age\":30}");
+json.object parse(string text);
+
+// Convert a JSON object to a string
+// Returns the JSON string representation
+// Example: string str = json.stringify(obj);
+string stringify(json.object obj);
+
+// JSON Object Creation and Manipulation
+
+// Create a new empty JSON object
+// Example: json.object user = json.create_object();
+json.object create_object();
+
+// Create a new empty JSON array
+// Example: json.array users = json.create_array();
+json.array create_array();
+
+// Get values from JSON object
+
+// Get string value by key
+// Returns empty string if key doesn't exist or value is not a string
+// Example: string name = json.get_string(user, "name");
+string get_string(json.object obj, string key);
+
+// Get integer value by key
+// Returns 0 if key doesn't exist or value is not an integer
+// Example: int age = json.get_int(user, "age");
+int get_int(json.object obj, string key);
+
+// Get float value by key
+// Returns 0.0 if key doesn't exist or value is not a number
+// Example: float score = json.get_float(user, "score");
+float get_float(json.object obj, string key);
+
+// Get boolean value by key
+// Returns false if key doesn't exist or value is not a boolean
+// Example: bool active = json.get_bool(user, "active");
+bool get_bool(json.object obj, string key);
+
+// Get nested object by key
+// Returns null if key doesn't exist or value is not an object
+// Example: json.object address = json.get_object(user, "address");
+json.object get_object(json.object obj, string key);
+
+// Get array by key
+// Returns null if key doesn't exist or value is not an array
+// Example: json.array friends = json.get_array(user, "friends");
+json.array get_array(json.object obj, string key);
+
+// Set values in JSON object
+
+// Set string value
+// Example: json.set_string(user, "name", "Bob");
+void set_string(json.object obj, string key, string value);
+
+// Set integer value
+// Example: json.set_int(user, "age", 25);
+void set_int(json.object obj, string key, int value);
+
+// Set float value
+// Example: json.set_float(user, "score", 95.5);
+void set_float(json.object obj, string key, float value);
+
+// Set boolean value
+// Example: json.set_bool(user, "active", true);
+void set_bool(json.object obj, string key, bool value);
+
+// JSON Array Operations
+
+// Get array size
+// Returns 0 if array is null
+// Example: int count = json.array_size(users);
+int array_size(json.array arr);
+
+// Get string from array at index
+// Returns empty string if index is out of bounds or value is not a string
+// Example: string name = json.array_get_string(names, 0);
+string array_get_string(json.array arr, int index);
+
+// Get integer from array at index
+// Returns 0 if index is out of bounds or value is not an integer
+// Example: int score = json.array_get_int(scores, 0);
+int array_get_int(json.array arr, int index);
+
+// Get object from array at index
+// Returns null if index is out of bounds or value is not an object
+// Example: json.object user = json.array_get_object(users, 0);
+json.object array_get_object(json.array arr, int index);
+
+// Add string to array
+// Example: json.array_push_string(names, "Alice");
+void array_push_string(json.array arr, string value);
+
+// Add integer to array
+// Example: json.array_push_int(scores, 95);
+void array_push_int(json.array arr, int value);
+
+// Add object to array
+// Example: json.array_push_object(users, user);
+void array_push_object(json.array arr, json.object obj);
+
+// Usage Example:
+//
+// import json;
+//
+// int main() {
+//     // Create JSON object
+//     json.object user = json.create_object();
+//     json.set_string(user, "name", "Alice");
+//     json.set_int(user, "age", 30);
+//     json.set_bool(user, "active", true);
+//     
+//     // Create array
+//     json.array hobbies = json.create_array();
+//     json.array_push_string(hobbies, "reading");
+//     json.array_push_string(hobbies, "coding");
+//     
+//     // Convert to string
+//     string json_str = json.stringify(user);
+//     output(json_str, string);
+//     
+//     // Parse JSON
+//     json.object parsed = json.parse(json_str);
+//     string name = json.get_string(parsed, "name");
+//     int age = json.get_int(parsed, "age");
+//     
+//     output("Name: " + name, string);
+//     output("Age: " + age, int);
+//     
+//     return 0;
+// }

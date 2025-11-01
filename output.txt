@@ -1,3 +1,7 @@
 Line 1: Hello, World! 
 Line 2: PIE language 
 Line 3: File I/O 
+Project: PIE Compiler
+Version: 1
+Progress: 95.5%
+Sum of 10 and 20 is 30

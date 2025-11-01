@@ -1,0 +1,6 @@
+Hello World
+Language: PIE
+Count: 42
+Time: 23:15:43
+Value of PI: 3.14159
+Sum: 30

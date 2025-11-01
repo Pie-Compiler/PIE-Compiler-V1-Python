@@ -1,0 +1,45 @@
+//A file to test regular express
+string word="abcccc";
+//defining a regex in PIE
+string myRegex="a.b";
+regex myregex=regex_compile(myRegex);
+
+//test
+int match=regex_match(myregex,word); //returns 1 for true and 0 for false
+
+output(match,int); //returns 0
+
+regex newRegex=regex_compile("(a.b)*.c*"); //allows strings like ccc , empty string , abc, ababab, abcab
+
+output(regex_match(newRegex,word),int);
+
+//let's play a game
+
+int option;
+string userWord;
+while(option!=2){
+	output("Hello there!Let's play a game. Guess a word in the regular language defined by the regular expression (a.b)*.c* and I'll tell you if you got it right!",string);
+	output("1: Play\n2:Skip",string);
+	input(option,int);
+	if(option!=2){
+		output("Enter your word!",string);
+		input(userWord,string);
+		if(regex_match(newRegex,userWord)==1){
+			output("You got it right! "+ userWord + " is a valid word",string);
+		}else{
+			output("Oh! Try again. "+userWord+" is not a valid word",string);
+		}
+	}
+}
+
+//verify phone numbers
+string kePhone="(((2547|2541)).(0|1|2|3|4|5|6|7|8|9)+):12)";
+regex phoneRegex=regex_compile(kePhone);
+string phone;
+output("Enter a phone number",string);
+input(phone,string);
+if(regex_match(phoneRegex,phone)==1){
+	output("Valid Phone!",string);
+}else{
+	output("Invalid Phone!",string);
+}

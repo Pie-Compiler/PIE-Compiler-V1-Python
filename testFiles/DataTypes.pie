@@ -1,0 +1,25 @@
+//Integers
+int num=9;
+//Strings
+string name="John";
+//Boolean
+bool isValid=true;
+//char
+char grade='A';
+//Output
+float average=5.5677;
+
+output(num,int);
+output(isValid,boolean);
+output(name,string);
+output(grade,char);
+
+//float output
+output(average,float);//5.57
+output(average,float,4);//5.5677
+
+//Also supports type casting in the output
+int days=7;
+output("The are "+days+" days in a week",string);
+output("The value of PI is "+3.142,string);
+

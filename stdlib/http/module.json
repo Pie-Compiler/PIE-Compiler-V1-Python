@@ -1,0 +1,66 @@
+{
+  "name": "http",
+  "version": "1.0.0",
+  "description": "HTTP client and server support for PIE",
+  "author": "PIE Team",
+  "requires": {
+    "pie_version": ">=1.0.0",
+    "modules": []
+  },
+  "c_bindings": {
+    "headers": ["pie_http.h"],
+    "sources": ["pie_http.c"],
+    "libraries": ["curl", "microhttpd", "pthread"]
+  },
+  "exports": {
+    "functions": [
+      {
+        "name": "get",
+        "signature": "string(string url)",
+        "description": "Perform HTTP GET request"
+      },
+      {
+        "name": "post",
+        "signature": "string(string url, string body, dict headers)",
+        "description": "Perform HTTP POST request"
+      },
+      {
+        "name": "put",
+        "signature": "string(string url, string body, dict headers)",
+        "description": "Perform HTTP PUT request"
+      },
+      {
+        "name": "delete",
+        "signature": "string(string url)",
+        "description": "Perform HTTP DELETE request"
+      },
+      {
+        "name": "listen",
+        "signature": "void(int port, function handler)",
+        "description": "Start HTTP server on specified port"
+      },
+      {
+        "name": "listen_ssl",
+        "signature": "void(int port, string cert_file, string key_file, function handler)",
+        "description": "Start HTTPS server on specified port"
+      }
+    ],
+    "types": [
+      {
+        "name": "request",
+        "type": "struct",
+        "description": "HTTP request object"
+      },
+      {
+        "name": "response",
+        "type": "struct",
+        "description": "HTTP response object"
+      },
+      {
+        "name": "status",
+        "type": "enum",
+        "description": "HTTP status codes"
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 from frontend.parser import Parser, print_ast
 from frontend.semanticAnalysis import SemanticAnalyzer
+from frontend.module_resolver import ModuleResolver
 from backend.llvm_generator import LLVMCodeGenerator
 import subprocess
 import traceback
@@ -8,8 +9,19 @@ import os
 
 import llvmlite.binding as llvm
 
-def build_and_link(llvm_module):
+def build_and_link(llvm_module, c_sources=None, libraries=None):
+    """
+    Build and link the LLVM module with C runtime and optional module sources.
+    
+    Args:
+        llvm_module: The LLVM module to compile
+        c_sources: Additional C source files from modules (list of paths)
+        libraries: Additional libraries to link (list of library names)
+    """
     obj_files = []
+    c_sources = c_sources or []
+    libraries = libraries or []
+    
     try:
         # Create a target machine from the default triple
         target_machine = llvm.Target.from_default_triple().create_target_machine()
@@ -23,8 +35,11 @@ def build_and_link(llvm_module):
         llvm_bin_path = "/usr/lib/llvm-18/bin/"
         clang_path = os.path.join(llvm_bin_path, "clang")
         runtime_path = "src/runtime/"
+        
+        # Get all C files from runtime directory
         c_files = [f for f in os.listdir(runtime_path) if f.endswith('.c')]
-
+        
+        # Compile each runtime C file
         for c_file in c_files:
             obj_file = c_file.replace('.c', '.o')
             subprocess.run(
@@ -32,9 +47,26 @@ def build_and_link(llvm_module):
                 check=True
             )
             obj_files.append(obj_file)
+        
+        # Compile module-specific C sources if any
+        for c_source_path in c_sources:
+            if os.path.exists(c_source_path):
+                c_file = os.path.basename(c_source_path)
+                obj_file = c_file.replace('.c', '.o')
+                print(f"Compiling module source: {c_source_path}")
+                subprocess.run(
+                    [clang_path, "-c", "-fPIC", str(c_source_path), "-o", obj_file],
+                    check=True
+                )
+                obj_files.append(obj_file)
 
         # --- Link all object files ---
         link_command = [clang_path, "output.o"] + obj_files + ["-o", "program", "-lm"]
+        
+        # Add additional libraries from modules
+        for lib in libraries:
+            link_command.append(f"-l{lib}")
+        
         subprocess.run(link_command, check=True)
 
         print("Build and linking successful! Executable: ./program")
@@ -71,8 +103,12 @@ def main():
         print_ast(ast)
         print("Parsing successful!")
 
-        analyzer = SemanticAnalyzer(parser.symbol_table)
-        is_valid, ast = analyzer.analyze(ast)
+        # Initialize module resolver
+        module_resolver = ModuleResolver()
+        
+        # Semantic analysis with module support
+        analyzer = SemanticAnalyzer(parser.symbol_table, module_resolver)
+        is_valid, ast = analyzer.analyze(ast, source_file=input_file)
 
         if analyzer.errors:
             print("\n--- Semantic Errors ---")
@@ -82,16 +118,39 @@ def main():
         if is_valid:
             print("\nProgram is semantically valid!")
 
-            # Code Generation returns the compiled llvmlite module object
-            llvm_generator = LLVMCodeGenerator(parser.symbol_table)
+            # Code Generation with imported modules
+            llvm_generator = LLVMCodeGenerator(
+                parser.symbol_table, 
+                analyzer.imported_modules
+            )
             llvm_module = llvm_generator.generate(ast)
 
             # Save the human-readable IR for debugging
             with open("output.ll", "w") as f:
                 f.write(str(llvm_module))
 
-            # Build and Link using the module object
-            build_and_link(llvm_module)
+            # Collect C sources and libraries from imported modules
+            c_sources = []
+            libraries = []
+            
+            for module_name, module_info in analyzer.imported_modules.items():
+                # Get C sources from module
+                module_c_sources = module_resolver.get_module_c_sources(module_name)
+                c_sources.extend(module_c_sources)
+                
+                # Get libraries from module
+                module_libraries = module_resolver.get_module_libraries(module_name)
+                libraries.extend(module_libraries)
+            
+            if analyzer.imported_modules:
+                print(f"\nImported modules: {', '.join(analyzer.imported_modules.keys())}")
+                if c_sources:
+                    print(f"Module C sources: {[str(s) for s in c_sources]}")
+                if libraries:
+                    print(f"Module libraries: {libraries}")
+
+            # Build and Link with module dependencies
+            build_and_link(llvm_module, c_sources, libraries)
 
         else:
             print("\nCompilation failed due to semantic errors.")

@@ -2,5 +2,11 @@
 //The graphs are represented by adjascency matrices which are in turn represented as arrays in the system
 
 int a[]=[0,10,1];
-int b[]=[a];
+int b[]=a;
+output("Array copy test", string);
+output("a[0]="+(a[0])+", b[0]="+(b[0]), string);
+output(", b[0]="+(b[0]), string);
+a[0]=99;
+output("After a[0]="+(a[0])+", b[0]="+(b[0]), string);
+float avg=arrayAvg(a);
 

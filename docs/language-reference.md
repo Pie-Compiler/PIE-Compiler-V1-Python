@@ -13,7 +13,8 @@ Complete reference documentation for the PIE programming language.
 7. [Control Flow](#control-flow)
 8. [Functions](#functions)
 9. [Arrays](#arrays)
-10. [Comments](#comments)
+10. [Modules](#modules)
+11. [Comments](#comments)
 
 ---
 
@@ -41,6 +42,7 @@ int       float     char      string    bool      boolean
 void      file      socket    dict      regex     array
 if        else      for       while     do        switch
 case      default   break     continue  return    exit
+import    from      as        export
 true      false     null
 ```
 
@@ -830,7 +832,84 @@ int[] numbers = [1, 2, 3, 4, 5];
 output(numbers, array)
 ---
 
-## 10. Comments
+## 10. Modules
+
+PIE supports a module system for code organization and reusability. Modules allow you to import standard libraries and create your own reusable components.
+
+### Import Statement
+
+Import modules using the `import` keyword:
+
+```pie
+import module_name;
+```
+
+**Examples:**
+```pie
+import http;    // Import HTTP module
+import json;    // Import JSON module
+import mathutils;  // Import custom module
+```
+
+### Using Module Functions
+
+Call module functions using dot notation:
+
+```pie
+import http;
+
+int main() {
+    string response = http.get("https://api.example.com");
+    output(response, string);
+    return 0;
+}
+```
+
+### Export Statement
+
+Mark functions as exported to make them available to importers:
+
+```pie
+// In mathutils.pie
+export int square(int x) {
+    return x * x;
+}
+
+export int cube(int x) {
+    return x * x * x;
+}
+
+// Private function (not exported)
+int helper(int x) {
+    return x + 1;
+}
+```
+
+**Usage:**
+```pie
+import mathutils;
+
+int result = mathutils.square(5);  // OK - exported
+// int val = mathutils.helper(5);  // ERROR - not exported
+```
+
+### Module Types
+
+1. **Standard Library Modules** - Built-in modules like `http` and `json`
+2. **User-Defined Modules** - Custom `.pie` files with exported functions
+
+### Module Search Order
+
+1. Standard library (`stdlib/` directory)
+2. Source file directory
+3. Current working directory
+4. User-specified paths
+
+For complete module system documentation, see [Module System Guide](module-system.md).
+
+---
+
+## 11. Comments
 
 ### Single-Line Comments
 

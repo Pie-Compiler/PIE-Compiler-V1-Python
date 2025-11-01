@@ -1,0 +1,66 @@
+// PIE HTTP Module Interface
+// This file defines the high-level PIE interface for HTTP operations
+// The actual implementation is in runtime/pie_http.c
+
+// HTTP Request structure (opaque type - implemented in C)
+// Users interact with this through handler functions
+
+// HTTP Response structure (opaque type - implemented in C)
+// Users interact with this through response methods in handlers
+
+// HTTP Client Functions
+
+// Perform a GET request to the specified URL
+// Returns the response body as a string
+// Example: string data = http.get("https://api.example.com/data");
+string get(string url);
+
+// Perform a POST request with body and optional headers
+// Returns the response body as a string
+// Example: string result = http.post("https://api.example.com/users", "{\"name\":\"Alice\"}", headers);
+string post(string url, string body, dict headers);
+
+// Perform a PUT request with body and optional headers
+// Returns the response body as a string
+string put(string url, string body, dict headers);
+
+// Perform a DELETE request to the specified URL
+// Returns the response body as a string
+string delete(string url);
+
+// HTTP Server Functions
+
+// Start an HTTP server on the specified port
+// The handler function will be called for each incoming request
+// Example:
+//   void my_handler(http.request req, http.response res) {
+//       res.status(200);
+//       res.send("Hello!");
+//   }
+//   http.listen(8080, my_handler);
+void listen(int port, function handler);
+
+// Start an HTTPS server with SSL certificate
+// Example: http.listen_ssl(443, "cert.pem", "key.pem", my_handler);
+void listen_ssl(int port, string cert_file, string key_file, function handler);
+
+// Request Methods (called on http.request object in handler)
+// These are implemented as C functions that operate on the request struct
+
+// Response Methods (called on http.response object in handler)
+// res.status(200);         // Set HTTP status code
+// res.header("Key", "Val"); // Set response header
+// res.send("body");        // Send response body
+
+// HTTP Status Code Constants
+int HTTP_OK = 200;
+int HTTP_CREATED = 201;
+int HTTP_NO_CONTENT = 204;
+int HTTP_BAD_REQUEST = 400;
+int HTTP_UNAUTHORIZED = 401;
+int HTTP_FORBIDDEN = 403;
+int HTTP_NOT_FOUND = 404;
+int HTTP_METHOD_NOT_ALLOWED = 405;
+int HTTP_INTERNAL_ERROR = 500;
+int HTTP_NOT_IMPLEMENTED = 501;
+int HTTP_SERVICE_UNAVAILABLE = 503;

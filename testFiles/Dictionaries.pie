@@ -1,0 +1,42 @@
+//declaring a dictionary
+dict empty={};
+dict student={
+	"name":"Jonathan",
+	"age":20,
+	"registration":"jui-89-i90",
+	"GPA":3.5
+};
+//########### Dictionary Methods #################
+//retreiving details from a dictionary
+string name=dict_get(student,"name");
+
+output("The student is called " + name,string);
+
+int age=dict_get(student,"age");
+
+//update student profile
+string lastname="Doe";
+dict_set(student,"name",(name+" "+lastname));
+
+name=dict_get(student,"name");
+output("The student is called " + name,string);
+
+//add a new key
+dict_set(student,"year",3);
+
+//check if a key exists
+int yearExists=dict_key_exists(student,"year"); //alternative way of writing
+int hoursExists=dict_has_key(student,"hours"); //returns 1 for true, 0 for false
+output("Year Exists: "+yearExists,string);
+output("Hours Exists: "+hoursExists,string);
+
+//deleting a key
+dict_delete(student,"year");
+yearExists=dict_key_exists(student,"year");
+output("Year Exists: "+yearExists,string);
+
+
+//retreiving keys for non-existent keys returns default values
+string size=dict_get(student,"size"); //returns ""
+float height=dict_get(student,"height");//returns 0.0
+output(size,string);

@@ -1,0 +1,109 @@
+// test_mathutils.pie - Example program using the mathutils user-defined module
+
+import mathutils;
+
+int main() {
+    output("=== Testing User-Defined Module: mathutils ===", string);
+    output("", string);
+    
+    // Test square function
+    int num = 5;
+    int sq = mathutils.square(num);
+    output("Square of ", string);
+    output(num, int);
+    output(" = ", string);
+    output(sq, int);
+    output("", string);
+    
+    // Test cube function
+    int cb = mathutils.cube(num);
+    output("Cube of ", string);
+    output(num, int);
+    output(" = ", string);
+    output(cb, int);
+    output("", string);
+    
+    // Test is_even function
+    output("Is ", string);
+    output(num, int);
+    output(" even? ", string);
+    if (mathutils.is_even(num) == 1) {
+        output("Yes", string);
+    } else {
+        output("No", string);
+    }
+    output("", string);
+    
+    // Test factorial function
+    int fact = mathutils.factorial(num);
+    output("Factorial of ", string);
+    output(num, int);
+    output(" = ", string);
+    output(fact, int);
+    output("", string);
+    
+    // Test max and min functions
+    int a = 10;
+    int b = 20;
+    output("Max(", string);
+    output(a, int);
+    output(", ", string);
+    output(b, int);
+    output(") = ", string);
+    output(mathutils.max(a, b), int);
+    output("", string);
+    
+    output("Min(", string);
+    output(a, int);
+    output(", ", string);
+    output(b, int);
+    output(") = ", string);
+    output(mathutils.min(a, b), int);
+    output("", string);
+    
+    // Test increment function
+    output("Increment ", string);
+    output(num, int);
+    output(" = ", string);
+    output(mathutils.increment(num), int);
+    output("", string);
+    
+    // Test power function
+    int base = 2;
+    int exp = 8;
+    output("Power: ", string);
+    output(base, int);
+    output("^", string);
+    output(exp, int);
+    output(" = ", string);
+    output(mathutils.power(base, exp), int);
+    output("", string);
+    
+    // Test is_prime function
+    int test_num = 17;
+    output("Is ", string);
+    output(test_num, int);
+    output(" prime? ", string);
+    if (mathutils.is_prime(test_num) == 1) {
+        output("Yes", string);
+    } else {
+        output("No", string);
+    }
+    output("", string);
+    
+    // Test GCD function
+    int x = 48;
+    int y = 18;
+    output("GCD(", string);
+    output(x, int);
+    output(", ", string);
+    output(y, int);
+    output(") = ", string);
+    output(mathutils.gcd(x, y), int);
+    output("", string);
+    
+    output("", string);
+    output("=== All tests complete! ===", string);
+    
+    return 0;
+}

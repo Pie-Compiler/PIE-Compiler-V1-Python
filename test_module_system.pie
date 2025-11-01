@@ -1,0 +1,21 @@
+// Test basic import and module function calls
+// This tests the module system parser and semantic analysis
+
+import http;
+import json;
+
+int main() {
+    output("Testing module system", string);
+    
+    // Note: These won't actually work yet since we don't have the C implementations
+    // But the compiler should parse and validate them correctly
+    
+    // Test module function calls
+    // string response = http.get("https://example.com");
+    // json.object obj = json.create_object();
+    // json.set_string(obj, "test", "value");
+    
+    output("Module system test complete", string);
+    
+    return 0;
+}

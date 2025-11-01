@@ -1,0 +1,21 @@
+//a user-defined module
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int subtract(int a, int b) {
+    return a - b;
+}
+
+string name="UserDefinedModule";
+
+int version=1; //won't be exported
+
+//explicit export of functions
+//user-defined is the module name
+export:user-defined={ 
+  function add,
+  function subtract,
+  string name
+}

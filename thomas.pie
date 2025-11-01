@@ -1,0 +1,5 @@
+int num=4;
+string name="Thomas";
+
+output(name,string);
+output(num,int);

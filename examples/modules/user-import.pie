@@ -1,0 +1,9 @@
+import user_defined from "./user-defined.pie";
+
+output("Using user-defined module", string);
+output("Module Name: " + user_defined.name, string);
+int sum = user_defined.add(10, 5);
+int difference = user_defined.subtract(10, 5);
+output("Sum (10 + 5): " + sum, int);
+output("Difference (10 - 5): " + difference, int);
+

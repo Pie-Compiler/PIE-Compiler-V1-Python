@@ -420,10 +420,11 @@ PIE includes a built-in regular expression engine using Kleene syntax with NFA-b
 |----------|-------------|---------|
 | Literal | Match specific character | `a` matches "a" |
 | `.` | Concatenation | `a.b` matches "ab" |
-| `|` | OR (alternation) | `a|b` matches "a" or "b" |
+| `\|` | OR (alternation) | `a\|b` matches "a" or "b" |
 | `*` | Kleene star (0 or more) | `a*` matches "", "a", "aa", ... |
 | `+` | Positive closure (1 or more) | `a+` matches "a", "aa", ... |
-| `()` | Grouping | `(a|b).c` matches "ac" or "bc" |
+| `()` | Grouping | `(a\|b).c` matches "ac" or "bc" |
+
 
 #### Length Constraints
 
@@ -621,6 +622,43 @@ if (log != null) {
 }
 ```
 
+#### Writing Expressions
+
+The `file_write` function accepts any expression that evaluates to a string. Numbers (int, float) are automatically converted to strings when used in concatenation expressions.
+
+```pie
+file f = file_open("data.txt", "w");
+
+if (f != null) {
+    // String literals
+    file_write(f, "Hello World\n");
+    
+    // String variables
+    string name = "PIE";
+    file_write(f, "Language: " + name + "\n");
+    
+    // Integer expressions (auto-converted to string)
+    int count = 42;
+    file_write(f, "Count: " + count + "\n");
+    
+    // Float expressions (auto-converted to string)
+    float pi = 3.14159;
+    file_write(f, "Value of PI: " + pi + "\n");
+    
+    // Function calls that return strings
+    int timestamp = time_now();
+    string timeStr = time_to_local(timestamp);
+    file_write(f, "Time: " + timeStr + "\n");
+    
+    // Complex expressions with arithmetic
+    int x = 10;
+    int y = 20;
+    file_write(f, "Sum: " + (x + y) + "\n");
+    
+    file_close(f);
+}
+```
+
 ### Practical Examples
 
 #### Data Export
@@ -632,13 +670,12 @@ float[] grades = [95.5, 87.3, 91.2];
 
 file f = file_open("grades.txt", "w");
 
-file_write(f, "=== Student Grades ===");
+file_write(f, "=== Student Grades ===\n");
 
 for (int i = 0; i < arr_size(names); i++) {
-    string line = names[i] + ": ";
-    file_write(f, line);
-    // Note: file_write only accepts strings
-    // Convert numbers to strings if needed
+    // file_write accepts any expression that evaluates to a string
+    // Numbers are automatically converted to strings in concatenation expressions
+    file_write(f, names[i] + ": " + grades[i] + "\n");
 }
 
 file_close(f);

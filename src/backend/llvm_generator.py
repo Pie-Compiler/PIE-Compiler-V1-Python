@@ -1,13 +1,14 @@
 import llvmlite.ir as ir
 import llvmlite.binding as llvm
 from frontend.visitor import Visitor
-from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration, Identifier, FunctionCallStatement
+from frontend.ast import Declaration, FunctionDefinition, FunctionCall, SubscriptAccess, ArrayDeclaration, Identifier, FunctionCallStatement, ImportStatement
 from frontend.types import TypeInfo
 
 class LLVMCodeGenerator(Visitor):
-    def __init__(self, symbol_table, debug=True):
+    def __init__(self, symbol_table, imported_modules=None, debug=True):
         self.debug = debug
         self.symbol_table = symbol_table
+        self.imported_modules = imported_modules or {}
         self.module = ir.Module(name="main_module")
         self._initialize_llvm()
         self.current_function = None
@@ -19,6 +20,7 @@ class LLVMCodeGenerator(Visitor):
         self.deferred_initializers = []  # (var_name, initializer_node) for function call initializers
         self._define_structs()
         self._declare_runtime_functions()
+        self._declare_module_functions()  # Declare functions from imported modules
 
     def _initialize_llvm(self):
         llvm.initialize_native_target()
@@ -270,6 +272,215 @@ class LLVMCodeGenerator(Visitor):
         # Variable validation functions
         ir.Function(self.module, ir.FunctionType(int_type, [ir.IntType(8).as_pointer()]), name="is_variable_defined")
         ir.Function(self.module, ir.FunctionType(int_type, [ir.IntType(8).as_pointer()]), name="is_variable_null")
+    
+    def _declare_module_functions(self):
+        """Declare external functions from imported modules."""
+        for namespace, module_info in self.imported_modules.items():
+            # Handle user-defined modules differently
+            if module_info.is_user_module:
+                self._generate_user_module_functions(namespace, module_info)
+            else:
+                # For stdlib modules, just declare external functions
+                for func in module_info.get_functions():
+                    full_name = f"{namespace}.{func['name']}"
+                    c_name = full_name.replace('.', '_')  # http.get -> http_get
+                    
+                    # Check if already declared
+                    try:
+                        self.module.get_global(c_name)
+                        continue  # Already declared
+                    except KeyError:
+                        pass  # Not declared yet
+                    
+                    # Parse signature and create LLVM function type
+                    signature = func['signature']
+                    if '(' not in signature:
+                        continue  # Skip invalid signatures
+                    
+                    return_type_str, params_str = signature.split('(', 1)
+                    return_type_str = return_type_str.strip()
+                    params_str = params_str.rstrip(')')
+                    
+                    # Convert return type
+                    llvm_return_type = self._module_type_to_llvm(return_type_str)
+                    
+                    # Parse parameters
+                    llvm_param_types = []
+                    if params_str.strip():
+                        param_parts = params_str.split(',')
+                        for param in param_parts:
+                            param = param.strip()
+                            if not param:
+                                continue
+                            # Expected format: "type name" or just "type"
+                            parts = param.split()
+                            if parts:
+                                param_type = ' '.join(parts[:-1]) if len(parts) > 1 else parts[0]
+                                llvm_param_types.append(self._module_type_to_llvm(param_type))
+                    
+                    # Declare the function
+                    func_type = ir.FunctionType(llvm_return_type, llvm_param_types)
+                    ir.Function(self.module, func_type, name=c_name)
+    
+    def _generate_user_module_functions(self, namespace, module_info):
+        """Generate LLVM code for user-defined module functions."""
+        # We need to generate ALL functions from the module (not just exported ones)
+        # because exported functions may call private functions
+        
+        # First, parse the module to get all function definitions
+        from frontend.parser import Parser
+        
+        with open(module_info.pie_file, 'r') as f:
+            source_code = f.read()
+        
+        parser = Parser()
+        try:
+            module_ast = parser.parse(source_code)
+        except Exception as e:
+            return  # Skip if can't parse
+        
+        if not module_ast or not module_ast.statements:
+            return
+        
+        # IMPORTANT: Process transitive dependencies first
+        # If this module imports other user modules, we need to generate their functions first
+        for stmt in module_ast.statements:
+            if isinstance(stmt, ImportStatement):
+                import_name = stmt.module_name
+                # Check if this is a user-defined module we've imported
+                if import_name in self.imported_modules:
+                    imported_module = self.imported_modules[import_name]
+                    if imported_module.is_user_module:
+                        # Recursively generate this module's functions if not already done
+                        try:
+                            # Check if any function from this module already exists
+                            test_funcs = imported_module.metadata.get('exported_functions', {})
+                            if test_funcs:
+                                first_func = list(test_funcs.keys())[0]
+                                c_name = f"{import_name}_{first_func}"
+                                self.module.get_global(c_name)
+                                # Already generated, skip
+                        except KeyError:
+                            # Not generated yet, generate it now
+                            self._generate_user_module_functions(import_name, imported_module)
+        
+        # Collect all function definitions
+        all_functions = []
+        exported_function_names = set(module_info.metadata.get('exported_functions', {}).keys())
+        
+        for stmt in module_ast.statements:
+            if isinstance(stmt, FunctionDefinition):
+                all_functions.append((stmt, stmt.name in exported_function_names))
+        
+        # Generate code for all functions
+        for func_ast_node, is_exported in all_functions:
+            func_name = func_ast_node.name
+            
+            # Determine the final name
+            if is_exported:
+                full_name = f"{namespace}.{func_name}"
+                c_name = full_name.replace('.', '_')
+            else:
+                # Private functions get a prefixed name to avoid conflicts
+                full_name = f"_{namespace}_{func_name}"
+                c_name = full_name
+            
+            # Check if already generated
+            try:
+                self.module.get_global(c_name)
+                continue
+            except KeyError:
+                pass
+            
+            # Save current state
+            saved_builder = getattr(self, 'builder', None)
+            saved_function = getattr(self, 'current_function', None)
+            saved_variables = getattr(self, 'llvm_var_table', {}).copy()
+            saved_generating_module = getattr(self, '_current_generating_module', None)
+            
+            # Set the current module context
+            self._current_generating_module = namespace
+            
+            # For exported functions, use the namespaced lookup
+            # For private functions, look up with the prefixed name
+            if is_exported:
+                lookup_name = f"{namespace}.{func_name}"
+                self._current_module_function_name = lookup_name
+                self._current_function_codegen_name = c_name
+            else:
+                # Add private function to symbol table temporarily
+                # Extract type info from AST
+                param_types = []
+                params = []
+                for param in func_ast_node.params:
+                    if hasattr(param.param_type, 'type_name'):
+                        type_str = param.param_type.type_name
+                        if param.param_type.is_array:
+                            type_str += '[]'
+                    else:
+                        type_str = str(param.param_type)
+                    param_types.append(type_str)
+                    params.append((type_str, param.name))
+                
+                if hasattr(func_ast_node.return_type, 'type_name'):
+                    return_type = func_ast_node.return_type.type_name
+                    if func_ast_node.return_type.is_array:
+                        return_type += '[]'
+                else:
+                    return_type = str(func_ast_node.return_type)
+                
+                # Temporarily add to symbol table with original name
+                self.symbol_table.add_symbol(
+                    func_name,
+                    'function',
+                    return_type=return_type,
+                    params=params,
+                    param_types=param_types
+                )
+                self._current_module_function_name = None
+                self._current_function_codegen_name = c_name
+            
+            # Generate the function
+            self.visit(func_ast_node)
+            
+            # Clean up
+            self._current_module_function_name = None
+            self._current_function_codegen_name = None
+            self._current_generating_module = saved_generating_module
+            
+            # Restore state
+            if saved_builder is not None:
+                self.builder = saved_builder
+            if saved_function is not None:
+                self.current_function = saved_function
+            self.llvm_var_table = saved_variables
+    
+    def _module_type_to_llvm(self, type_str):
+        """Convert a module type string to LLVM type."""
+        type_str = type_str.strip()
+        
+        # Handle module-specific types
+        if type_str.startswith('json.'):
+            # json.object and json.array are opaque pointers
+            return ir.IntType(8).as_pointer()  # void*
+        elif type_str.startswith('http.'):
+            # http.request and http.response are opaque pointers
+            return ir.IntType(8).as_pointer()  # void*
+        
+        # Handle basic PIE types
+        type_mapping = {
+            'void': ir.VoidType(),
+            'int': ir.IntType(32),
+            'float': ir.DoubleType(),
+            'string': ir.IntType(8).as_pointer(),
+            'char': ir.IntType(8),
+            'bool': ir.IntType(1),
+            'file': ir.IntType(64),  # FILE* as i64
+            'dict': self.dict_type if hasattr(self, 'dict_type') else ir.IntType(8).as_pointer(),
+            'function': ir.IntType(8).as_pointer(),  # Function pointer
+        }
+        
+        return type_mapping.get(type_str, ir.IntType(8).as_pointer())
 
         # String utility functions
         ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_contains")
@@ -492,22 +703,37 @@ class LLVMCodeGenerator(Visitor):
                                 if result_array is not None:  # Only store if we have a result
                                     self.builder.store(result_array, self.global_vars[name])
             
-            # Process deferred initializers (for global variables that depend on function calls or other variables)
-            for var_name, initializer_node in self.deferred_initializers:
-                init_val = self.visit(initializer_node)
-                # Load the value if it's a pointer to another variable
-                if isinstance(init_val.type, ir.PointerType):
-                    global_var_type = self.global_vars[var_name].type.pointee
-                    if init_val.type.pointee == global_var_type:
-                        init_val = self.builder.load(init_val)
-                self.builder.store(init_val, self.global_vars[var_name])
-            
-            # Process all non-function statements (declarations have already been processed,
-            # but we need to process executable statements like loops, conditionals, function calls)
+            # Process all non-function statements in their original order
+            # This ensures that statements execute in the order they were written
             for stmt in ast.statements:
                 if not isinstance(stmt, FunctionDefinition):
-                    # Skip declarations that were already processed
-                    if not isinstance(stmt, (Declaration, ArrayDeclaration)):
+                    # For declarations with deferred initializers, process them now
+                    if isinstance(stmt, Declaration):
+                        # Check if this declaration has a deferred initializer
+                        deferred = None
+                        for i, (var_name, initializer_node) in enumerate(self.deferred_initializers):
+                            if var_name == stmt.identifier:
+                                deferred = (i, var_name, initializer_node)
+                                break
+                        
+                        if deferred:
+                            # Process the deferred initializer now
+                            i, var_name, initializer_node = deferred
+                            init_val = self.visit(initializer_node)
+                            # Load the value if it's a pointer to another variable
+                            if isinstance(init_val.type, ir.PointerType):
+                                global_var_type = self.global_vars[var_name].type.pointee
+                                if init_val.type.pointee == global_var_type:
+                                    init_val = self.builder.load(init_val)
+                            self.builder.store(init_val, self.global_vars[var_name])
+                            # Remove from deferred list
+                            self.deferred_initializers.pop(i)
+                        # Skip other declaration processing since globals were already created
+                    elif isinstance(stmt, ArrayDeclaration):
+                        # Skip array declarations since they were already processed
+                        pass
+                    else:
+                        # Process other statements (function calls, loops, etc.)
                         self.visit(stmt)
             
             # Return 0 from main
@@ -541,6 +767,16 @@ class LLVMCodeGenerator(Visitor):
         # This method is called from the old code path, but we handle program generation differently now
         # Just pass through to avoid issues
         pass
+    
+    def visit_importstatement(self, node):
+        """Import statements are handled during semantic analysis and module declaration."""
+        # No code generation needed for imports - functions are already declared
+        return None
+    
+    def visit_exportstatement(self, node):
+        """Export statements wrap function/variable definitions."""
+        # Just visit the wrapped statement
+        return self.visit(node)
 
     def visit_block(self, node):
         # Each block has its own symbol table scope, managed by the semantic analyzer.
@@ -550,13 +786,23 @@ class LLVMCodeGenerator(Visitor):
 
     def visit_functiondefinition(self, node):
         # 1. Get function type from symbol table (or construct it)
-        func_symbol = self.symbol_table.lookup_function(node.name)
+        # Check if this is a user module function being generated
+        lookup_name = node.name
+        if hasattr(self, '_current_module_function_name') and self._current_module_function_name:
+            lookup_name = self._current_module_function_name
+        
+        func_symbol = self.symbol_table.lookup_function(lookup_name)
         return_type = self.get_llvm_type(func_symbol['return_type'])
         param_types = [self.get_llvm_type(pt) for pt in func_symbol['param_types']]
         func_type = ir.FunctionType(return_type, param_types)
 
         # 2. Declare the function in the module
-        self.current_function = ir.Function(self.module, func_type, name=node.name)
+        # Use the codegen name if specified (for user module functions)
+        func_name = node.name
+        if hasattr(self, '_current_function_codegen_name') and self._current_function_codegen_name:
+            func_name = self._current_function_codegen_name
+        
+        self.current_function = ir.Function(self.module, func_type, name=func_name)
 
         # 3. Create entry block and IR builder
         entry_block = self.current_function.append_basic_block(name='entry')
@@ -1664,10 +1910,49 @@ class LLVMCodeGenerator(Visitor):
                     arg_val = self._load_if_pointer(raw_arg_val)
                 call_args.append(arg_val)
         return self.builder.call(c_func, call_args, f'{func_name}_call')
+    
+    def visit_module_function_call(self, node):
+        """Handle calls to module functions like http.get() or json.parse()"""
+        # Convert module.function to module_function (C name)
+        c_name = node.name.replace('.', '_')
+        
+        # Get the function from the module
+        try:
+            func = self.module.get_global(c_name)
+        except KeyError:
+            raise Exception(f"Module function '{node.name}' not declared. C name: {c_name}")
+        
+        # Process arguments
+        args = []
+        for i, arg in enumerate(node.args):
+            arg_val = self.visit(arg)
+            
+            # Load from pointer if needed, but be careful with strings and opaque types
+            if i < len(func.args):
+                expected_type = func.args[i].type
+                # If expecting a pointer and we have a pointer, keep it
+                # If expecting a value and we have a pointer, load it
+                if isinstance(arg_val.type, ir.PointerType):
+                    if isinstance(expected_type, ir.PointerType):
+                        args.append(arg_val)  # Both pointers, keep as is
+                    else:
+                        args.append(self.builder.load(arg_val))  # Load the value
+                else:
+                    args.append(arg_val)  # Already a value
+            else:
+                args.append(self._load_if_pointer(arg_val))
+        
+        # Call the module function
+        result_name = f'{c_name}_result' if not isinstance(func.function_type.return_type, ir.VoidType) else ''
+        return self.builder.call(func, args, result_name)
 
     def visit_functioncall(self, node):
         if node.name.startswith('arr_'):
             return self.visit_array_function_call(node)
+        
+        # Check if this is a module function call (contains '.')
+        if '.' in node.name:
+            return self.visit_module_function_call(node)
         
         # Special handling for dict_get with type inference
 
@@ -1816,6 +2101,40 @@ class LLVMCodeGenerator(Visitor):
         }
         
         actual_name = function_name_map.get(node.name, node.name)
+        
+        # If we're currently generating a user module function and calling another function,
+        # check if it's a function from the same module
+        if hasattr(self, '_current_generating_module') and self._current_generating_module:
+            # Check if it's calling itself (recursion) - use the current function being generated
+            if hasattr(self, '_current_function_codegen_name') and self._current_function_codegen_name:
+                # Extract the function name from the codegen name
+                # e.g., "mathutils_factorial" -> check if node.name == "factorial"
+                module_prefix = self._current_generating_module.replace('.', '_') + '_'
+                if self._current_function_codegen_name.startswith(module_prefix):
+                    func_short_name = self._current_function_codegen_name[len(module_prefix):]
+                    if node.name == func_short_name:
+                        # Recursive call - use the full codegen name
+                        actual_name = self._current_function_codegen_name
+                elif self._current_function_codegen_name == f"_{self._current_generating_module}_{node.name}":
+                    # Private function calling itself
+                    actual_name = self._current_function_codegen_name
+            
+            # If not a self-call, try to find the function with the module prefix
+            if actual_name == function_name_map.get(node.name, node.name):
+                prefixed_name = f"_{self._current_generating_module}_{actual_name}"
+                try:
+                    self.module.get_global(prefixed_name)
+                    actual_name = prefixed_name
+                except KeyError:
+                    # Not a module-local function, try exported function
+                    exported_name = f"{self._current_generating_module}_{actual_name}"
+                    try:
+                        self.module.get_global(exported_name)
+                        actual_name = exported_name
+                    except KeyError:
+                        # Not a module function, use normal name
+                        pass
+        
         func = self.module.get_global(actual_name)
         if func is None:
             raise Exception(f"Unknown function referenced: {node.name} (mapped to {actual_name})")

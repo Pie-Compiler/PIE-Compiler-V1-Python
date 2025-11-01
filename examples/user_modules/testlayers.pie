@@ -1,0 +1,6 @@
+import mathutils;
+
+// Test square function
+export int hex(int num) {
+    return mathutils.square(num)*mathutils.square(num);
+}

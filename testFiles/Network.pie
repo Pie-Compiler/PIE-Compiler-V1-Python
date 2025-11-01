@@ -1,0 +1,27 @@
+// Create socket
+socket sock = tcp_socket();
+
+// Connect to server
+int connected = tcp_connect(sock, "example.com", 80);
+
+if (connected == 0) {
+    output("Connected!", string);
+    
+    // Send HTTP request
+    tcp_send(sock, "GET / HTTP/1.1\r\n");
+    tcp_send(sock, "Host: example.com\r\n");
+    tcp_send(sock, "\r\n");
+    
+    // Receive response
+    string buffer = "";
+    int received = tcp_recv(sock, buffer, 1024);
+    
+    if (received > 0) {
+        output("Response:", string);
+        output(buffer, string);
+    }
+    
+    tcp_close(sock);
+} else {
+    output("Connection failed", string);
+}

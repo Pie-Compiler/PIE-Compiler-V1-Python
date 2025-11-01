@@ -1,0 +1,56 @@
+//This is a test file for reading and writing to text files
+//Demonstrates file_write with various expression types
+
+//writing to a file with different expression types
+file f = file_open("output.txt", "w");//open file in writing mode
+
+if (f != null) {
+    // String literals
+    file_write(f, "Line 1: Hello, World! \n");
+    file_write(f, "Line 2: PIE language \n");
+    file_write(f, "Line 3: File I/O \n");
+    
+    // String concatenation with variables
+    string name = "PIE Compiler";
+    file_write(f, "Project: " + name + "\n");
+    
+    // Integer expressions (auto-converted to string)
+    int version = 1;
+    file_write(f, "Version: " + version + "\n");
+    
+    // Float expressions (auto-converted to string)
+    float progress = 95.5;
+    file_write(f, "Progress: " + progress + "%\n");
+    
+    // Arithmetic expressions
+    int x = 10;
+    int y = 20;
+    file_write(f, "Sum of " + x + " and " + y + " is " + (x + y) + "\n");
+    
+    file_close(f);
+    output("File written successfully with various expressions", string);
+}
+
+//reading from a file
+
+f = file_open("output.txt", "r"); //open a file in reading mode
+
+if (f != null) {
+    string content = file_read_all(f);
+    file_close(f);
+    
+    output("File contents:", string);
+    output(content, string);
+}
+
+
+file logFile = file_open("log.txt", "a"); //open a file in append mode
+
+if (logFile != null) {
+    int timestamp = time_now();
+    string timeStr = time_to_local(timestamp);
+    
+    // Complex expression with function call result
+    file_write(logFile, "[" + timeStr + "] Event occurred\n");
+    file_close(logFile);
+}

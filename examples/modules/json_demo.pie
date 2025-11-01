@@ -1,0 +1,120 @@
+// JSON Processing Example
+// Demonstrates various JSON operations
+// NOTE: This is a design example - full implementation pending
+
+import json;
+
+int main() {
+    output("=== PIE JSON Module Example ===", string);
+    output("", string);
+    
+    // Example 1: Creating JSON objects
+    output("1. Creating JSON objects", string);
+    
+    json.object person = json.create_object();
+    json.set_string(person, "name", "Alice Smith");
+    json.set_int(person, "age", 30);
+    json.set_string(person, "city", "San Francisco");
+    json.set_bool(person, "active", true);
+    
+    string person_str = json.stringify(person);
+    output("Person: " + person_str, string);
+    
+    output("", string);
+    
+    // Example 2: Creating JSON arrays
+    output("2. Creating JSON arrays", string);
+    
+    json.array hobbies = json.create_array();
+    json.array_push_string(hobbies, "Reading");
+    json.array_push_string(hobbies, "Coding");
+    json.array_push_string(hobbies, "Hiking");
+    
+    string hobbies_str = json.stringify(hobbies);
+    output("Hobbies: " + hobbies_str, string);
+    
+    output("", string);
+    
+    // Example 3: Nested objects
+    output("3. Working with nested objects", string);
+    
+    json.object address = json.create_object();
+    json.set_string(address, "street", "123 Main St");
+    json.set_string(address, "city", "San Francisco");
+    json.set_string(address, "zip", "94102");
+    
+    json.object full_person = json.create_object();
+    json.set_string(full_person, "name", "Bob Johnson");
+    json.set_int(full_person, "age", 25);
+    // TODO: Need json.set_object() function
+    // json.set_object(full_person, "address", address);
+    
+    string full_person_str = json.stringify(full_person);
+    output("Full person: " + full_person_str, string);
+    
+    output("", string);
+    
+    // Example 4: Parsing JSON strings
+    output("4. Parsing JSON strings", string);
+    
+    string json_text = "{\"product\":\"Laptop\",\"price\":999,\"in_stock\":true}";
+    json.object product = json.parse(json_text);
+    
+    if (product != null) {
+        string prod_name = json.get_string(product, "product");
+        int price = json.get_int(product, "price");
+        bool in_stock = json.get_bool(product, "in_stock");
+        
+        output("Product: " + prod_name, string);
+        output("Price: $" + price, int);
+        if (in_stock) {
+            output("Status: In Stock", string);
+        } else {
+            output("Status: Out of Stock", string);
+        }
+    }
+    
+    output("", string);
+    
+    // Example 5: Arrays of objects
+    output("5. Working with arrays of objects", string);
+    
+    json.array products = json.create_array();
+    
+    json.object prod1 = json.create_object();
+    json.set_string(prod1, "name", "Laptop");
+    json.set_int(prod1, "price", 999);
+    
+    json.object prod2 = json.create_object();
+    json.set_string(prod2, "name", "Mouse");
+    json.set_int(prod2, "price", 25);
+    
+    json.object prod3 = json.create_object();
+    json.set_string(prod3, "name", "Keyboard");
+    json.set_int(prod3, "price", 75);
+    
+    json.array_push_object(products, prod1);
+    json.array_push_object(products, prod2);
+    json.array_push_object(products, prod3);
+    
+    int total = 0;
+    int num_products = json.array_size(products);
+    
+    output("Product catalog (" + num_products + " items):", string);
+    for (int i = 0; i < num_products; i++) {
+        json.object p = json.array_get_object(products, i);
+        if (p != null) {
+            string pname = json.get_string(p, "name");
+            int pprice = json.get_int(p, "price");
+            output("  - " + pname + ": $" + pprice, string);
+            total = total + pprice;
+        }
+    }
+    
+    output("Total value: $" + total, int);
+    
+    output("", string);
+    output("=== Example Complete ===", string);
+    
+    return 0;
+}

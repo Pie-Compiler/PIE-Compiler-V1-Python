@@ -2,9 +2,11 @@ from frontend.symbol_table import SymbolTable, TypeChecker
 from frontend.visitor import Visitor
 from frontend.ast import *
 from frontend.types import TypeInfo, canonicalize
+from frontend.module_resolver import ModuleResolver, ModuleNotFoundError, ModuleError
+from pathlib import Path
 
 class SemanticAnalyzer(Visitor):
-    def __init__(self, symbol_table):
+    def __init__(self, symbol_table, module_resolver=None):
         self.symbol_table = symbol_table
         self.type_checker = TypeChecker(self.symbol_table)
         self.errors = []
@@ -12,6 +14,8 @@ class SemanticAnalyzer(Visitor):
         self.error_set = set()
         self.current_function = None
         self.in_switch = False
+        self.module_resolver = module_resolver or ModuleResolver()
+        self.imported_modules = {}  # Track imported modules: {namespace: ModuleInfo}
         self._register_builtin_functions()
 
     def _register_builtin_functions(self):
@@ -93,9 +97,16 @@ class SemanticAnalyzer(Visitor):
             self.error_set.add(error_msg)
             self.errors.append(error_msg)
 
-    def analyze(self, ast):
+    def analyze(self, ast, source_file=None):
         if not ast:
             return False, None
+        
+        # Store source file directory for module resolution
+        if source_file:
+            from pathlib import Path
+            self.source_file_dir = Path(source_file).parent
+        else:
+            self.source_file_dir = None
 
         self.visit(ast)
 
@@ -106,6 +117,200 @@ class SemanticAnalyzer(Visitor):
         for stmt in node.statements:
             self.visit(stmt)
         return None
+    
+    def visit_importstatement(self, node):
+        """Process import statements and register module symbols."""
+        try:
+            # Get source file directory for relative imports
+            source_file_dir = getattr(self, 'source_file_dir', None)
+            
+            # Resolve the module
+            module_info = self.module_resolver.resolve_module(node.module_name, source_file_dir)
+            node.resolved_path = module_info.pie_file
+            node.module_info = module_info
+            
+            # Register module namespace
+            namespace = node.alias or node.module_name
+            self.imported_modules[namespace] = module_info
+            
+            # If it's a user-defined module, parse it to extract exports
+            if module_info.is_user_module:
+                self._process_user_module(module_info, namespace)
+            else:
+                # For stdlib modules, use metadata
+                # Register module functions in symbol table with namespace
+                for func in module_info.get_functions():
+                    full_name = f"{namespace}.{func['name']}"
+                    self._register_module_function(full_name, func)
+                
+                # Register module types
+                for type_def in module_info.get_types():
+                    type_name = f"{namespace}.{type_def['name']}"
+                    self.symbol_table.add_symbol(
+                        type_name,
+                        'type',
+                        type_kind=type_def['type']
+                    )
+                
+        except (ModuleNotFoundError, ModuleError) as e:
+            self.add_error(str(e))
+        
+        return None
+    
+    def _process_user_module(self, module_info, namespace):
+        """
+        Parse a user-defined .pie module and extract exported functions.
+        
+        Args:
+            module_info: ModuleInfo object for the user module
+            namespace: Namespace to use for imported symbols
+        """
+        from frontend.parser import Parser
+        
+        # Read the module file
+        with open(module_info.pie_file, 'r') as f:
+            source_code = f.read()
+        
+        # Create a new parser and parse the module
+        parser = Parser()
+        try:
+            module_ast = parser.parse(source_code)
+        except Exception as e:
+            self.add_error(f"Failed to parse user module {module_info.name}: {e}")
+            return
+        
+        if not module_ast or not module_ast.statements:
+            self.add_error(f"User module {module_info.name} has no statements")
+            return
+        
+        # FIRST: Process any imports in this module (transitive dependencies)
+        # This ensures that if testlayers imports mathutils, mathutils gets processed
+        module_dir = Path(module_info.pie_file).parent
+        for stmt in module_ast.statements:
+            if isinstance(stmt, ImportStatement):
+                import_name = stmt.module_name
+                # Only process if not already imported
+                if import_name not in self.imported_modules:
+                    try:
+                        # Resolve the transitive import
+                        transitive_module_info = self.module_resolver.resolve_module(import_name, module_dir)
+                        self.imported_modules[import_name] = transitive_module_info
+                        
+                        # If it's also a user module, recursively process it
+                        if transitive_module_info.is_user_module:
+                            self._process_user_module(transitive_module_info, import_name)
+                        else:
+                            # For stdlib modules, register functions
+                            for func in transitive_module_info.get_functions():
+                                full_name = f"{import_name}.{func['name']}"
+                                self._register_module_function(full_name, func)
+                            # Register module types
+                            for type_def in transitive_module_info.get_types():
+                                type_name = f"{import_name}.{type_def['name']}"
+                                self.symbol_table.add_symbol(
+                                    type_name,
+                                    'type',
+                                    type_kind=type_def['type']
+                                )
+                    except (ModuleNotFoundError, ModuleError) as e:
+                        self.add_error(f"Failed to import transitive dependency {import_name} from {module_info.name}: {e}")
+        
+        # SECOND: Extract exported functions and register them (NO semantic analysis on module)
+        for stmt in module_ast.statements:
+            if isinstance(stmt, FunctionDefinition) and stmt.is_exported:
+                # Register the exported function in the symbol table
+                full_name = f"{namespace}.{stmt.name}"
+                
+                # Build parameter list
+                params = []
+                param_types = []
+                for param in stmt.params:
+                    # Extract type string from TypeSpecifier
+                    if hasattr(param.param_type, 'type_name'):
+                        type_str = param.param_type.type_name
+                        if param.param_type.is_array:
+                            type_str += '[]'
+                    else:
+                        type_str = str(param.param_type)
+                    
+                    params.append((type_str, param.name))  # Store as tuple (type, name)
+                    param_types.append(type_str)
+                
+                # Get return type
+                if hasattr(stmt.return_type, 'type_name'):
+                    return_type = stmt.return_type.type_name
+                    if stmt.return_type.is_array:
+                        return_type += '[]'
+                else:
+                    return_type = str(stmt.return_type)
+                
+                self.symbol_table.add_symbol(
+                    full_name,
+                    'function',
+                    return_type=return_type,
+                    params=params,
+                    param_types=param_types,
+                    is_module_function=True,
+                    is_user_module_function=True,
+                    module_ast_node=stmt  # Store the AST node for code generation
+                )
+                
+                # Also store the function in module metadata for later access
+                if 'exported_functions' not in module_info.metadata:
+                    module_info.metadata['exported_functions'] = {}
+                module_info.metadata['exported_functions'][stmt.name] = stmt
+    
+    def _register_module_function(self, full_name, func_metadata):
+        """Register a module function in the symbol table."""
+        # Parse signature: "string(string url, string body)"
+        signature = func_metadata['signature']
+        
+        # Simple signature parsing - expects format: "return_type(param_type param_name, ...)"
+        if '(' not in signature:
+            self.add_error(f"Invalid function signature in module: {signature}")
+            return
+        
+        return_type_str, params_str = signature.split('(', 1)
+        return_type = return_type_str.strip()
+        params_str = params_str.rstrip(')')
+        
+        params = []
+        param_types = []
+        
+        if params_str.strip():
+            # Split by comma and parse each parameter
+            param_parts = params_str.split(',')
+            for param in param_parts:
+                param = param.strip()
+                if not param:
+                    continue
+                # Expected format: "type name"
+                parts = param.split()
+                if len(parts) >= 2:
+                    param_type = ' '.join(parts[:-1])  # Handle "json.object" type
+                    param_name = parts[-1]
+                    params.append({'type': param_type, 'name': param_name})
+                    param_types.append(param_type)
+                elif len(parts) == 1:
+                    # Just type, generate a name
+                    param_type = parts[0]
+                    param_name = f"arg{len(params)}"
+                    params.append({'type': param_type, 'name': param_name})
+                    param_types.append(param_type)
+        
+        self.symbol_table.add_symbol(
+            full_name,
+            'function',
+            return_type=return_type,
+            params=params,
+            param_types=param_types,
+            is_module_function=True
+        )
+    
+    def visit_exportstatement(self, node):
+        """Export statements are handled during parsing - just visit the wrapped statement."""
+        # The is_exported flag has already been set on the node
+        return self.visit(node)
 
     def visit_declaration(self, node):
         var_type_name = node.var_type.type_name
@@ -274,6 +479,11 @@ class SemanticAnalyzer(Visitor):
         return node.element_type
 
     def visit_functiondefinition(self, node):
+        # Skip if this is a user module function definition being visited during module import
+        # (it's already been registered)
+        if hasattr(self, '_skip_function_definitions') and self._skip_function_definitions:
+            return None
+            
         if self.current_function:
             self.add_error("Nested function definitions are not allowed.")
             return None
@@ -367,10 +577,43 @@ class SemanticAnalyzer(Visitor):
             return 'KEYWORD_FLOAT'
         self.add_error(f"Unknown array function '{func_name}'")
         return None
+    
+    def visit_module_function_call(self, node):
+        """Handle calls to module functions like http.get()"""
+        # Function name contains '.' - it's a module function
+        function_symbol = self.symbol_table.lookup_function(node.name)
+        
+        if not function_symbol:
+            # Module might not be imported
+            module_namespace = node.name.split('.')[0]
+            if module_namespace not in self.imported_modules:
+                self.add_error(f"Module '{module_namespace}' not imported. Did you forget 'import {module_namespace};'?")
+            else:
+                self.add_error(f"Undefined module function: '{node.name}'")
+            return None
+        
+        param_types = function_symbol.get('param_types', [])
+        if len(node.args) != len(param_types):
+            self.add_error(f"Incorrect number of arguments for function '{node.name}'. Expected {len(param_types)}, got {len(node.args)}.")
+        
+        # Type check arguments
+        for i, arg_expr in enumerate(node.args):
+            arg_type = self.visit(arg_expr)
+            if i < len(param_types):
+                param_type = param_types[i]
+                # For module functions, we're more lenient with type checking for now
+                # since we might have opaque types like json.object
+                # TODO: Improve type checking for module types
+        
+        return function_symbol.get('return_type')
 
     def visit_functioncall(self, node):
         if node.name.startswith('arr_'):
             return self.visit_array_function_call(node)
+        
+        # Check if this is a module function call (contains '.')
+        if '.' in node.name:
+            return self.visit_module_function_call(node)
         
         # Special handling for dict_get with type inference
 

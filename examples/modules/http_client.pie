@@ -1,0 +1,93 @@
+// HTTP Client Example
+// Demonstrates making HTTP requests and parsing JSON responses
+// NOTE: This is a design example - full implementation pending
+
+import http;
+import json;
+
+int main() {
+    output("=== PIE HTTP Client Example ===", string);
+    output("", string);
+    
+    // Example 1: Simple GET request
+    output("1. Fetching user data from API...", string);
+    string response = http.get("https://api.github.com/users/octocat");
+    
+    // Parse the JSON response
+    json.object user = json.parse(response);
+    
+    if (user != null) {
+        string name = json.get_string(user, "name");
+        string bio = json.get_string(user, "bio");
+        int followers = json.get_int(user, "followers");
+        int following = json.get_int(user, "following");
+        
+        output("Name: " + name, string);
+        output("Bio: " + bio, string);
+        output("Followers: " + followers, int);
+        output("Following: " + following, int);
+    } else {
+        output("Failed to parse JSON response", string);
+    }
+    
+    output("", string);
+    
+    // Example 2: POST request with JSON body
+    output("2. Creating a new resource...", string);
+    
+    // Create JSON object for POST body
+    json.object new_user = json.create_object();
+    json.set_string(new_user, "name", "John Doe");
+    json.set_string(new_user, "email", "john@example.com");
+    json.set_int(new_user, "age", 28);
+    
+    // Convert to JSON string
+    string post_body = json.stringify(new_user);
+    
+    // Create headers
+    dict headers;
+    headers["Content-Type"] = "application/json";
+    headers["Authorization"] = "Bearer token123";
+    
+    // Make POST request
+    string post_response = http.post("https://jsonplaceholder.typicode.com/users", post_body, headers);
+    
+    output("POST Response:", string);
+    output(post_response, string);
+    
+    output("", string);
+    
+    // Example 3: Working with JSON arrays
+    output("3. Fetching and processing array data...", string);
+    string array_response = http.get("https://jsonplaceholder.typicode.com/posts");
+    
+    json.array posts = json.parse(array_response);
+    
+    if (posts != null) {
+        int count = json.array_size(posts);
+        output("Total posts: " + count, string);
+        
+        // Process first 5 posts
+        int limit = 5;
+        if (count < limit) {
+            limit = count;
+        }
+        
+        output("First " + limit + " posts:", string);
+        for (int i = 0; i < limit; i++) {
+            json.object post = json.array_get_object(posts, i);
+            
+            if (post != null) {
+                int id = json.get_int(post, "id");
+                string title = json.get_string(post, "title");
+                
+                output("  [" + id + "] " + title, string);
+            }
+        }
+    }
+    
+    output("", string);
+    output("=== Example Complete ===", string);
+    
+    return 0;
+}

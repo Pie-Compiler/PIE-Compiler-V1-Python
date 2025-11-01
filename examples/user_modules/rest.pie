@@ -1,0 +1,5 @@
+import testlayers;
+
+int val=testlayers.hex(3);
+output("Hex of 3 is: ",string);
+output(val,int);

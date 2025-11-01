@@ -1,0 +1,136 @@
+{
+  "name": "json",
+  "version": "1.0.0",
+  "description": "JSON parsing and serialization for PIE",
+  "author": "PIE Team",
+  "requires": {
+    "pie_version": ">=1.0.0",
+    "modules": []
+  },
+  "c_bindings": {
+    "headers": ["pie_json.h"],
+    "sources": ["pie_json.c"],
+    "libraries": ["jansson"]
+  },
+  "exports": {
+    "functions": [
+      {
+        "name": "parse",
+        "signature": "json.object(string text)",
+        "description": "Parse JSON string into object"
+      },
+      {
+        "name": "stringify",
+        "signature": "string(json.object obj)",
+        "description": "Convert JSON object to string"
+      },
+      {
+        "name": "create_object",
+        "signature": "json.object()",
+        "description": "Create new JSON object"
+      },
+      {
+        "name": "create_array",
+        "signature": "json.array()",
+        "description": "Create new JSON array"
+      },
+      {
+        "name": "get_string",
+        "signature": "string(json.object obj, string key)",
+        "description": "Get string value from JSON object"
+      },
+      {
+        "name": "get_int",
+        "signature": "int(json.object obj, string key)",
+        "description": "Get integer value from JSON object"
+      },
+      {
+        "name": "get_float",
+        "signature": "float(json.object obj, string key)",
+        "description": "Get float value from JSON object"
+      },
+      {
+        "name": "get_bool",
+        "signature": "bool(json.object obj, string key)",
+        "description": "Get boolean value from JSON object"
+      },
+      {
+        "name": "get_object",
+        "signature": "json.object(json.object obj, string key)",
+        "description": "Get nested object from JSON object"
+      },
+      {
+        "name": "get_array",
+        "signature": "json.array(json.object obj, string key)",
+        "description": "Get array from JSON object"
+      },
+      {
+        "name": "set_string",
+        "signature": "void(json.object obj, string key, string value)",
+        "description": "Set string value in JSON object"
+      },
+      {
+        "name": "set_int",
+        "signature": "void(json.object obj, string key, int value)",
+        "description": "Set integer value in JSON object"
+      },
+      {
+        "name": "set_float",
+        "signature": "void(json.object obj, string key, float value)",
+        "description": "Set float value in JSON object"
+      },
+      {
+        "name": "set_bool",
+        "signature": "void(json.object obj, string key, bool value)",
+        "description": "Set boolean value in JSON object"
+      },
+      {
+        "name": "array_size",
+        "signature": "int(json.array arr)",
+        "description": "Get size of JSON array"
+      },
+      {
+        "name": "array_get_string",
+        "signature": "string(json.array arr, int index)",
+        "description": "Get string from JSON array at index"
+      },
+      {
+        "name": "array_get_int",
+        "signature": "int(json.array arr, int index)",
+        "description": "Get integer from JSON array at index"
+      },
+      {
+        "name": "array_get_object",
+        "signature": "json.object(json.array arr, int index)",
+        "description": "Get object from JSON array at index"
+      },
+      {
+        "name": "array_push_string",
+        "signature": "void(json.array arr, string value)",
+        "description": "Add string to JSON array"
+      },
+      {
+        "name": "array_push_int",
+        "signature": "void(json.array arr, int value)",
+        "description": "Add integer to JSON array"
+      },
+      {
+        "name": "array_push_object",
+        "signature": "void(json.array arr, json.object obj)",
+        "description": "Add object to JSON array"
+      }
+    ],
+    "types": [
+      {
+        "name": "object",
+        "type": "opaque",
+        "description": "JSON object type (opaque pointer to C json_t)"
+      },
+      {
+        "name": "array",
+        "type": "opaque",
+        "description": "JSON array type (opaque pointer to C json_t)"
+      }
+    ]
+  }
+}

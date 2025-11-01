@@ -1,0 +1,97 @@
+ // mathutils.pie - User-defined module demonstrating export functionality
+// This module provides mathematical utility functions
+
+// Export a function to calculate the square of a number
+export int square(int x) {
+    return x * x;
+}
+
+// Export a function to calculate the cube of a number
+export int cube(int x) {
+    return x * x * x;
+}
+
+// Export a function to check if a number is even
+export int is_even(int n) {
+    if (n % 2 == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+// Export a function to calculate factorial
+export int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+// Export a function to find maximum of two numbers
+export int max(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+// Export a function to find minimum of two numbers
+export int min(int a, int b) {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}
+
+// Private helper function (not exported)
+int helper_function(int x) {
+    return x + 1;
+}
+
+// Export a function that uses the private helper
+export int increment(int x) {
+    return helper_function(x);
+}
+
+// Export a function to calculate power
+export int power(int base, int exponent) {
+    int result = 1;
+    int i = 0;
+    while (i < exponent) {
+        result = result * base;
+        i = i + 1;
+    }
+    return result;
+}
+
+// Export a function to check if a number is prime
+export int is_prime(int n) {
+    if (n <= 1) {
+        return 0;
+    }
+    if (n <= 3) {
+        return 1;
+    }
+    if (n % 2 == 0) {
+        return 0;
+    }
+    
+    int i = 3;
+    while (i * i <= n) {
+        if (n % i == 0) {
+            return 0;
+        }
+        i = i + 2;
+    }
+    return 1;
+}
+
+// Export a function to calculate GCD (Greatest Common Divisor)
+export int gcd(int a, int b) {
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}

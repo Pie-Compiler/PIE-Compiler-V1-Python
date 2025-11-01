@@ -1,0 +1,37 @@
+//Test file_write with various expressions
+
+int main() {
+    file f = file_open("test_expressions.txt", "w");
+    
+    if (f != null) {
+        // Test 1: Simple string literal (should work)
+        file_write(f, "Hello World\n");
+        
+        // Test 2: String concatenation (should work)
+        string name = "PIE";
+        file_write(f, "Language: " + name + "\n");
+        
+        // Test 3: Integer to string conversion in expression
+        int count = 42;
+        file_write(f, "Count: " + count + "\n");
+        
+        // Test 4: Function call that returns string
+        int timestamp = time_now();
+        string timeStr = time_to_local(timestamp);
+        file_write(f, "Time: " + timeStr + "\n");
+        
+        // Test 5: Expression with multiple concatenations
+        float pi = 3.14159;
+        file_write(f, "Value of PI: " + pi + "\n");
+        
+        // Test 6: Complex expression
+        int x = 10;
+        int y = 20;
+        file_write(f, "Sum: " + (x + y) + "\n");
+        
+        file_close(f);
+        output("File written successfully", string);
+    }
+    
+    return 0;
+}

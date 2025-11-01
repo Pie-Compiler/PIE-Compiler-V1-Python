@@ -1,0 +1,55 @@
+//declaring an array
+int numbers[]=[1,2,3,4,5,6,7];
+string names[]=["John","Stuart","Peter","Paul"];
+float decimals[]=[2.3,3.5,6.7,8.9];
+char grades[]=['a','b','c'];
+
+//accessing a value
+int index=1;
+int second=numbers[index];
+
+output("The value of index "+index+" is "+second,string);
+
+
+int nums[2]=[1,2];
+
+//get array size (only works for dynamic arrays)
+int size=arr_size(numbers);
+output(size,int);
+
+//adding elements
+arr_push(names,"Audrey");
+//print the array
+output(names,array);
+
+//popping elements
+float last=arr_pop(decimals);
+output(decimals,array);
+
+//array methods
+
+//checking if a value exists
+int check1=arr_contains(numbers,98);//returns 0
+int check2=arr_contains(numbers,4);
+output("Exists: "+check1,string);
+output("Exists: "+check2,string);
+
+//getting it's index
+int foundIndex = arr_indexof(numbers, 3);    // 2
+int notFound = arr_indexof(numbers, 99); // -1
+output("FoundIndex: "+foundIndex,string);
+output("NotFoundIndex: "+notFound,string);
+
+//using the pop and push methods
+
+int testArray[]=[];
+arr_push(testArray,5);
+output(testArray,array);
+//remove the element
+int popped=arr_pop(testArray);
+output("The popped value is "+popped,string);
+output(testArray,array);
+
+//getting the size of an array
+float values[]=[2.45,5.678,3.456,4.56];
+output(arr_size(values),int);

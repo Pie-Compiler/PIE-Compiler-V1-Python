@@ -16,6 +16,7 @@ class Parser:
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
             'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_DICT','KEYWORD_REGEX',
             'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 'KEYWORD_NULL', 'KEYWORD_EXIT', 'KEYWORD_ARRAY',
+            'KEYWORD_IMPORT', 'KEYWORD_FROM', 'KEYWORD_AS', 'KEYWORD_EXPORT',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
             'SEMICOLON', 'COMMA', 'DOT', 'COLON',
             'PLUS', 'MINUS', 'MUL', 'DIV', 'MOD',
@@ -394,8 +395,39 @@ class Parser:
                     | return_statement
                     | function_call_statement
                     | block_statement
-                    | function_definition'''
+                    | function_definition
+                    | import_statement
+                    | export_statement'''
         p[0] = p[1]
+    
+    def p_import_statement(self, p):
+        '''import_statement : KEYWORD_IMPORT module_path SEMICOLON
+                           | KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON'''
+        if len(p) == 4:
+            # import http;
+            p[0] = ImportStatement(p[2], alias=None)
+        else:
+            # import http as h;
+            p[0] = ImportStatement(p[2], alias=p[4])
+    
+    def p_module_path(self, p):
+        '''module_path : IDENTIFIER
+                      | module_path DOT IDENTIFIER'''
+        if len(p) == 2:
+            p[0] = p[1]
+        else:
+            p[0] = p[1] + '.' + p[3]
+    
+    def p_export_statement(self, p):
+        '''export_statement : KEYWORD_EXPORT function_definition
+                           | KEYWORD_EXPORT declaration_statement'''
+        # Mark the function or variable for export
+        exported_item = p[2]
+        if isinstance(exported_item, FunctionDefinition):
+            exported_item.is_exported = True
+        elif isinstance(exported_item, Declaration):
+            exported_item.is_exported = True
+        p[0] = exported_item
 
     def p_do_while_statement(self, p):
         '''do_while_statement : KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON'''
@@ -584,6 +616,8 @@ class Parser:
     def p_function_call(self, p):
         '''function_call : IDENTIFIER LPAREN argument_list RPAREN
                         | IDENTIFIER LPAREN RPAREN
+                        | IDENTIFIER DOT IDENTIFIER LPAREN argument_list RPAREN
+                        | IDENTIFIER DOT IDENTIFIER LPAREN RPAREN
                         | SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
@@ -622,8 +656,18 @@ class Parser:
             else:
                 p[0] = ArrayAvg(p[3], p[5])
         elif slice_type == 'IDENTIFIER':
-            args = p[3] if len(p) == 5 else []
-            p[0] = FunctionCall(p[1], args)
+            # Check if this is a module function call (IDENTIFIER DOT IDENTIFIER)
+            if len(p) >= 6 and p.slice[2].type == 'DOT':
+                # Module function call: module.function(args)
+                module_name = p[1]
+                func_name = p[3]
+                full_name = f"{module_name}.{func_name}"
+                args = p[5] if len(p) == 7 else []  # p[5] for version with args, empty for no args
+                p[0] = FunctionCall(full_name, args)
+            else:
+                # Regular function call
+                args = p[3] if len(p) == 5 else []
+                p[0] = FunctionCall(p[1], args)
     
     def p_argument_list(self, p):
         '''argument_list : expression

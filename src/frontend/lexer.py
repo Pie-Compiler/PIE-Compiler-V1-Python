@@ -259,7 +259,11 @@ def build_master_nfa():
         "boolean": "KEYWORD_BOOL",  # Add this line
         "true": "KEYWORD_TRUE",
         "false": "KEYWORD_FALSE",
-        "array": "KEYWORD_ARRAY"
+        "array": "KEYWORD_ARRAY",
+        "import": "KEYWORD_IMPORT",
+        "from": "KEYWORD_FROM",
+        "as": "KEYWORD_AS",
+        "export": "KEYWORD_EXPORT"
     }
     for word, token_name in keywords.items():
         nfa_start, nfa_end = build_literal_nfa(word)
