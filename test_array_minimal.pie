@@ -1,0 +1,8 @@
+// Minimal array test
+string names[] = ["Alice", "Bob"];
+
+void start() {
+    output("Test", string);
+}
+
+start();

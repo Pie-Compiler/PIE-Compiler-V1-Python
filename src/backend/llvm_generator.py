@@ -274,6 +274,80 @@ class LLVMCodeGenerator(Visitor):
         # Variable validation functions
         ir.Function(self.module, ir.FunctionType(int_type, [ir.IntType(8).as_pointer()]), name="is_variable_defined")
         ir.Function(self.module, ir.FunctionType(int_type, [ir.IntType(8).as_pointer()]), name="is_variable_null")
+
+        # Dynamic array functions
+        int_array_ptr = self.d_array_int_type
+        string_array_ptr = self.d_array_string_type
+        float_array_ptr = self.d_array_float_type
+        bool_type = self.get_llvm_type('boolean')
+        
+        # Array creation and management functions
+        ir.Function(self.module, ir.FunctionType(int_array_ptr, []), name="d_array_int_create")
+        ir.Function(self.module, ir.FunctionType(string_array_ptr, []), name="d_array_string_create")
+        ir.Function(self.module, ir.FunctionType(float_array_ptr, []), name="d_array_float_create")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr, int_type]), name="d_array_int_append")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr, string_type]), name="d_array_string_append")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, float_type]), name="d_array_float_append")
+        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr, int_type]), name="d_array_float_get")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, int_type, float_type]), name="d_array_float_set")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr]), name="d_array_float_free")
+
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr]), name="print_int_array")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr]), name="print_string_array")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr]), name="print_float_array")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.d_array_char_type]), name="print_char_array")
+
+        char_array_ptr = self.d_array_char_type
+        char_type = self.get_llvm_type('char')
+        ir.Function(self.module, ir.FunctionType(char_array_ptr, []), name="d_array_char_create")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr, char_type]), name="d_array_char_append")
+        ir.Function(self.module, ir.FunctionType(char_type, [char_array_ptr, int_type]), name="d_array_char_get")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr, int_type, char_type]), name="d_array_char_set")
+        ir.Function(self.module, ir.FunctionType(int_type, [char_array_ptr]), name="d_array_char_size")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr]), name="d_array_char_free")
+        ir.Function(self.module, ir.FunctionType(char_type, [char_array_ptr]), name="d_array_char_pop")
+        ir.Function(self.module, ir.FunctionType(bool_type, [char_array_ptr, char_type]), name="d_array_char_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [char_array_ptr, char_type]), name="d_array_char_indexof")
+        ir.Function(self.module, ir.FunctionType(char_array_ptr, [char_array_ptr, char_array_ptr]), name="d_array_char_concat")
+        ir.Function(self.module, ir.FunctionType(char_array_ptr, [char_array_ptr]), name="d_array_char_copy")
+
+        # String utility functions 
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_starts_with")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_ends_with")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_type]), name="string_is_empty")
+
+        # Integer array functions
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr, int_type]), name="d_array_int_push")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr]), name="d_array_int_pop")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr]), name="d_array_int_size")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr, int_type]), name="d_array_int_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr, int_type]), name="d_array_int_indexof")
+        ir.Function(self.module, ir.FunctionType(int_array_ptr, [int_array_ptr, int_array_ptr]), name="d_array_int_concat")
+        ir.Function(self.module, ir.FunctionType(float_type, [int_array_ptr]), name="d_array_int_avg")
+        ir.Function(self.module, ir.FunctionType(int_array_ptr, [int_array_ptr]), name="d_array_int_copy")
+        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr, int_type]), name="d_array_int_get")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr, int_type, int_type]), name="d_array_int_set")
+
+        # String array functions
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr, string_type]), name="d_array_string_push")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_array_ptr]), name="d_array_string_pop")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_array_ptr]), name="d_array_string_size")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_array_ptr, string_type]), name="d_array_string_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [string_array_ptr, string_type]), name="d_array_string_indexof")
+        ir.Function(self.module, ir.FunctionType(string_array_ptr, [string_array_ptr, string_array_ptr]), name="d_array_string_concat")
+        ir.Function(self.module, ir.FunctionType(string_array_ptr, [string_array_ptr]), name="d_array_string_copy")
+        ir.Function(self.module, ir.FunctionType(string_type, [string_array_ptr, int_type]), name="d_array_string_get")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr, int_type, string_type]), name="d_array_string_set")
+
+        # Float array functions  
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, float_type]), name="d_array_float_push")
+        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr]), name="d_array_float_pop")
+        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr]), name="d_array_float_size")
+        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr, float_type]), name="d_array_float_contains")
+        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr, float_type]), name="d_array_float_indexof")
+        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr]), name="d_array_float_avg")
+        ir.Function(self.module, ir.FunctionType(float_array_ptr, [float_array_ptr]), name="d_array_float_copy")
     
     def _declare_module_functions(self):
         """Declare external functions from imported modules."""
@@ -483,86 +557,6 @@ class LLVMCodeGenerator(Visitor):
         }
         
         return type_mapping.get(type_str, ir.IntType(8).as_pointer())
-
-        # String utility functions
-        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_contains")
-        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_starts_with")
-        ir.Function(self.module, ir.FunctionType(int_type, [string_type, string_type]), name="string_ends_with")
-        ir.Function(self.module, ir.FunctionType(int_type, [string_type]), name="string_is_empty")
-
-        # Dynamic array functions
-        int_array_ptr = self.d_array_int_type
-        string_array_ptr = self.d_array_string_type
-        float_array_ptr = self.d_array_float_type
-        int_type = self.get_llvm_type('int')
-        string_type = self.get_llvm_type('string')
-        float_type = self.get_llvm_type('float')
-        bool_type = self.get_llvm_type('boolean')
-
-        # Integer array functions
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr, int_type]), name="d_array_int_push")
-        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr]), name="d_array_int_pop")
-        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr]), name="d_array_int_size")
-        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr, int_type]), name="d_array_int_contains")
-        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr, int_type]), name="d_array_int_indexof")
-        ir.Function(self.module, ir.FunctionType(int_array_ptr, [int_array_ptr, int_array_ptr]), name="d_array_int_concat")
-        ir.Function(self.module, ir.FunctionType(float_type, [int_array_ptr]), name="d_array_int_avg")
-        ir.Function(self.module, ir.FunctionType(int_array_ptr, [int_array_ptr]), name="d_array_int_copy")
-        # Missing earlier: get/set for int
-        ir.Function(self.module, ir.FunctionType(int_type, [int_array_ptr, int_type]), name="d_array_int_get")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr, int_type, int_type]), name="d_array_int_set")
-
-        # String array functions
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr, string_type]), name="d_array_string_push")
-        ir.Function(self.module, ir.FunctionType(string_type, [string_array_ptr]), name="d_array_string_pop")
-        ir.Function(self.module, ir.FunctionType(int_type, [string_array_ptr]), name="d_array_string_size")
-        ir.Function(self.module, ir.FunctionType(int_type, [string_array_ptr, string_type]), name="d_array_string_contains")
-        ir.Function(self.module, ir.FunctionType(int_type, [string_array_ptr, string_type]), name="d_array_string_indexof")
-        ir.Function(self.module, ir.FunctionType(string_array_ptr, [string_array_ptr, string_array_ptr]), name="d_array_string_concat")
-        ir.Function(self.module, ir.FunctionType(string_array_ptr, [string_array_ptr]), name="d_array_string_copy")
-        # Missing earlier: get/set for string
-        ir.Function(self.module, ir.FunctionType(string_type, [string_array_ptr, int_type]), name="d_array_string_get")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr, int_type, string_type]), name="d_array_string_set")
-
-        # Float array functions  
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, float_type]), name="d_array_float_push")
-        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr]), name="d_array_float_pop")
-        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr]), name="d_array_float_size")
-        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr, float_type]), name="d_array_float_contains")
-        ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr, float_type]), name="d_array_float_indexof")
-        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr]), name="d_array_float_avg")
-        ir.Function(self.module, ir.FunctionType(float_array_ptr, [float_array_ptr]), name="d_array_float_copy")
-        # Already declared earlier in original code: get/set for float
-
-        # Array creation and management functions
-        ir.Function(self.module, ir.FunctionType(int_array_ptr, []), name="d_array_int_create")
-        ir.Function(self.module, ir.FunctionType(string_array_ptr, []), name="d_array_string_create")
-        ir.Function(self.module, ir.FunctionType(float_array_ptr, []), name="d_array_float_create")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr, int_type]), name="d_array_int_append")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr, string_type]), name="d_array_string_append")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, float_type]), name="d_array_float_append")
-        ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr, int_type]), name="d_array_float_get")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr, int_type, float_type]), name="d_array_float_set")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr]), name="d_array_float_free")
-
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [int_array_ptr]), name="print_int_array")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [string_array_ptr]), name="print_string_array")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [float_array_ptr]), name="print_float_array")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [self.d_array_char_type]), name="print_char_array")
-
-        char_array_ptr = self.d_array_char_type
-        char_type = self.get_llvm_type('char')
-        ir.Function(self.module, ir.FunctionType(char_array_ptr, []), name="d_array_char_create")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr, char_type]), name="d_array_char_append")
-        ir.Function(self.module, ir.FunctionType(char_type, [char_array_ptr, int_type]), name="d_array_char_get")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr, int_type, char_type]), name="d_array_char_set")
-        ir.Function(self.module, ir.FunctionType(int_type, [char_array_ptr]), name="d_array_char_size")
-        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [char_array_ptr]), name="d_array_char_free")
-        ir.Function(self.module, ir.FunctionType(char_type, [char_array_ptr]), name="d_array_char_pop")
-        ir.Function(self.module, ir.FunctionType(bool_type, [char_array_ptr, char_type]), name="d_array_char_contains")
-        ir.Function(self.module, ir.FunctionType(int_type, [char_array_ptr, char_type]), name="d_array_char_indexof")
-        ir.Function(self.module, ir.FunctionType(char_array_ptr, [char_array_ptr, char_array_ptr]), name="d_array_char_concat")
-        ir.Function(self.module, ir.FunctionType(char_array_ptr, [char_array_ptr]), name="d_array_char_copy")
 
     def _array_runtime_func(self, base_type, operation):
         """Helper to get array runtime function names"""

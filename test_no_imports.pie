@@ -1,0 +1,24 @@
+// Test: Verify module system works correctly
+// This file has NO imports and should compile without any module-specific code
+
+void test_basic() {
+    output("Testing basic functionality without modules", string);
+    
+    // Test arithmetic
+    int a = 10;
+    int b = 20;
+    int sum = a + b;
+    output("Sum: ", string);
+    output(sum, int);
+    
+    // Test strings
+    string msg = "Hello from PIE";
+    output(msg, string);
+}
+
+void start() {
+    output("=== Module System Test ===", string);
+    output("No imports - should compile without HTTP/JSON libraries", string);
+    test_basic();
+    output("=== Test Complete ===", string);
+}
