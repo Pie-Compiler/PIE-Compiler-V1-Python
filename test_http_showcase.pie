@@ -1,0 +1,47 @@
+// HTTP Server Showcase - Demonstrates all HTTP server features
+// This example shows routing, method handling, headers, and status codes
+import http;
+
+void api_handler(ptr request, ptr response) {
+    string path = http.request_get_path(request);
+    string method = http.request_get_method(request);
+    
+    // Route: GET /
+    if (path == "/" && method == "GET") {
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "text/html");
+        http.response_set_body(response, "<h1>PIE HTTP Server</h1><p>Try /api, /hello, or /status</p>");
+    } 
+    // Route: GET /api
+    else if (path == "/api" && method == "GET") {
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{message: Welcome to the API, version: 1.0}");
+    }
+    // Route: GET /hello
+    else if (path == "/hello" && method == "GET") {
+        http.response_set_status(response, 200);
+        http.response_set_body(response, "Hello, World from PIE!");
+    }
+    // Route: GET /status
+    else if (path == "/status" && method == "GET") {
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{status: healthy, uptime: unknown}");
+    }
+    // Method not allowed
+    else if (method != "GET") {
+        http.response_set_status(response, 405);
+        http.response_set_header(response, "Allow", "GET");
+        http.response_set_body(response, "405 Method Not Allowed - Only GET is supported");
+    }
+    // 404 Not Found
+    else {
+        http.response_set_status(response, 404);
+        http.response_set_body(response, "404 Not Found - The requested resource does not exist");
+    }
+}
+
+void start() {
+    http.listen(3000, api_handler);
+}

@@ -254,6 +254,7 @@ def build_master_nfa():
         "char": "KEYWORD_CHAR",
         "void": "KEYWORD_VOID",
         "null": "KEYWORD_NULL",
+        "ptr": "KEYWORD_PTR",
         "string": "KEYWORD_STRING",
         "bool": "KEYWORD_BOOL",
         "boolean": "KEYWORD_BOOL",  # Add this line

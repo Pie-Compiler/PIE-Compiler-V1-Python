@@ -1,0 +1,18 @@
+// Simple HTTP server test - Echo server
+import http;
+
+// Echo server - responds with request details
+void echo_handler(ptr request, ptr response) {
+    string method = http.request_get_method(request);
+    string path = http.request_get_path(request);
+    
+    http.response_set_status(response, 200);
+    http.response_set_header(response, "Content-Type", "text/plain");
+    http.response_set_body(response, "PIE Echo Server - Request received!");
+    
+    output("Handled request:", string);
+    output(path, string);
+}
+
+output("Starting echo server on port 3000...", string);
+http.listen(3000, echo_handler);

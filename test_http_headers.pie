@@ -1,0 +1,34 @@
+// Test HTTP response codes and headers
+import http;
+
+output("=== Testing HTTP Response Codes and Headers ===", string);
+
+// Test 1: Successful request (200)
+output("Test 1: GET request to httpbin.org", string);
+string response = http.get("https://httpbin.org/status/200");
+int status = http.get_status_code();
+output("Status code:", string);
+output(status, int);
+
+// Test 2: 404 Not Found
+output("Test 2: GET request expecting 404", string);
+string response2 = http.get("https://httpbin.org/status/404");
+int status2 = http.get_status_code();
+output("Status code:", string);
+output(status2, int);
+
+// Test 3: 500 Server Error
+output("Test 3: GET request expecting 500", string);
+string response3 = http.get("https://httpbin.org/status/500");
+int status3 = http.get_status_code();
+output("Status code:", string);
+output(status3, int);
+
+// Test 4: Simple GET with status code check
+output("Test 4: Simple GET with status check", string);
+string response4 = http.get("https://httpbin.org/status/201");
+int status4 = http.get_status_code();
+output("Status code:", string);
+output(status4, int);
+
+output("=== All HTTP status tests complete! ===", string);

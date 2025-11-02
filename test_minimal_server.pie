@@ -1,0 +1,9 @@
+// Minimal HTTP server test
+import http;
+
+void simple_handler(ptr request, ptr response) {
+    http.response_set_body(response, "Hello from PIE!");
+}
+
+output("Starting server on port 9000...", string);
+http.listen(9000, simple_handler);

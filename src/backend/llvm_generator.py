@@ -89,6 +89,8 @@ class LLVMCodeGenerator(Visitor):
             return ir.IntType(8)
         elif type_str == 'string':
             return ir.IntType(8).as_pointer()
+        elif type_str == 'ptr':
+            return ir.IntType(8).as_pointer()
         elif type_str == 'boolean' or type_str == 'bool':
             return ir.IntType(1)
         elif type_str == 'void':
@@ -1925,16 +1927,35 @@ class LLVMCodeGenerator(Visitor):
         # Process arguments
         args = []
         for i, arg in enumerate(node.args):
+            # Special handling for function identifiers passed as arguments
+            if isinstance(arg, Identifier):
+                # Check if this argument is a function reference
+                try:
+                    # Try to get the function from the module
+                    func_ref = self.module.get_global(arg.name)
+                    if isinstance(func_ref, ir.Function):
+                        # This is a function - bitcast it to i8* (generic function pointer)
+                        func_ptr = self.builder.bitcast(func_ref, ir.IntType(8).as_pointer())
+                        args.append(func_ptr)
+                        continue
+                except (KeyError, AttributeError):
+                    pass
+            
             arg_val = self.visit(arg)
             
             # Load from pointer if needed, but be careful with strings and opaque types
             if i < len(func.args):
                 expected_type = func.args[i].type
-                # If expecting a pointer and we have a pointer, keep it
-                # If expecting a value and we have a pointer, load it
+                # If expecting a pointer and we have a pointer, check pointer levels
                 if isinstance(arg_val.type, ir.PointerType):
                     if isinstance(expected_type, ir.PointerType):
-                        args.append(arg_val)  # Both pointers, keep as is
+                        # Both are pointers - but check if we have a double pointer
+                        # when we only need a single pointer (common with ptr params)
+                        if isinstance(arg_val.type.pointee, ir.PointerType) and not isinstance(expected_type.pointee, ir.PointerType):
+                            # We have i8** but need i8* - load once
+                            args.append(self.builder.load(arg_val))
+                        else:
+                            args.append(arg_val)  # Both pointers at same level, keep as is
                     else:
                         args.append(self.builder.load(arg_val))  # Load the value
                 else:

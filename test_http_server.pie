@@ -1,0 +1,45 @@
+// Test HTTP server functionality
+import http;
+
+// Define a simple request handler
+void handle_request(ptr request, ptr response) {
+    // Get request info
+    string method = http.request_get_method(request);
+    string path = http.request_get_path(request);
+    
+    output("Received request:", string);
+    output("Method:", string);
+    output(method, string);
+    output("Path:", string);
+    output(path, string);
+    
+    // Set response
+    if (path == "/") {
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "text/html");
+        http.response_set_body(response, "<h1>Welcome to PIE HTTP Server!</h1><p>Server is running.</p>");
+    } else if (path == "/api/status") {
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{\"status\": \"OK\", \"server\": \"PIE HTTP/1.0\"}");
+    } else if (path == "/api/hello") {
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{\"message\": \"Hello from PIE!\"}");
+    } else {
+        http.response_set_status(response, 404);
+        http.response_set_header(response, "Content-Type", "text/plain");
+        http.response_set_body(response, "404 - Not Found");
+    }
+}
+
+output("=== Starting PIE HTTP Server ===", string);
+output("Server will listen on http://localhost:8080", string);
+output("Try these URLs:", string);
+output("  - http://localhost:8080/", string);
+output("  - http://localhost:8080/api/status", string);
+output("  - http://localhost:8080/api/hello", string);
+output("", string);
+
+// Start server (blocking call)
+http.listen(8080, handle_request);

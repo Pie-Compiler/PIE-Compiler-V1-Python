@@ -1,0 +1,10 @@
+// Simple test program for HTTP and JSON module stubs
+import http;
+import json;
+
+// Test HTTP GET
+string response = http.get("https://api.example.com/data");
+output("HTTP GET Response: ", string);
+output(response, string);
+
+output("=== HTTP test complete! ===", string);

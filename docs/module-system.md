@@ -79,74 +79,258 @@ PIE includes several standard library modules with powerful functionality.
 
 ### HTTP Module
 
-The `http` module provides HTTP client and server capabilities.
+The `http` module provides HTTP client capabilities powered by **libcurl**. It allows you to make HTTP requests to web APIs and servers directly from PIE programs.
 
 **Available Functions:**
-- `http.get(string url)` → `string` - Perform GET request
-- `http.post(string url, string body)` → `string` - Perform POST request
-- `http.put(string url, string body)` → `string` - Perform PUT request
-- `http.delete(string url)` → `string` - Perform DELETE request
 
-**Example:**
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `get` | `string(string url)` | Perform HTTP GET request |
+| `post` | `string(string url, string body, dict headers)` | Perform HTTP POST request |
+| `put` | `string(string url, string body, dict headers)` | Perform HTTP PUT request |
+| `delete` | `string(string url)` | Perform HTTP DELETE request |
+
+**Implementation Details:**
+- Uses libcurl for reliable HTTP communication
+- Automatically follows redirects
+- Custom User-Agent: "PIE-HTTP/1.0"
+- Returns response body as string
+- Error messages prefixed with `[ERROR]`
+
+#### HTTP GET Example
+
+Fetch data from a public API:
+
 ```pie
 import http;
 
-int main() {
-    string response = http.get("https://jsonplaceholder.typicode.com/todos/1");
-    output("Response: ", string);
-    output(response, string);
-    return 0;
-}
+// Make a GET request to a public API
+string response = http.get("https://httpbin.org/get");
+
+output("=== HTTP GET Response ===", string);
+output(response, string);
+
+// Example output:
+// {
+//   "args": {},
+//   "headers": {
+//     "Accept": "*/*",
+//     "Host": "httpbin.org",
+//     "User-Agent": "PIE-HTTP/1.0"
+//   },
+//   "origin": "xxx.xxx.xxx.xxx",
+//   "url": "https://httpbin.org/get"
+// }
+```
+
+#### HTTP POST Example
+
+Send data to an API endpoint:
+
+```pie
+import http;
+
+// Prepare JSON body
+string json_body = "{\"name\": \"PIE Lang\", \"version\": \"1.0\"}";
+
+// Make POST request
+string response = http.post(
+    "https://httpbin.org/post",
+    json_body,
+    null  // headers parameter (optional)
+);
+
+output("POST Response: ", string);
+output(response, string);
+```
+
+#### HTTP PUT Example
+
+Update a resource:
+
+```pie
+import http;
+
+string update_data = "{\"status\": \"updated\"}";
+
+string response = http.put(
+    "https://httpbin.org/put",
+    update_data,
+    null
+);
+
+output("PUT Response: ", string);
+output(response, string);
+```
+
+#### HTTP DELETE Example
+
+Delete a resource:
+
+```pie
+import http;
+
+string response = http.delete("https://httpbin.org/delete");
+
+output("DELETE Response: ", string);
+output(response, string);
+```
+
+#### Complete HTTP Client Example
+
+A practical example fetching and displaying API data:
+
+```pie
+import http;
+
+output("=== Testing PIE HTTP Module ===", string);
+
+// Test 1: GET request
+output("Fetching user data...", string);
+string user_response = http.get("https://jsonplaceholder.typicode.com/users/1");
+output("User Data:", string);
+output(user_response, string);
+
+// Test 2: POST request
+output("Creating new post...", string);
+string new_post = "{\"title\": \"Hello from PIE\", \"body\": \"Testing HTTP POST\", \"userId\": 1}";
+string post_response = http.post(
+    "https://jsonplaceholder.typicode.com/posts",
+    new_post,
+    null
+);
+output("Created Post:", string);
+output(post_response, string);
+
+output("=== All HTTP tests complete! ===", string);
 ```
 
 ### JSON Module
 
-The `json` module provides JSON parsing and manipulation.
+The `json` module provides JSON parsing and manipulation capabilities powered by **libjansson**.
+
+**Implementation Status:** ⚠️ Currently using stub implementations. Full functionality coming soon with Jansson library integration.
 
 **Available Functions:**
 
-*Parsing & Stringification:*
-- `json.parse(string json_string)` → `json.object`
-- `json.stringify(json.object obj)` → `string`
+| Category | Function | Signature | Description |
+|----------|----------|-----------|-------------|
+| **Parsing** | `parse` | `json.object(string text)` | Parse JSON string into object |
+| | `stringify` | `string(json.object obj)` | Convert JSON object to string |
+| **Object Creation** | `create_object` | `json.object()` | Create new empty JSON object |
+| | `create_array` | `json.array()` | Create new empty JSON array |
+| **Object Getters** | `get_string` | `string(json.object obj, string key)` | Get string value from object |
+| | `get_int` | `int(json.object obj, string key)` | Get integer value from object |
+| | `get_float` | `float(json.object obj, string key)` | Get float value from object |
+| | `get_bool` | `int(json.object obj, string key)` | Get boolean value from object |
+| | `get_object` | `json.object(json.object obj, string key)` | Get nested object |
+| | `get_array` | `json.array(json.object obj, string key)` | Get array from object |
+| **Object Setters** | `set_string` | `void(json.object obj, string key, string value)` | Set string value |
+| | `set_int` | `void(json.object obj, string key, int value)` | Set integer value |
+| | `set_float` | `void(json.object obj, string key, float value)` | Set float value |
+| | `set_bool` | `void(json.object obj, string key, int value)` | Set boolean value |
+| **Array Operations** | `array_size` | `int(json.array arr)` | Get array size |
+| | `array_get_string` | `string(json.array arr, int index)` | Get string at index |
+| | `array_get_int` | `int(json.array arr, int index)` | Get integer at index |
+| | `array_get_object` | `json.object(json.array arr, int index)` | Get object at index |
+| | `array_push_string` | `void(json.array arr, string value)` | Add string to array |
+| | `array_push_int` | `void(json.array arr, int value)` | Add integer to array |
+| | `array_push_object` | `void(json.array arr, json.object obj)` | Add object to array |
 
-*Object Operations:*
-- `json.create_object()` → `json.object`
-- `json.get_string(json.object obj, string key)` → `string`
-- `json.get_int(json.object obj, string key)` → `int`
-- `json.get_float(json.object obj, string key)` → `float`
-- `json.get_bool(json.object obj, string key)` → `int`
-- `json.set_string(json.object obj, string key, string value)` → `void`
-- `json.set_int(json.object obj, string key, int value)` → `void`
-- `json.set_float(json.object obj, string key, float value)` → `void`
+#### JSON Creation Example
 
-*Array Operations:*
-- `json.create_array()` → `json.array`
-- `json.array_append_string(json.array arr, string value)` → `void`
-- `json.array_append_int(json.array arr, int value)` → `void`
-- `json.array_get_string(json.array arr, int index)` → `string`
-- `json.array_get_int(json.array arr, int index)` → `int`
-- `json.array_size(json.array arr)` → `int`
+Create and manipulate JSON objects:
 
-**Example:**
 ```pie
 import json;
 
-int main() {
-    // Parse JSON string
-    string json_str = "{\"name\":\"Alice\",\"age\":25}";
-    json.object person = json.parse(json_str);
-    
-    // Extract values
-    string name = json.get_string(person, "name");
-    int age = json.get_int(person, "age");
-    
-    output("Name: ", string);
-    output(name, string);
-    output("Age: ", string);
-    output(age, int);
-    
-    return 0;
-}
+// Create a new JSON object
+json.object person = json.create_object();
+
+// Set values
+json.set_string(person, "name", "Alice");
+json.set_int(person, "age", 25);
+json.set_float(person, "height", 5.6);
+json.set_bool(person, "active", 1);
+
+// Convert to JSON string
+string json_str = json.stringify(person);
+output("JSON: ", string);
+output(json_str, string);
+
+// Output: {"name":"Alice","age":25,"height":5.6,"active":true}
+```
+
+#### JSON Parsing Example
+
+Parse and extract data from JSON:
+
+```pie
+import json;
+
+// Parse JSON string
+string json_data = "{\"name\":\"Bob\",\"score\":95,\"passed\":true}";
+json.object result = json.parse(json_data);
+
+// Extract values
+string name = json.get_string(result, "name");
+int score = json.get_int(result, "score");
+int passed = json.get_bool(result, "passed");
+
+output("Student: ", string);
+output(name, string);
+output("Score: ", string);
+output(score, int);
+```
+
+#### JSON Array Example
+
+Work with JSON arrays:
+
+```pie
+import json;
+
+// Create array
+json.array colors = json.create_array();
+
+// Add items
+json.array_push_string(colors, "red");
+json.array_push_string(colors, "green");
+json.array_push_string(colors, "blue");
+
+// Get array size
+int size = json.array_size(colors);
+output("Array size: ", string);
+output(size, int);
+
+// Access elements
+string first = json.array_get_string(colors, 0);
+output("First color: ", string);
+output(first, string);
+```
+
+#### HTTP + JSON Combined Example
+
+A practical example combining HTTP and JSON:
+
+```pie
+import http;
+import json;
+
+output("=== Fetching and Parsing JSON Data ===", string);
+
+// Fetch JSON data from API
+string response = http.get("https://jsonplaceholder.typicode.com/users/1");
+
+// Note: Full JSON parsing will work once Jansson integration is complete
+// For now, you can work with the raw JSON string
+output("API Response:", string);
+output(response, string);
+
+// With full JSON support (coming soon):
+// json.object user = json.parse(response);
+// string name = json.get_string(user, "name");
+// string email = json.get_string(user, "email");
 ```
 
 ---
@@ -547,6 +731,87 @@ Nested module namespaces (e.g., `utils.string.format`) are planned for future re
 ### Package Management
 
 A package manager for sharing and distributing PIE modules is under consideration.
+
+---
+
+## System Dependencies
+
+### Required Libraries for Standard Modules
+
+Some standard library modules require system libraries to be installed.
+
+#### HTTP Module Dependencies
+
+The HTTP module requires **libcurl** for HTTP client functionality:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install libcurl4-openssl-dev
+
+# macOS
+brew install curl
+
+# Arch Linux
+sudo pacman -S curl
+```
+
+Optional for server functionality (not yet implemented):
+```bash
+# Ubuntu/Debian
+sudo apt-get install libmicrohttpd-dev
+```
+
+#### JSON Module Dependencies
+
+The JSON module will require **libjansson** once fully implemented:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install libjansson-dev
+
+# macOS
+brew install jansson
+
+# Arch Linux
+sudo pacman -S jansson
+```
+
+#### Install All Dependencies
+
+For convenience, install all dependencies at once:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y libcurl4-openssl-dev libmicrohttpd-dev libjansson-dev
+
+# macOS
+brew install curl jansson
+
+# Arch Linux
+sudo pacman -S curl jansson
+```
+
+### Verifying Installation
+
+Test your HTTP module installation:
+
+```pie
+// test_http.pie
+import http;
+
+string response = http.get("https://httpbin.org/get");
+output("Response received successfully!", string);
+output(response, string);
+```
+
+Compile and run:
+```bash
+python3 src/main.py test_http.pie
+./program
+```
+
+If you see a response, the HTTP module is working correctly!
 
 ---
 

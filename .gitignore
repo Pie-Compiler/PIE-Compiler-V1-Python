@@ -8,4 +8,5 @@ output.ll
 output.ir
 output.bc
 output.0
+/src/frontend/parser.out*
 program

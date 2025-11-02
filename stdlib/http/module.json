@@ -20,13 +20,28 @@
         "description": "Perform HTTP GET request"
       },
       {
+        "name": "get_full",
+        "signature": "ptr(string url)",
+        "description": "Perform HTTP GET request with full response info (status, headers)"
+      },
+      {
+        "name": "get_headers",
+        "signature": "string(string url, ptr headers)",
+        "description": "Perform HTTP GET request with custom headers"
+      },
+      {
         "name": "post",
-        "signature": "string(string url, string body, dict headers)",
+        "signature": "string(string url, string body, ptr headers)",
         "description": "Perform HTTP POST request"
       },
       {
+        "name": "post_full",
+        "signature": "ptr(string url, string body, ptr headers)",
+        "description": "Perform HTTP POST request with full response info"
+      },
+      {
         "name": "put",
-        "signature": "string(string url, string body, dict headers)",
+        "signature": "string(string url, string body, ptr headers)",
         "description": "Perform HTTP PUT request"
       },
       {
@@ -35,14 +50,64 @@
         "description": "Perform HTTP DELETE request"
       },
       {
+        "name": "get_status_code",
+        "signature": "int()",
+        "description": "Get HTTP status code from last request"
+      },
+      {
+        "name": "get_response_headers",
+        "signature": "string()",
+        "description": "Get HTTP response headers from last request"
+      },
+      {
+        "name": "free_response",
+        "signature": "void(ptr response)",
+        "description": "Free http_client_response_t structure"
+      },
+      {
         "name": "listen",
-        "signature": "void(int port, function handler)",
+        "signature": "void(int port, ptr handler)",
         "description": "Start HTTP server on specified port"
       },
       {
         "name": "listen_ssl",
-        "signature": "void(int port, string cert_file, string key_file, function handler)",
+        "signature": "void(int port, string cert_file, string key_file, ptr handler)",
         "description": "Start HTTPS server on specified port"
+      },
+      {
+        "name": "request_get_method",
+        "signature": "string(ptr request)",
+        "description": "Get request method from server request"
+      },
+      {
+        "name": "request_get_path",
+        "signature": "string(ptr request)",
+        "description": "Get request path from server request"
+      },
+      {
+        "name": "request_get_body",
+        "signature": "string(ptr request)",
+        "description": "Get request body from server request"
+      },
+      {
+        "name": "request_get_header",
+        "signature": "string(ptr request, string header_name)",
+        "description": "Get request header value from server request"
+      },
+      {
+        "name": "response_set_status",
+        "signature": "void(ptr response, int status_code)",
+        "description": "Set response status code in server response"
+      },
+      {
+        "name": "response_set_body",
+        "signature": "void(ptr response, string body)",
+        "description": "Set response body in server response"
+      },
+      {
+        "name": "response_set_header",
+        "signature": "void(ptr response, string header_name, string header_value)",
+        "description": "Set response header in server response"
       }
     ],
     "types": [

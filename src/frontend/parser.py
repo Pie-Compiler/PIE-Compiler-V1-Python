@@ -16,6 +16,7 @@ class Parser:
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
             'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_DICT','KEYWORD_REGEX',
             'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 'KEYWORD_NULL', 'KEYWORD_EXIT', 'KEYWORD_ARRAY',
+            'KEYWORD_PTR',
             'KEYWORD_IMPORT', 'KEYWORD_FROM', 'KEYWORD_AS', 'KEYWORD_EXPORT',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
             'SEMICOLON', 'COMMA', 'DOT', 'COLON',
@@ -505,6 +506,7 @@ class Parser:
                           | KEYWORD_FLOAT
                           | KEYWORD_CHAR
                           | KEYWORD_VOID
+                          | KEYWORD_PTR
                           | KEYWORD_STRING
                           | KEYWORD_BOOL
                           | KEYWORD_FILE

@@ -1,0 +1,50 @@
+// Test program for HTTP and JSON module stubs
+import http;
+import json;
+
+// Test HTTP GET
+string response = http.get("https://api.example.com/data");
+output("HTTP GET Response: ", string);
+output(response, string);
+
+// Test JSON parsing
+json.object obj = json.create_object();
+json.set_string(obj, "name", "PIE Language");
+json.set_int(obj, "version", 1);
+json.set_float(obj, "rating", 4.5);
+
+string json_str = json.stringify(obj);
+output("JSON String: ", string);
+output(json_str, string);
+
+// Test JSON get functions
+string name = json.get_string(obj, "name");
+int version = json.get_int(obj, "version");
+float rating = json.get_float(obj, "rating");
+
+output("Name: ", string);
+output(name, string);
+
+output("Version: ", string);
+output(version, int);
+
+output("Rating: ", string);
+output(rating, float);
+
+// Test JSON array
+json.array arr = json.create_array();
+json.array_push_string(arr, "first");
+json.array_push_string(arr, "second");
+json.array_push_int(arr, 123);
+
+int arr_size = json.array_size(arr);
+output("Array size: ", string);
+output(arr_size, int);
+
+// Test HTTP POST
+string post_body = "{test: true}";
+string post_response = http.post("https://api.example.com/submit", post_body, obj);
+output("HTTP POST Response: ", string);
+output(post_response, string);
+
+output("=== Stub tests complete! ===", string);

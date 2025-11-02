@@ -36,22 +36,41 @@ def build_and_link(llvm_module, c_sources=None, libraries=None):
         clang_path = os.path.join(llvm_bin_path, "clang")
         runtime_path = "src/runtime/"
         
-        # Get all C files from runtime directory
-        c_files = [f for f in os.listdir(runtime_path) if f.endswith('.c')]
+        # Core runtime files (always compiled)
+        core_runtime_files = [
+            'runtime.c',
+            'd_array.c',
+            'dict_lib.c',
+            'string_lib.c',
+            'file_lib.c',
+            'crypto_lib.c',
+            'time_lib.c',
+            'regex_lib.c',
+            'math_lib.c',
+            'net_lib.c'
+        ]
         
-        # Compile each runtime C file
-        for c_file in c_files:
-            obj_file = c_file.replace('.c', '.o')
-            subprocess.run(
-                [clang_path, "-c", "-fPIC", os.path.join(runtime_path, c_file), "-o", obj_file],
-                check=True
-            )
-            obj_files.append(obj_file)
+        # Track which C files are being compiled
+        runtime_c_files = set()
         
-        # Compile module-specific C sources if any
+        # Compile core runtime files
+        for c_file in core_runtime_files:
+            if os.path.exists(os.path.join(runtime_path, c_file)):
+                obj_file = c_file.replace('.c', '.o')
+                subprocess.run(
+                    [clang_path, "-c", "-fPIC", os.path.join(runtime_path, c_file), "-o", obj_file],
+                    check=True
+                )
+                obj_files.append(obj_file)
+                runtime_c_files.add(c_file)
+        
+        # Compile module-specific C sources if any (skip duplicates already in runtime/)
         for c_source_path in c_sources:
+            c_file = os.path.basename(c_source_path)
+            # Skip if this file was already compiled from runtime directory
+            if c_file in runtime_c_files:
+                continue
             if os.path.exists(c_source_path):
-                c_file = os.path.basename(c_source_path)
                 obj_file = c_file.replace('.c', '.o')
                 print(f"Compiling module source: {c_source_path}")
                 subprocess.run(

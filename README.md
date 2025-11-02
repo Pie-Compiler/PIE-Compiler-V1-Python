@@ -19,12 +19,13 @@ PIE is a statically-typed, compiled programming language that combines the simpl
 - 🚀 **LLVM-Based Compilation** - Fast, optimized native code generation
 - 📝 **C-Like Syntax** - Familiar and easy to learn for C/C++ programmers
 - 🎯 **Static Typing** - Catch errors at compile-time with type safety
-- � **Module System** - Import standard libraries and create reusable modules
-- �📚 **Rich Standard Library** - Math, strings, file I/O, networking, HTTP, JSON, and more
+- 📦 **Module System** - Import standard libraries and create reusable modules
+-  **Rich Standard Library** - Math, strings, file I/O, HTTP, JSON, and more
+- 🌐 **HTTP Client** - Make HTTP requests with libcurl integration
 - 🔄 **Dynamic Arrays** - Built-in support for growable arrays
 - 📖 **Dictionaries** - Hash maps with automatic type inference
 - 🔍 **Regular Expressions** - Pattern matching with Kleene syntax
-- 🌐 **Network Support** - TCP sockets and HTTP for network programming
+- 🌐 **Network Support** - TCP sockets for network programming
 - 📁 **File I/O** - Comprehensive file handling capabilities
 
 ## Quick Start
@@ -51,12 +52,25 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. **Install dependencies:**
+3. **Install Python dependencies:**
 ```bash
 pip install llvmlite ply
 ```
 
-4. **Verify LLVM installation:**
+4. **Install system libraries for HTTP and JSON modules:**
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y libcurl4-openssl-dev libmicrohttpd-dev libjansson-dev
+
+# macOS
+brew install curl jansson
+
+# Arch Linux
+sudo pacman -S curl jansson
+```
+
+5. **Verify LLVM installation:**
 ```bash
 llc --version
 clang --version
@@ -176,9 +190,14 @@ output(result, int);
 import http;
 import json;
 
-// Use module functions with dot notation
-string response = http.get("https://api.example.com/data");
-json.object data = json.parse(response);
+// Make HTTP GET request
+string response = http.get("https://httpbin.org/get");
+output("Response: ", string);
+output(response, string);
+
+// HTTP POST request
+string json_data = "{\"name\": \"PIE\", \"version\": \"1.0\"}";
+string post_result = http.post("https://httpbin.org/post", json_data, null);
 
 // Create your own modules (mathutils.pie)
 export int square(int x) {
@@ -192,7 +211,25 @@ int result = mathutils.square(5);  // Returns 25
 
 ## Examples
 
-### Example 1: Temperature Converter
+### Example 1: HTTP Client
+```pie
+import http;
+
+output("=== Fetching Data from API ===", string);
+
+// GET request
+string user_data = http.get("https://jsonplaceholder.typicode.com/users/1");
+output("User Data:", string);
+output(user_data, string);
+
+// POST request
+string new_post = "{\"title\": \"Hello PIE\", \"body\": \"Testing HTTP\", \"userId\": 1}";
+string response = http.post("https://jsonplaceholder.typicode.com/posts", new_post, null);
+output("Created Post:", string);
+output(response, string);
+```
+
+### Example 2: Temperature Converter
 ```pie
 float celsius = 25.0;
 float fahrenheit = (celsius * 9.0 / 5.0) + 32.0;
@@ -202,7 +239,7 @@ output("Fahrenheit: ", string);
 output(fahrenheit, float, 2);
 ```
 
-### Example 2: Working with Dictionaries
+### Example 3: Working with Dictionaries
 ```pie
 dict student = {
     "name": "Alice",

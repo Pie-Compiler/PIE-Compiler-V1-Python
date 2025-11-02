@@ -1,0 +1,6 @@
+// Simple JSON test
+import json;
+
+void start() {
+    output("JSON module loaded successfully", string);
+}

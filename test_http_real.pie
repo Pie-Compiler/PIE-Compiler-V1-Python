@@ -1,0 +1,13 @@
+// Test real HTTP GET request with libcurl implementation
+import http;
+
+output("=== Testing HTTP Module ===", string);
+
+// Test 1: HTTP GET to a public API
+output("Test 1: HTTP GET request...", string);
+string response = http.get("https://pie-lang.online");
+output("Response received (first 200 chars):", string);
+// Note: We can't easily substring in PIE yet, so just output the whole response
+output(response, string);
+
+output("=== HTTP GET test complete! ===", string);

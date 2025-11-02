@@ -1,0 +1,22 @@
+// Complete HTTP Server Test - demonstrates routing
+import http;
+
+void request_handler(ptr request, ptr response) {
+    string path = http.request_get_path(request);
+    
+    if (path == "/") {
+        http.response_set_body(response, "Welcome to PIE HTTP Server!");
+    } else if (path == "/hello") {
+        http.response_set_body(response, "Hello, World!");
+    } else if (path == "/api/data") {
+        http.response_set_body(response, "{message: This is data, status: ok}");
+    } else {
+        http.response_set_body(response, "404 - Page Not Found");
+    }
+}
+
+void start() {
+    http.listen(8080, request_handler);
+}
+
+start();
