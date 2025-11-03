@@ -132,6 +132,22 @@ void pie_json_set_float(pie_json_object_t obj, const char* key, double value);
  */
 void pie_json_set_bool(pie_json_object_t obj, const char* key, int value);
 
+/**
+ * Set nested object in JSON object
+ * @param obj JSON object
+ * @param key Key name
+ * @param value Nested JSON object
+ */
+void pie_json_set_object(pie_json_object_t obj, const char* key, pie_json_object_t value);
+
+/**
+ * Set array in JSON object
+ * @param obj JSON object
+ * @param key Key name
+ * @param value JSON array
+ */
+void pie_json_set_array(pie_json_object_t obj, const char* key, pie_json_array_t value);
+
 // ============================================================================
 // JSON Array Functions
 // ============================================================================

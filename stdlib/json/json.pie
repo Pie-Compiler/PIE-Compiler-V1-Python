@@ -77,6 +77,14 @@ void set_float(ptr obj, string key, float value);
 // Example: json.set_bool(user, "active", 1);
 void set_bool(ptr obj, string key, int value);
 
+// Set nested object
+// Example: json.set_object(user, "address", address);
+void set_object(ptr obj, string key, ptr value);
+
+// Set array
+// Example: json.set_array(user, "hobbies", hobbies);
+void set_array(ptr obj, string key, ptr value);
+
 // JSON Array Operations
 
 // Get array size

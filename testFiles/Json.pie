@@ -1,35 +1,201 @@
-import http;
 import json;
 
-void handle_request(ptr request, ptr response) {
-       string method = http.request_get_method(request);
-       string path = http.request_get_path(request);
-       if (method == "GET" && path == "/api/users") {
-        // Create JSON response
-        json.array users = json.create_array();
-        
-        json.object user1 = json.create_object();
-        json.set_string(user1, "name", "Alice");
-        json.set_int(user1, "age", 30);
-        
-        json.object user2 = json.create_object();
-        json.set_string(user2, "name", "Bob");
-        json.set_int(user2, "age", 25);
-        
-        // Serialize to JSON string
-        string response_body = json.stringify(users);
-        
-        http.response_set_status(response,200);
-        http.response_set_header("Content-Type", "application/json");
-        http.response_set_body(response,response_body);
-    } else {
-        http.response_set_status(response,404);
-        http.response_set_body(response,"404 - Not Found");
-    }
-}
-
+// Example: Working with nested JSON objects and arrays
 int main() {
-    output("Starting server on port 8080...", string);
-    http.listen(8080, handle_request);
+    output("=== Nested JSON Structures Test ===", string);
+    output("", string);
+    
+    // ========================================
+    // PART 1: Creating nested objects
+    // ========================================
+    output("=== Creating Nested Objects ===", string);
+    
+    // Create a user with nested address object
+    ptr user = json.create_object();
+    json.set_string(user, "name", "Alice");
+    json.set_int(user, "age", 30);
+    
+    // Create nested address object
+    ptr address = json.create_object();
+    json.set_string(address, "street", "123 Main St");
+    json.set_string(address, "city", "Springfield");
+    json.set_string(address, "zip", "12345");
+    
+    // Now we can nest the address object inside the user!
+    json.set_object(user, "address", address);
+    
+    // Convert to JSON string
+    string user_json = json.stringify(user);
+    output("User with nested address:", string);
+    output(user_json, string);
+    output("", string);
+    
+    // Parse and access nested object
+    ptr parsed_user = json.parse(user_json);
+    string name = json.get_string(parsed_user, "name");
+    int age = json.get_int(parsed_user, "age");
+    ptr nested_address = json.get_object(parsed_user, "address");
+    
+    output("Parsed user name: ", string);
+    output(name, string);
+    output("Parsed user age: ", string);
+    output(age, int);
+    
+    // Access nested address fields
+    string street = json.get_string(nested_address, "street");
+    string city = json.get_string(nested_address, "city");
+    string zip = json.get_string(nested_address, "zip");
+    
+    output("Address street: ", string);
+    output(street, string);
+    output("Address city: ", string);
+    output(city, string);
+    output("Address zip: ", string);
+    output(zip, string);
+    output("", string);
+    
+    // ========================================
+    // PART 2: Creating objects with nested arrays
+    // ========================================
+    output("=== Creating Objects with Nested Arrays ===", string);
+    
+    // Create user object
+    ptr user_bob = json.create_object();
+    json.set_string(user_bob, "name", "Bob");
+    json.set_int(user_bob, "age", 25);
+    
+    // Create hobbies array and populate it
+    ptr hobbies = json.create_array();
+    json.array_push_string(hobbies, "reading");
+    json.array_push_string(hobbies, "coding");
+    json.array_push_string(hobbies, "gaming");
+    
+    // Nest the array in the user object
+    json.set_array(user_bob, "hobbies", hobbies);
+    
+    // Convert to JSON string
+    string user_with_hobbies = json.stringify(user_bob);
+    output("User with hobbies array:", string);
+    output(user_with_hobbies, string);
+    output("", string);
+    
+    // Access the nested data
+    string bob_name = json.get_string(user_bob, "name");
+    ptr hobbies_retrieved = json.get_array(user_bob, "hobbies");
+    
+    output("User: ", string);
+    output(bob_name, string);
+    output("Number of hobbies: ", string);
+    int hobby_count = json.array_size(hobbies_retrieved);
+    output(hobby_count, int);
+    
+    // Access array elements
+    string hobby0 = json.array_get_string(hobbies_retrieved, 0);
+    string hobby1 = json.array_get_string(hobbies_retrieved, 1);
+    string hobby2 = json.array_get_string(hobbies_retrieved, 2);
+    
+    output("Hobby 0: ", string);
+    output(hobby0, string);
+    output("Hobby 1: ", string);
+    output(hobby1, string);
+    output("Hobby 2: ", string);
+    output(hobby2, string);
+    output("", string);
+    
+    // ========================================
+    // PART 3: Complex nested structure
+    // ========================================
+    output("=== Complex Nested Structure ===", string);
+    
+    // Create company object
+    ptr company = json.create_object();
+    json.set_string(company, "name", "TechCorp");
+    
+    // Create employees array
+    ptr employees = json.create_array();
+    
+    // Create first employee with skills
+    ptr emp0 = json.create_object();
+    json.set_string(emp0, "name", "Alice");
+    json.set_string(emp0, "role", "Engineer");
+    
+    ptr emp0_skills = json.create_array();
+    json.array_push_string(emp0_skills, "Python");
+    json.array_push_string(emp0_skills, "C++");
+    json.set_array(emp0, "skills", emp0_skills);
+    
+    // Create second employee with skills
+    ptr emp1 = json.create_object();
+    json.set_string(emp1, "name", "Bob");
+    json.set_string(emp1, "role", "Designer");
+    
+    ptr emp1_skills = json.create_array();
+    json.array_push_string(emp1_skills, "Figma");
+    json.array_push_string(emp1_skills, "Photoshop");
+    json.set_array(emp1, "skills", emp1_skills);
+    
+    // Add employees to array
+    json.array_push_object(employees, emp0);
+    json.array_push_object(employees, emp1);
+    
+    // Add employees array to company
+    json.set_array(company, "employees", employees);
+    
+    // Convert to JSON string
+    string company_json = json.stringify(company);
+    output("Company with employees and skills:", string);
+    output(company_json, string);
+    output("", string);
+    
+    // Access the complex structure
+    string company_name = json.get_string(company, "name");
+    ptr employees_retrieved = json.get_array(company, "employees");
+    
+    output("Company: ", string);
+    output(company_name, string);
+    output("Number of employees: ", string);
+    int emp_count = json.array_size(employees_retrieved);
+    output(emp_count, int);
+    output("", string);
+    
+    // Access first employee
+    output("=== Employee 0 ===", string);
+    ptr emp0_retrieved = json.array_get_object(employees_retrieved, 0);
+    string emp0_name = json.get_string(emp0_retrieved, "name");
+    string emp0_role = json.get_string(emp0_retrieved, "role");
+    ptr emp0_skills_retrieved = json.get_array(emp0_retrieved, "skills");
+    
+    output("Name: ", string);
+    output(emp0_name, string);
+    output("Role: ", string);
+    output(emp0_role, string);
+    output("Skills: ", string);
+    string skill0 = json.array_get_string(emp0_skills_retrieved, 0);
+    string skill1 = json.array_get_string(emp0_skills_retrieved, 1);
+    output(skill0, string);
+    output(", ", string);
+    output(skill1, string);
+    output("", string);
+    
+    // Access second employee
+    output("=== Employee 1 ===", string);
+    ptr emp1_retrieved = json.array_get_object(employees_retrieved, 1);
+    string emp1_name = json.get_string(emp1_retrieved, "name");
+    string emp1_role = json.get_string(emp1_retrieved, "role");
+    ptr emp1_skills_retrieved = json.get_array(emp1_retrieved, "skills");
+    
+    output("Name: ", string);
+    output(emp1_name, string);
+    output("Role: ", string);
+    output(emp1_role, string);
+    output("Skills: ", string);
+    string skill2 = json.array_get_string(emp1_skills_retrieved, 0);
+    string skill3 = json.array_get_string(emp1_skills_retrieved, 1);
+    output(skill2, string);
+    output(", ", string);
+    output(skill3, string);
+    output("", string);
+    
+    output("=== Test Complete ===", string);
     return 0;
 }

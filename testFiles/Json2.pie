@@ -1,0 +1,52 @@
+//Testing the JSON module
+import json;
+//Basic operations
+//NB: PIE Auto-wraps the code in the main function if not provided
+void printJson(ptr jsonObj){
+	output(json.stringify(jsonObj),string);
+}
+
+//creating an empty json object
+
+ptr user=json.create_object();
+output("Empty user object",string);
+output(json.stringify(user),string); // {}
+
+//adding some data to the object --> json.set_[DATA-TYPE](ptr,key,value);
+json.set_string(user,"name","John");
+json.set_int(user,"age",20);
+string data=json.stringify(user);
+output("After adding some data \n "+data,string);
+
+//nesting some data
+
+//nesting an array
+ptr hobbies = json.create_array();
+json.array_push_string(hobbies, "reading");
+json.array_push_string(hobbies, "coding");
+json.array_push_string(hobbies, "gaming");
+json.set_array(user,"hobbies",hobbies);
+data=json.stringify(user);
+output("After adding the nested data",string);
+printJson(user);
+
+//nesting an obj
+ptr userAccount=json.create_object();
+json.set_string(userAccount,"Number","0123526512511");
+json.set_string(userAccount,"Bank","PIE Bank");
+json.set_object(user,"account",userAccount);
+output("After nesting the account object",string);
+printJson(user);
+
+//make it even more complex --> a nested object with a nested array
+ptr grades=json.create_object();
+ptr gradesArr=json.create_array();
+json.array_push_string(gradesArr,"A");
+json.array_push_string(gradesArr,"B");
+json.set_array(grades,"Unit 1",gradesArr);
+json.set_object(user,"grades",grades);
+output("After nesting grades",string);
+printJson(user);
+
+
+

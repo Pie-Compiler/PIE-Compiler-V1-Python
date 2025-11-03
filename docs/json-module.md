@@ -157,6 +157,24 @@ Sets a boolean value in the object.
 json.set_bool(user, "active", 1);  // 1 = true, 0 = false
 ```
 
+#### `set_object(ptr obj, string key, ptr value)`
+Sets a nested object in the object.
+
+```pie
+ptr address = json.create_object();
+json.set_string(address, "city", "NYC");
+json.set_object(user, "address", address);
+```
+
+#### `set_array(ptr obj, string key, ptr value)`
+Sets an array in the object.
+
+```pie
+ptr hobbies = json.create_array();
+json.array_push_string(hobbies, "reading");
+json.set_array(user, "hobbies", hobbies);
+```
+
 ### Array Operations
 
 #### `array_size(ptr arr) -> int`
@@ -208,7 +226,184 @@ Adds an object to the end of an array.
 json.array_push_object(users, user);
 ```
 
-## Complete Example
+## Working with Nested Objects
+
+You can programmatically create nested objects using `set_object()`:
+
+```pie
+import json;
+
+// Create user object
+ptr user = json.create_object();
+json.set_string(user, "name", "Alice");
+json.set_int(user, "age", 30);
+
+// Create nested address object
+ptr address = json.create_object();
+json.set_string(address, "street", "123 Main St");
+json.set_string(address, "city", "Springfield");
+json.set_string(address, "zip", "12345");
+
+// Nest the address inside the user
+json.set_object(user, "address", address);
+
+// Convert to JSON
+string json_str = json.stringify(user);
+// Output: {"name":"Alice","age":30,"address":{"street":"123 Main St","city":"Springfield","zip":"12345"}}
+```
+
+You can also parse and access nested objects:
+
+```pie
+// Parse JSON with nested object
+string user_json = '{"name":"Alice","age":30,"address":{"street":"123 Main St","city":"Springfield","zip":"12345"}}';
+ptr user = json.parse(user_json);
+
+// Access top-level fields
+string name = json.get_string(user, "name");
+int age = json.get_int(user, "age");
+
+// Access nested object
+ptr address = json.get_object(user, "address");
+string street = json.get_string(address, "street");
+string city = json.get_string(address, "city");
+string zip = json.get_string(address, "zip");
+
+output("Name: ", string);
+output(name, string);
+output("Street: ", string);
+output(street, string);
+output("City: ", string);
+output(city, string);
+```
+
+## Working with Nested Arrays
+
+You can programmatically create objects with nested arrays using `set_array()`:
+
+```pie
+import json;
+
+// Create user object
+ptr user = json.create_object();
+json.set_string(user, "name", "Bob");
+json.set_int(user, "age", 25);
+
+// Create hobbies array
+ptr hobbies = json.create_array();
+json.array_push_string(hobbies, "reading");
+json.array_push_string(hobbies, "coding");
+json.array_push_string(hobbies, "gaming");
+
+// Nest the array in the user object
+json.set_array(user, "hobbies", hobbies);
+
+// Convert to JSON
+string json_str = json.stringify(user);
+// Output: {"name":"Bob","age":25,"hobbies":["reading","coding","gaming"]}
+```
+
+You can also access nested arrays from parsed JSON:
+
+```pie
+// Parse JSON with array
+string json_str = '{"name":"Bob","age":25,"hobbies":["reading","coding","gaming"]}';
+ptr user = json.parse(json_str);
+
+// Access the array
+ptr hobbies = json.get_array(user, "hobbies");
+
+// Get array length
+int hobby_count = json.array_size(hobbies);
+output("Number of hobbies: ", string);
+output(hobby_count, int);
+
+// Access individual elements
+string hobby0 = json.array_get_string(hobbies, 0);
+string hobby1 = json.array_get_string(hobbies, 1);
+string hobby2 = json.array_get_string(hobbies, 2);
+
+output("Hobbies: ", string);
+output(hobby0, string);
+output(", ", string);
+output(hobby1, string);
+output(", ", string);
+output(hobby2, string);
+```
+
+## Working with Arrays of Objects
+
+You can handle arrays containing objects using `array_get_object()`:
+
+```pie
+import json;
+
+// Parse JSON with array of objects (e.g., server response)
+string json_str = '{"users":[{"name":"Alice","age":30},{"name":"Bob","age":25}]}';
+ptr data = json.parse(json_str);
+
+// Get the users array
+ptr users = json.get_array(data, "users");
+int user_count = json.array_size(users);
+
+// Access first user
+ptr user0 = json.array_get_object(users, 0);
+string name0 = json.get_string(user0, "name");
+int age0 = json.get_int(user0, "age");
+
+// Access second user
+ptr user1 = json.array_get_object(users, 1);
+string name1 = json.get_string(user1, "name");
+int age1 = json.get_int(user1, "age");
+
+output("User 0: ", string);
+output(name0, string);
+output(" (", string);
+output(age0, int);
+output(" years old)", string);
+```
+
+## Complex Nested Structures
+
+The JSON module supports arbitrarily complex nesting of objects and arrays:
+
+```pie
+import json;
+
+// Parse company data with employees containing skills
+string company_json = '{"name":"TechCorp","employees":[{"name":"Alice","role":"Engineer","skills":["Python","C++"]},{"name":"Bob","role":"Designer","skills":["Figma","Photoshop"]}]}';
+ptr company = json.parse(company_json);
+
+// Get company name
+string company_name = json.get_string(company, "name");
+
+// Get employees array
+ptr employees = json.get_array(company, "employees");
+int emp_count = json.array_size(employees);
+
+// Access first employee
+ptr emp0 = json.array_get_object(employees, 0);
+string emp0_name = json.get_string(emp0, "name");
+string emp0_role = json.get_string(emp0, "role");
+
+// Access skills array of first employee
+ptr emp0_skills = json.get_array(emp0, "skills");
+string skill0 = json.array_get_string(emp0_skills, 0);
+string skill1 = json.array_get_string(emp0_skills, 1);
+
+output("Company: ", string);
+output(company_name, string);
+output("Employee: ", string);
+output(emp0_name, string);
+output("Role: ", string);
+output(emp0_role, string);
+output("Skills: ", string);
+output(skill0, string);
+output(", ", string);
+output(skill1, string);
+```
+
+## Complete Basic Example
 
 ```pie
 import json;
@@ -261,12 +456,20 @@ Jansson uses reference counting for memory management. The PIE JSON module curre
 
 ## Testing
 
-The JSON module has been tested with:
+The JSON module has been fully tested with:
 - ✅ Object creation and manipulation
 - ✅ String values
-- ✅ Integer values
-- ✅ Nested structures
+- ✅ Integer values  
+- ✅ Float values
+- ✅ Boolean values
+- ✅ Nested objects (multi-level)
+- ✅ Nested arrays
+- ✅ Arrays of objects
+- ✅ Complex nested structures (objects with arrays of objects with arrays)
 - ✅ JSON parsing
 - ✅ JSON stringification
+- ✅ Array size and element access
 
-See `test_json_simple.pie` for a working example.
+See test files:
+- `testFiles/Json.pie` - Comprehensive nested structures example
+- `test_json_simple.pie` - Basic JSON operations

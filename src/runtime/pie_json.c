@@ -221,6 +221,32 @@ void pie_json_set_bool(pie_json_object_t obj, const char* key, int value) {
     json_object_set_new(json, key, value ? json_true() : json_false());
 }
 
+void pie_json_set_object(pie_json_object_t obj, const char* key, pie_json_object_t value) {
+    if (!obj || !key || !value) {
+        return;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* val_json = (json_t*)value;
+    
+    // Increase reference count since json_object_set_new steals the reference
+    json_incref(val_json);
+    json_object_set_new(json, key, val_json);
+}
+
+void pie_json_set_array(pie_json_object_t obj, const char* key, pie_json_array_t value) {
+    if (!obj || !key || !value) {
+        return;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* val_json = (json_t*)value;
+    
+    // Increase reference count since json_object_set_new steals the reference
+    json_incref(val_json);
+    json_object_set_new(json, key, val_json);
+}
+
 // ============================================================================
 // JSON Array Functions
 // ============================================================================
@@ -235,7 +261,7 @@ int pie_json_array_len(pie_json_array_t arr) {
         return 0;
     }
     
-    return (int)pie_json_array_len(json);
+    return (int)json_array_size(json);
 }
 
 const char* pie_json_array_get_string(pie_json_array_t arr, int index) {

@@ -99,6 +99,18 @@
         "c_name": "pie_json_set_bool"
       },
       {
+        "name": "set_object",
+        "signature": "void(ptr obj, string key, ptr value)",
+        "description": "Set nested object in JSON object",
+        "c_name": "pie_json_set_object"
+      },
+      {
+        "name": "set_array",
+        "signature": "void(ptr obj, string key, ptr value)",
+        "description": "Set array in JSON object",
+        "c_name": "pie_json_set_array"
+      },
+      {
         "name": "array_size",
         "signature": "int(ptr arr)",
         "description": "Get size of JSON array",
