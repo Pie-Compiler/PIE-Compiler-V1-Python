@@ -1,0 +1,120 @@
+// Advanced JSON test - Nested objects and arrays
+
+import json;
+
+output("=== JSON Module - Advanced Test ===", string);
+
+// Test 1: Create complex nested structure
+output("\n--- Test 1: Nested Objects ---", string);
+
+json.object person = json.create_object();
+json.set_string(person, "name", "John Doe");
+json.set_int(person, "age", 35);
+
+// Create nested address object
+json.object address = json.create_object();
+json.set_string(address, "street", "123 Main St");
+json.set_string(address, "city", "San Francisco");
+json.set_string(address, "state", "CA");
+json.set_int(address, "zipcode", 94102);
+
+// Note: We can't set nested objects yet without additional support
+// For now, we'll create separate objects and stringify them
+
+string person_json = json.stringify(person);
+output("Person: " + person_json, string);
+
+string address_json = json.stringify(address);
+output("Address: " + address_json, string);
+
+// Test 2: Array of objects
+output("\n--- Test 2: Array of Objects ---", string);
+
+json.array users = json.create_array();
+
+json.object user1 = json.create_object();
+json.set_string(user1, "name", "Alice");
+json.set_int(user1, "age", 28);
+json.array_push_object(users, user1);
+
+json.object user2 = json.create_object();
+json.set_string(user2, "name", "Bob");
+json.set_int(user2, "age", 32);
+json.array_push_object(users, user2);
+
+json.object user3 = json.create_object();
+json.set_string(user3, "name", "Charlie");
+json.set_int(user3, "age", 25);
+json.array_push_object(users, user3);
+
+int users_count = json.array_size(users);
+output("Users count: ", string);
+output(users_count, int);
+
+// Get each user object from array
+for (int i = 0; i < users_count; i++) {
+    json.object user = json.array_get_object(users, i);
+    if (user != null) {
+        string user_name = json.get_string(user, "name");
+        int user_age = json.get_int(user, "age");
+        output("User " + i + ": " + user_name + ", Age: ", string);
+        output(user_age, int);
+    }
+}
+
+// Test 3: Parse complex JSON
+output("\n--- Test 3: Parse Complex JSON ---", string);
+
+string complex_json = "{\"product\":\"Laptop\",\"price\":1299.99,\"inStock\":1,\"quantity\":15}";
+json.object product = json.parse(complex_json);
+
+if (product != null) {
+    string product_name = json.get_string(product, "product");
+    float price = json.get_float(product, "price");
+    int inStock = json.get_bool(product, "inStock");
+    int quantity = json.get_int(product, "quantity");
+    
+    output("Product: " + product_name, string);
+    output("Price: $", string);
+    output(price, float, 2);
+    output("In Stock: ", string);
+    output(inStock, int);
+    output("Quantity: ", string);
+    output(quantity, int);
+}
+
+// Test 4: Mixed array types (using separate arrays)
+output("\n--- Test 4: Multiple Arrays ---", string);
+
+json.array string_array = json.create_array();
+json.array_push_string(string_array, "apple");
+json.array_push_string(string_array, "banana");
+json.array_push_string(string_array, "cherry");
+
+json.array number_array = json.create_array();
+json.array_push_int(number_array, 10);
+json.array_push_int(number_array, 20);
+json.array_push_int(number_array, 30);
+
+output("Fruits:", string);
+for (int i = 0; i < json.array_size(string_array); i++) {
+    string fruit = json.array_get_string(string_array, i);
+    output("  - " + fruit, string);
+}
+
+output("Numbers:", string);
+for (int i = 0; i < json.array_size(number_array); i++) {
+    int num = json.array_get_int(number_array, i);
+    output("  - ", string);
+    output(num, int);
+}
+
+// Test 5: Stringify array
+output("\n--- Test 5: Stringify Arrays ---", string);
+string fruits_json = json.stringify(string_array);
+output("Fruits JSON: " + fruits_json, string);
+
+string numbers_json = json.stringify(number_array);
+output("Numbers JSON: " + numbers_json, string);
+
+output("\n=== JSON Advanced Tests Complete! ===", string);

@@ -2,139 +2,344 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <jansson.h>
 
 // ============================================================================
-// STUB IMPLEMENTATIONS - Replace with real Jansson library code
+// JSON Object Creation and Parsing
 // ============================================================================
 
-// Stub structure for JSON objects (in real implementation, this would be json_t*)
-typedef struct {
-    int is_array;
-    int stub_marker;
-} stub_json_t;
-
-json_object_t json_parse(const char* text) {
-    // STUB: Return a dummy object
-    stub_json_t* obj = malloc(sizeof(stub_json_t));
-    obj->is_array = 0;
-    obj->stub_marker = 0xDEADBEEF;
-    printf("[STUB] Parsing JSON: %s\n", text);
-    return obj;
+pie_json_object_t pie_json_parse(const char* text) {
+    if (!text) {
+        return NULL;
+    }
+    
+    json_error_t error;
+    json_t* root = json_loads(text, 0, &error);
+    
+    if (!root) {
+        fprintf(stderr, "JSON parse error on line %d: %s\n", error.line, error.text);
+        return NULL;
+    }
+    
+    return (pie_json_object_t)root;
 }
 
-char* json_stringify(json_object_t obj) {
-    // STUB: Return placeholder JSON string
-    char* result = malloc(256);
-    strcpy(result, "{\"stub\": \"This is a stub JSON response\"}");
+char* pie_json_stringify(pie_json_object_t obj) {
+    if (!obj) {
+        return strdup("null");
+    }
+    
+    json_t* json = (json_t*)obj;
+    char* result = json_dumps(json, JSON_COMPACT);
+    
+    if (!result) {
+        return strdup("null");
+    }
+    
     return result;
 }
 
-json_object_t json_create_object() {
-    // STUB: Return a dummy object
-    stub_json_t* obj = malloc(sizeof(stub_json_t));
-    obj->is_array = 0;
-    obj->stub_marker = 0xDEADBEEF;
-    return obj;
+pie_json_object_t pie_json_create_object() {
+    return (pie_json_object_t)json_object();
 }
 
-json_array_t json_create_array() {
-    // STUB: Return a dummy array
-    stub_json_t* arr = malloc(sizeof(stub_json_t));
-    arr->is_array = 1;
-    arr->stub_marker = 0xDEADBEEF;
-    return arr;
+pie_json_array_t pie_json_create_array() {
+    return (pie_json_array_t)json_array();
 }
 
-void json_free(json_object_t obj) {
-    // STUB: Free the dummy object
+void pie_json_free(pie_json_object_t obj) {
     if (obj) {
-        free(obj);
+        json_decref((json_t*)obj);
     }
 }
 
 // ============================================================================
-// Get Functions (Stubs)
+// JSON Object Get Functions
 // ============================================================================
 
-const char* json_get_string(json_object_t obj, const char* key) {
-    return "[STUB] string value";
+const char* pie_json_get_string(pie_json_object_t obj, const char* key) {
+    if (!obj || !key) {
+        return "";
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* value = json_object_get(json, key);
+    
+    if (!value || !json_is_string(value)) {
+        return "";
+    }
+    
+    const char* str = json_string_value(value);
+    return str ? str : "";
 }
 
-int json_get_int(json_object_t obj, const char* key) {
-    return 42; // STUB value
+int pie_json_get_int(pie_json_object_t obj, const char* key) {
+    if (!obj || !key) {
+        return 0;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* value = json_object_get(json, key);
+    
+    if (!value) {
+        return 0;
+    }
+    
+    if (json_is_integer(value)) {
+        return (int)json_integer_value(value);
+    }
+    
+    if (json_is_real(value)) {
+        return (int)json_real_value(value);
+    }
+    
+    return 0;
 }
 
-double json_get_float(json_object_t obj, const char* key) {
-    return 3.14; // STUB value
+double pie_json_get_float(pie_json_object_t obj, const char* key) {
+    if (!obj || !key) {
+        return 0.0;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* value = json_object_get(json, key);
+    
+    if (!value) {
+        return 0.0;
+    }
+    
+    if (json_is_real(value)) {
+        return json_real_value(value);
+    }
+    
+    if (json_is_integer(value)) {
+        return (double)json_integer_value(value);
+    }
+    
+    return 0.0;
 }
 
-int json_get_bool(json_object_t obj, const char* key) {
-    return 1; // STUB: always true
+int pie_json_get_bool(pie_json_object_t obj, const char* key) {
+    if (!obj || !key) {
+        return 0;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* value = json_object_get(json, key);
+    
+    if (!value) {
+        return 0;
+    }
+    
+    if (json_is_true(value)) {
+        return 1;
+    }
+    
+    if (json_is_false(value)) {
+        return 0;
+    }
+    
+    // For non-boolean values, return truthy behavior
+    if (json_is_integer(value)) {
+        return json_integer_value(value) != 0;
+    }
+    
+    return 0;
 }
 
-json_object_t json_get_object(json_object_t obj, const char* key) {
-    return json_create_object(); // STUB: return new empty object
+pie_json_object_t pie_json_get_object(pie_json_object_t obj, const char* key) {
+    if (!obj || !key) {
+        return NULL;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* value = json_object_get(json, key);
+    
+    if (!value || !json_is_object(value)) {
+        return NULL;
+    }
+    
+    // Increase reference count since we're returning it
+    json_incref(value);
+    return (pie_json_object_t)value;
 }
 
-json_array_t json_get_array(json_object_t obj, const char* key) {
-    return json_create_array(); // STUB: return new empty array
+pie_json_array_t pie_json_get_array(pie_json_object_t obj, const char* key) {
+    if (!obj || !key) {
+        return NULL;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_t* value = json_object_get(json, key);
+    
+    if (!value || !json_is_array(value)) {
+        return NULL;
+    }
+    
+    // Increase reference count since we're returning it
+    json_incref(value);
+    return (pie_json_array_t)value;
 }
 
 // ============================================================================
-// Set Functions (Stubs)
+// JSON Object Set Functions
 // ============================================================================
 
-void json_set_string(json_object_t obj, const char* key, const char* value) {
-    // STUB: Do nothing
-    printf("[STUB] Setting %s = \"%s\"\n", key, value);
+void pie_json_set_string(pie_json_object_t obj, const char* key, const char* value) {
+    if (!obj || !key || !value) {
+        return;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_object_set_new(json, key, json_string(value));
 }
 
-void json_set_int(json_object_t obj, const char* key, int value) {
-    // STUB: Do nothing
-    printf("[STUB] Setting %s = %d\n", key, value);
+void pie_json_set_int(pie_json_object_t obj, const char* key, int value) {
+    if (!obj || !key) {
+        return;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_object_set_new(json, key, json_integer(value));
 }
 
-void json_set_float(json_object_t obj, const char* key, double value) {
-    // STUB: Do nothing
-    printf("[STUB] Setting %s = %f\n", key, value);
+void pie_json_set_float(pie_json_object_t obj, const char* key, double value) {
+    if (!obj || !key) {
+        return;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_object_set_new(json, key, json_real(value));
 }
 
-void json_set_bool(json_object_t obj, const char* key, int value) {
-    // STUB: Do nothing
-    printf("[STUB] Setting %s = %s\n", key, value ? "true" : "false");
+void pie_json_set_bool(pie_json_object_t obj, const char* key, int value) {
+    if (!obj || !key) {
+        return;
+    }
+    
+    json_t* json = (json_t*)obj;
+    json_object_set_new(json, key, value ? json_true() : json_false());
 }
 
 // ============================================================================
-// Array Functions (Stubs)
+// JSON Array Functions
 // ============================================================================
 
-int json_array_size(json_array_t arr) {
-    return 0; // STUB: empty array
+int pie_json_array_len(pie_json_array_t arr) {
+    if (!arr) {
+        return 0;
+    }
+    
+    json_t* json = (json_t*)arr;
+    if (!json_is_array(json)) {
+        return 0;
+    }
+    
+    return (int)pie_json_array_len(json);
 }
 
-const char* json_array_get_string(json_array_t arr, int index) {
-    return "[STUB] array string";
+const char* pie_json_array_get_string(pie_json_array_t arr, int index) {
+    if (!arr || index < 0) {
+        return "";
+    }
+    
+    json_t* json = (json_t*)arr;
+    if (!json_is_array(json)) {
+        return "";
+    }
+    
+    json_t* value = json_array_get(json, (size_t)index);
+    if (!value || !json_is_string(value)) {
+        return "";
+    }
+    
+    const char* str = json_string_value(value);
+    return str ? str : "";
 }
 
-int json_array_get_int(json_array_t arr, int index) {
-    return 42; // STUB value
+int pie_json_array_get_int(pie_json_array_t arr, int index) {
+    if (!arr || index < 0) {
+        return 0;
+    }
+    
+    json_t* json = (json_t*)arr;
+    if (!json_is_array(json)) {
+        return 0;
+    }
+    
+    json_t* value = json_array_get(json, (size_t)index);
+    if (!value) {
+        return 0;
+    }
+    
+    if (json_is_integer(value)) {
+        return (int)json_integer_value(value);
+    }
+    
+    if (json_is_real(value)) {
+        return (int)json_real_value(value);
+    }
+    
+    return 0;
 }
 
-json_object_t json_array_get_object(json_array_t arr, int index) {
-    return json_create_object(); // STUB: return new empty object
+pie_json_object_t pie_json_array_get_object(pie_json_array_t arr, int index) {
+    if (!arr || index < 0) {
+        return NULL;
+    }
+    
+    json_t* json = (json_t*)arr;
+    if (!json_is_array(json)) {
+        return NULL;
+    }
+    
+    json_t* value = json_array_get(json, (size_t)index);
+    if (!value || !json_is_object(value)) {
+        return NULL;
+    }
+    
+    // Increase reference count since we're returning it
+    json_incref(value);
+    return (pie_json_object_t)value;
 }
 
-void json_array_push_string(json_array_t arr, const char* value) {
-    // STUB: Do nothing
-    printf("[STUB] Pushing string to array: \"%s\"\n", value);
+void pie_json_array_push_string(pie_json_array_t arr, const char* value) {
+    if (!arr || !value) {
+        return;
+    }
+    
+    json_t* json = (json_t*)arr;
+    if (!json_is_array(json)) {
+        return;
+    }
+    
+    json_array_append_new(json, json_string(value));
 }
 
-void json_array_push_int(json_array_t arr, int value) {
-    // STUB: Do nothing
-    printf("[STUB] Pushing int to array: %d\n", value);
+void pie_json_array_push_int(pie_json_array_t arr, int value) {
+    if (!arr) {
+        return;
+    }
+    
+    json_t* json = (json_t*)arr;
+    if (!json_is_array(json)) {
+        return;
+    }
+    
+    json_array_append_new(json, json_integer(value));
 }
 
-void json_array_push_object(json_array_t arr, json_object_t obj) {
-    // STUB: Do nothing
-    printf("[STUB] Pushing object to array\n");
+void pie_json_array_push_object(pie_json_array_t arr, pie_json_object_t obj) {
+    if (!arr || !obj) {
+        return;
+    }
+    
+    json_t* json = (json_t*)arr;
+    if (!json_is_array(json)) {
+        return;
+    }
+    
+    // Increase reference count since the array will hold a reference
+    json_incref((json_t*)obj);
+    json_array_append(json, (json_t*)obj);
 }

@@ -16,7 +16,12 @@ string post_response = http.post(
     new_post,
     null
 );
+int response_code=http.get_status_code();
+output("Response code: "+response_code,string);
+if(response_code!=201 && response_code!=200){
+	output("Request Failed with code: "+response_code,string);
+}else{
 output("Created Post:", string);
 output(post_response, string);
-
+}
 output("=== All HTTP tests complete! ===", string);

@@ -1,0 +1,86 @@
+// Basic JSON module test - Creating and manipulating JSON objects
+
+import json;
+
+output("=== JSON Module - Basic Test ===", string);
+
+// Test 1: Create JSON object and set values
+output("\n--- Test 1: Create and Set Values ---", string);
+json.object user = json.create_object();
+json.set_string(user, "name", "Alice");
+json.set_int(user, "age", 30);
+json.set_float(user, "score", 95.5);
+json.set_bool(user, "active", 1);
+
+// Test 2: Get values from JSON object
+output("\n--- Test 2: Get Values ---", string);
+string name = json.get_string(user, "name");
+int age = json.get_int(user, "age");
+float score = json.get_float(user, "score");
+int active = json.get_bool(user, "active");
+
+output("Name: " + name, string);
+output("Age: ", string);
+output(age, int);
+output("Score: ", string);
+output(score, float, 2);
+output("Active: ", string);
+output(active, int);
+
+// Test 3: Stringify JSON object
+output("\n--- Test 3: Stringify ---", string);
+string json_str = json.stringify(user);
+output("JSON String: " + json_str, string);
+
+// Test 4: Parse JSON string
+output("\n--- Test 4: Parse JSON ---", string);
+string json_input = "{\"username\":\"bob\",\"level\":5,\"points\":1250.75}";
+json.object parsed = json.parse(json_input);
+
+if (parsed != null) {
+    string username = json.get_string(parsed, "username");
+    int level = json.get_int(parsed, "level");
+    float points = json.get_float(parsed, "points");
+    
+    output("Parsed Username: " + username, string);
+    output("Parsed Level: ", string);
+    output(level, int);
+    output("Parsed Points: ", string);
+    output(points, float, 2);
+}
+
+// Test 5: Create and manipulate JSON array
+output("\n--- Test 5: JSON Array ---", string);
+json.array names = json.create_array();
+json.array_push_string(names, "Alice");
+json.array_push_string(names, "Bob");
+json.array_push_string(names, "Charlie");
+
+int count = json.array_size(names);
+output("Array size: ", string);
+output(count, int);
+
+for (int i = 0; i < count; i++) {
+    string name_item = json.array_get_string(names, i);
+    output("  [" + i + "]: " + name_item, string);
+}
+
+// Test 6: Array of integers
+output("\n--- Test 6: Integer Array ---", string);
+json.array scores_arr = json.create_array();
+json.array_push_int(scores_arr, 85);
+json.array_push_int(scores_arr, 92);
+json.array_push_int(scores_arr, 78);
+json.array_push_int(scores_arr, 95);
+
+int scores_count = json.array_size(scores_arr);
+output("Scores count: ", string);
+output(scores_count, int);
+
+for (int i = 0; i < scores_count; i++) {
+    int score_val = json.array_get_int(scores_arr, i);
+    output("  Score " + i + ": ", string);
+    output(score_val, int);
+}
+
+output("\n=== JSON Basic Tests Complete! ===", string);

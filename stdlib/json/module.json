@@ -16,121 +16,131 @@
     "functions": [
       {
         "name": "parse",
-        "signature": "json.object(string text)",
-        "description": "Parse JSON string into object"
+        "signature": "ptr(string text)",
+        "description": "Parse JSON string into object",
+        "c_name": "pie_json_parse"
       },
       {
         "name": "stringify",
-        "signature": "string(json.object obj)",
-        "description": "Convert JSON object to string"
+        "signature": "string(ptr obj)",
+        "description": "Convert JSON object to string",
+        "c_name": "pie_json_stringify"
       },
       {
         "name": "create_object",
-        "signature": "json.object()",
-        "description": "Create new JSON object"
+        "signature": "ptr()",
+        "description": "Create new JSON object",
+        "c_name": "pie_json_create_object"
       },
       {
         "name": "create_array",
-        "signature": "json.array()",
-        "description": "Create new JSON array"
+        "signature": "ptr()",
+        "description": "Create new JSON array",
+        "c_name": "pie_json_create_array"
       },
       {
         "name": "get_string",
-        "signature": "string(json.object obj, string key)",
-        "description": "Get string value from JSON object"
+        "signature": "string(ptr obj, string key)",
+        "description": "Get string value from JSON object",
+        "c_name": "pie_json_get_string"
       },
       {
         "name": "get_int",
-        "signature": "int(json.object obj, string key)",
-        "description": "Get integer value from JSON object"
+        "signature": "int(ptr obj, string key)",
+        "description": "Get integer value from JSON object",
+        "c_name": "pie_json_get_int"
       },
       {
         "name": "get_float",
-        "signature": "float(json.object obj, string key)",
-        "description": "Get float value from JSON object"
+        "signature": "float(ptr obj, string key)",
+        "description": "Get float value from JSON object",
+        "c_name": "pie_json_get_float"
       },
       {
         "name": "get_bool",
-        "signature": "bool(json.object obj, string key)",
-        "description": "Get boolean value from JSON object"
+        "signature": "int(ptr obj, string key)",
+        "description": "Get boolean value from JSON object",
+        "c_name": "pie_json_get_bool"
       },
       {
         "name": "get_object",
-        "signature": "json.object(json.object obj, string key)",
-        "description": "Get nested object from JSON object"
+        "signature": "ptr(ptr obj, string key)",
+        "description": "Get nested object from JSON object",
+        "c_name": "pie_json_get_object"
       },
       {
         "name": "get_array",
-        "signature": "json.array(json.object obj, string key)",
-        "description": "Get array from JSON object"
+        "signature": "ptr(ptr obj, string key)",
+        "description": "Get array from JSON object",
+        "c_name": "pie_json_get_array"
       },
       {
         "name": "set_string",
-        "signature": "void(json.object obj, string key, string value)",
-        "description": "Set string value in JSON object"
+        "signature": "void(ptr obj, string key, string value)",
+        "description": "Set string value in JSON object",
+        "c_name": "pie_json_set_string"
       },
       {
         "name": "set_int",
-        "signature": "void(json.object obj, string key, int value)",
-        "description": "Set integer value in JSON object"
+        "signature": "void(ptr obj, string key, int value)",
+        "description": "Set integer value in JSON object",
+        "c_name": "pie_json_set_int"
       },
       {
         "name": "set_float",
-        "signature": "void(json.object obj, string key, float value)",
-        "description": "Set float value in JSON object"
+        "signature": "void(ptr obj, string key, float value)",
+        "description": "Set float value in JSON object",
+        "c_name": "pie_json_set_float"
       },
       {
         "name": "set_bool",
-        "signature": "void(json.object obj, string key, bool value)",
-        "description": "Set boolean value in JSON object"
+        "signature": "void(ptr obj, string key, int value)",
+        "description": "Set boolean value in JSON object",
+        "c_name": "pie_json_set_bool"
       },
       {
         "name": "array_size",
-        "signature": "int(json.array arr)",
-        "description": "Get size of JSON array"
+        "signature": "int(ptr arr)",
+        "description": "Get size of JSON array",
+        "c_name": "pie_json_array_len"
       },
       {
         "name": "array_get_string",
-        "signature": "string(json.array arr, int index)",
-        "description": "Get string from JSON array at index"
+        "signature": "string(ptr arr, int index)",
+        "description": "Get string from JSON array at index",
+        "c_name": "pie_json_array_get_string"
       },
       {
         "name": "array_get_int",
-        "signature": "int(json.array arr, int index)",
-        "description": "Get integer from JSON array at index"
+        "signature": "int(ptr arr, int index)",
+        "description": "Get integer from JSON array at index",
+        "c_name": "pie_json_array_get_int"
       },
       {
         "name": "array_get_object",
-        "signature": "json.object(json.array arr, int index)",
-        "description": "Get object from JSON array at index"
+        "signature": "ptr(ptr arr, int index)",
+        "description": "Get object from JSON array at index",
+        "c_name": "pie_json_array_get_object"
       },
       {
         "name": "array_push_string",
-        "signature": "void(json.array arr, string value)",
-        "description": "Add string to JSON array"
+        "signature": "void(ptr arr, string value)",
+        "description": "Add string to JSON array",
+        "c_name": "pie_json_array_push_string"
       },
       {
         "name": "array_push_int",
-        "signature": "void(json.array arr, int value)",
-        "description": "Add integer to JSON array"
+        "signature": "void(ptr arr, int value)",
+        "description": "Add integer to JSON array",
+        "c_name": "pie_json_array_push_int"
       },
       {
         "name": "array_push_object",
-        "signature": "void(json.array arr, json.object obj)",
-        "description": "Add object to JSON array"
+        "signature": "void(ptr arr, ptr obj)",
+        "description": "Add object to JSON array",
+        "c_name": "pie_json_array_push_object"
       }
     ],
-    "types": [
-      {
-        "name": "object",
-        "type": "opaque",
-        "description": "JSON object type (opaque pointer to C json_t)"
-      },
-      {
-        "name": "array",
-        "type": "opaque",
-        "description": "JSON array type (opaque pointer to C json_t)"
-      }
-    ]
+    "types": []
   }
 }

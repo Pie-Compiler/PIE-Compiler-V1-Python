@@ -362,7 +362,8 @@ class LLVMCodeGenerator(Visitor):
                 # For stdlib modules, just declare external functions
                 for func in module_info.get_functions():
                     full_name = f"{namespace}.{func['name']}"
-                    c_name = full_name.replace('.', '_')  # http.get -> http_get
+                    # Use c_name if provided in module.json, otherwise derive from full_name
+                    c_name = func.get('c_name', full_name.replace('.', '_'))  # e.g., json.parse -> pie_json_parse if c_name is set
                     
                     # Check if already declared
                     try:
@@ -2008,8 +2009,25 @@ class LLVMCodeGenerator(Visitor):
     
     def visit_module_function_call(self, node):
         """Handle calls to module functions like http.get() or json.parse()"""
-        # Convert module.function to module_function (C name)
-        c_name = node.name.replace('.', '_')
+        # Split module.function to get module name and function name
+        parts = node.name.split('.', 1)
+        if len(parts) == 2:
+            module_name, func_name = parts
+            # Look up the function in module metadata to get c_name
+            c_name = None
+            if module_name in self.imported_modules:
+                module_info = self.imported_modules[module_name]
+                for func in module_info.get_functions():
+                    if func['name'] == func_name:
+                        # Use c_name if provided, otherwise derive from full name
+                        c_name = func.get('c_name', node.name.replace('.', '_'))
+                        break
+            if not c_name:
+                # Fallback to old behavior if module not found
+                c_name = node.name.replace('.', '_')
+        else:
+            # No module prefix, use as-is
+            c_name = node.name
         
         # Get the function from the module
         try:

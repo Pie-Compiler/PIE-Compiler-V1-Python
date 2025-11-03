@@ -1,6 +1,24 @@
-// Simple JSON test
+// Simplified JSON test using ptr type
+
 import json;
 
-void start() {
-    output("JSON module loaded successfully", string);
-}
+output("=== JSON Module Test ===", string);
+
+// Create JSON object using ptr type
+ptr user = json.create_object();
+json.set_string(user, "name", "Alice");
+json.set_int(user, "age", 30);
+
+// Get values
+string name = json.get_string(user, "name");
+int age = json.get_int(user, "age");
+
+output("Name: " + name, string);
+output("Age: ", string);
+output(age, int);
+
+// Stringify
+string json_str = json.stringify(user);
+output("JSON: " + json_str, string);
+
+output("=== Test Complete ===", string);
