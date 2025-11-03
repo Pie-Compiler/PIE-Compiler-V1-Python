@@ -1,0 +1,62 @@
+//A file to show how to create functions in PIE
+
+//string function to check if a string is long
+string isLong(string myString){
+	if(myString>5){ //PIE auctomatically compares string lengths when using comparison operators between strings and integers
+		return "This string is long";
+	}else{
+		return "This string is not long";
+	}
+}
+
+//int function to add two integers
+int addInts(int a, int b){
+	return a + b;
+}
+
+//float function to multiply two floats
+float multiplyFloats(float x, float y){
+	return x * y;
+}
+
+
+//char function to get first character of a string
+char getGrade(float grade){
+	if(grade >= 90.0){
+		return 'A';
+	}else if(grade >= 80.0){
+		return 'B';
+	}else if(grade >= 70.0){
+		return 'C';
+	}else if(grade >= 60.0){
+		return 'D';
+	}else{
+		return 'F';
+	}
+}
+
+//test string function
+output("Please enter a string an I'll tell you if it's long",string);
+string userInput;
+input(userInput,string);
+output(isLong(userInput),string);
+
+//test int function
+output("Please enter two integers to add",string);
+int int1;
+int int2;
+input(int1,int);
+input(int2,int);
+output("The sum is: " + addInts(int1,int2),string);
+//test float function
+output("Please enter two floats to multiply",string);
+float float1;
+float float2;
+input(float1,float);
+input(float2,float);
+output("The product is: " + multiplyFloats(float1,float2),string);
+//test char function
+output("Please enter a grade (float) to get the letter grade",string);
+float gradeInput;
+input(gradeInput,float);
+output("The letter grade is: " + getGrade(gradeInput),string);

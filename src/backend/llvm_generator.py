@@ -834,7 +834,20 @@ class LLVMCodeGenerator(Visitor):
                 self.builder.ret_void()
             else:
                 # Default return for non-void functions (e.g., return 0 for int main)
-                zero = ir.Constant(return_type, 0)
+                if isinstance(return_type, ir.PointerType):
+                    # For pointer types, use null instead of 0
+                    zero = ir.Constant(return_type, None)
+                elif isinstance(return_type, ir.IntType) and return_type.width == 8:
+                    # For i8 (char), use 0
+                    zero = ir.Constant(return_type, 0)
+                elif isinstance(return_type, ir.IntType):
+                    # For other integer types
+                    zero = ir.Constant(return_type, 0)
+                elif isinstance(return_type, ir.DoubleType):
+                    # For floats
+                    zero = ir.Constant(return_type, 0.0)
+                else:
+                    zero = ir.Constant(return_type, 0)
                 self.builder.ret(zero)
 
         # 7. Clean up for the next function

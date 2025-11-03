@@ -52,14 +52,20 @@ if (logFile != null) {
     
     // Complex expression with function call result
     file_write(logFile, "[" + timeStr + "] Event occurred\n");
+    file_flush(logFile); //ensure data is written to disk
     file_close(logFile);
 }
 
 //reading all lines to an array 
 logFile=file_open("log.txt","r");
-string lines[]=file_read_lines(logFile);
-int numLines=arr_size(lines);
-output("The file has "+numLines+" lines in it",string);
-for(int i=0;i<numLines;i=i+1){
-    output("Line "+(i+1)+": "+lines[i],string);
+if(logFile==null){
+    output("Failed to open log file for reading",string);
+}else{
+    string lines[]=file_read_lines(logFile);
+    int numLines=arr_size(lines);
+    output("The file has "+numLines+" lines in it",string);
+    for(int i=0;i<numLines;i=i+1){
+        output("Line "+(i+1)+": "+lines[i],string);
+    }
 }
+ file_close(logFile);

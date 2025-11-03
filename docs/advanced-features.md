@@ -608,6 +608,153 @@ if (f != null) {
 }
 ```
 
+#### Reading Lines from a File
+
+The `file_read_lines` function reads lines from a file into a dynamic string array. It supports optional parameters to read a specific range of lines.
+
+**Syntax:**
+```pie
+string[] file_read_lines(file f);                    // Read all lines
+string[] file_read_lines(file f, int start_line);    // Read from line N to end
+string[] file_read_lines(file f, int start, int end); // Read lines N through M
+```
+
+**Parameters:**
+- `f` - File handle opened in read mode
+- `start_line` (optional) - Starting line number (0-based index)
+- `end` (optional) - Ending line number (inclusive)
+
+**Returns:**
+- Dynamic array of strings, one per line
+- Empty array if file is empty or range is invalid
+
+**Line Indexing:**
+- Lines are 0-indexed (first line is line 0)
+- End line is inclusive (line `end` is included in result)
+
+**Example 1: Read All Lines**
+```pie
+file f = file_open("data.txt", "r");
+
+if (f != null) {
+    string[] lines = file_read_lines(f);
+    file_close(f);
+    
+    output("Total lines: ", string);
+    output(arr_size(lines), int);
+    
+    // Process each line
+    for (int i = 0; i < arr_size(lines); i++) {
+        output("Line ", string);
+        output(i, int);
+        output(": " + lines[i], string);
+    }
+}
+```
+
+**Example 2: Read from a Specific Line to End**
+```pie
+file log = file_open("server.log", "r");
+
+if (log != null) {
+    // Read from line 100 to end (skip first 100 lines)
+    string[] recent = file_read_lines(log, 100);
+    file_close(log);
+    
+    output("Recent log entries: ", string);
+    output(arr_size(recent), int);
+    
+    for (int i = 0; i < arr_size(recent); i++) {
+        output(recent[i], string);
+    }
+}
+```
+
+**Example 3: Read a Range of Lines**
+```pie
+file report = file_open("report.txt", "r");
+
+if (report != null) {
+    // Read lines 10 through 20 (11 lines total)
+    string[] section = file_read_lines(report, 10, 20);
+    file_close(report);
+    
+    output("Section lines: ", string);
+    output(arr_size(section), int);
+    
+    for (int i = 0; i < arr_size(section); i++) {
+        output(section[i], string);
+    }
+}
+```
+
+**Example 4: Read First N Lines**
+```pie
+file preview = file_open("large_file.txt", "r");
+
+if (preview != null) {
+    // Read first 5 lines (lines 0-4)
+    string[] header = file_read_lines(preview, 0, 4);
+    file_close(preview);
+    
+    output("File preview:", string);
+    for (int i = 0; i < arr_size(header); i++) {
+        output(header[i], string);
+    }
+}
+```
+
+**Practical Use Cases:**
+
+1. **Processing CSV Files**
+   ```pie
+   file csv = file_open("data.csv", "r");
+   string[] lines = file_read_lines(csv, 1);  // Skip header line
+   file_close(csv);
+   
+   for (int i = 0; i < arr_size(lines); i++) {
+       // Process each data row
+       output("Record: " + lines[i], string);
+   }
+   ```
+
+2. **Log File Analysis**
+   ```pie
+   file errors = file_open("error.log", "r");
+   string[] all_lines = file_read_lines(errors);
+   file_close(errors);
+   
+   int error_count = 0;
+   for (int i = 0; i < arr_size(all_lines); i++) {
+       // Check if line contains "ERROR"
+       // (Note: PIE doesn't have string_contains yet, this is conceptual)
+       error_count = error_count + 1;
+   }
+   
+   output("Total errors found: ", string);
+   output(error_count, int);
+   ```
+
+3. **Reading Configuration Sections**
+   ```pie
+   file config = file_open("config.ini", "r");
+   
+   // Read database section (lines 50-60)
+   string[] db_config = file_read_lines(config, 50, 60);
+   file_close(config);
+   
+   for (int i = 0; i < arr_size(db_config); i++) {
+       output(db_config[i], string);
+   }
+   ```
+
+**Notes:**
+- Lines are read as-is, including any trailing whitespace
+- Line endings (`\n`, `\r\n`) are stripped from each line
+- If `start_line` is beyond the end of file, returns empty array
+- If `end` is beyond the end of file, reads until end of file
+- Each line becomes one element in the returned array
+
 #### Appending to a File
 
 ```pie
