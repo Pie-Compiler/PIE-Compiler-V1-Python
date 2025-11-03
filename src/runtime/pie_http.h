@@ -1,15 +1,14 @@
 #ifndef PIE_HTTP_H
 #define PIE_HTTP_H
 
+#include "dict_lib.h"
+
 // HTTP Module - Client and Server Support
 // This module provides HTTP client (via libcurl) and server (via libmicrohttpd) functionality
 
 // Opaque types for HTTP structures
 typedef void* http_request_t;
 typedef void* http_response_t;
-
-// Dictionary type (forward declaration - defined in dict_lib.h)
-typedef struct Dictionary Dictionary;
 
 // Function pointer type for HTTP request handlers
 typedef void (*http_handler_t)(http_request_t request, http_response_t response);
@@ -92,11 +91,11 @@ char* http_delete(const char* url);
 int http_get_status_code(void);
 
 /**
- * Get HTTP response headers from last request
+ * Get HTTP response headers from last request as a Dictionary
  * NOTE: This is a simplified API. Use http_get_full() for better header handling
- * @return Last response headers as string (do not free)
+ * @return Dictionary with header names as keys and header values as strings (caller must free)
  */
-const char* http_get_response_headers(void);
+Dictionary* http_get_response_headers(void);
 
 /**
  * Free http_client_response_t structure

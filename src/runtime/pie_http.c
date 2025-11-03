@@ -1,9 +1,11 @@
 #include "pie_http.h"
+#include "dict_lib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
 #include <microhttpd.h>
+#include <ctype.h>
 
 // ============================================================================
 // Internal Structures and Helpers
@@ -30,6 +32,12 @@ typedef struct {
     http_handler_t handler;
     struct MHD_Daemon* daemon;
 } server_context_t;
+
+// Connection-specific data for accumulating POST/PUT body
+typedef struct {
+    char* body_data;
+    size_t body_size;
+} connection_data_t;
 
 // Server request/response structures
 typedef struct {
@@ -442,8 +450,62 @@ int http_get_status_code(void) {
     return last_status_code;
 }
 
-const char* http_get_response_headers(void) {
-    return last_response_headers ? last_response_headers : "";
+Dictionary* http_get_response_headers(void) {
+    Dictionary* headers_dict = dict_create();
+    
+    if (!last_response_headers || strlen(last_response_headers) == 0) {
+        return headers_dict;
+    }
+    
+    // Parse the raw headers string into key-value pairs
+    // Headers are formatted as "Name: Value\r\n" or "Name: Value\n"
+    char* headers_copy = strdup(last_response_headers);
+    char* line = strtok(headers_copy, "\r\n");
+    
+    while (line != NULL) {
+        // Skip empty lines and status line (starts with HTTP/)
+        if (strlen(line) > 0 && strncmp(line, "HTTP/", 5) != 0) {
+            // Find the colon separator
+            char* colon = strchr(line, ':');
+            if (colon != NULL) {
+                // Extract header name (before colon)
+                size_t name_len = colon - line;
+                char* name = malloc(name_len + 1);
+                strncpy(name, line, name_len);
+                name[name_len] = '\0';
+                
+                // Trim trailing whitespace from name
+                while (name_len > 0 && isspace(name[name_len - 1])) {
+                    name[--name_len] = '\0';
+                }
+                
+                // Extract header value (after colon and any leading whitespace)
+                char* value = colon + 1;
+                while (*value && isspace(*value)) {
+                    value++;
+                }
+                
+                // Trim trailing whitespace from value
+                size_t value_len = strlen(value);
+                char* value_copy = strdup(value);
+                while (value_len > 0 && isspace(value_copy[value_len - 1])) {
+                    value_copy[--value_len] = '\0';
+                }
+                
+                // Add to dictionary
+                DictValue* dict_val = dict_value_create_string(value_copy);
+                dict_set(headers_dict, name, dict_val);
+                
+                free(name);
+                free(value_copy);
+            }
+        }
+        
+        line = strtok(NULL, "\r\n");
+    }
+    
+    free(headers_copy);
+    return headers_dict;
 }
 
 void http_free_response(http_client_response_t* response) {
@@ -494,27 +556,44 @@ static enum MHD_Result handle_request(void* cls,
                                      const char* upload_data,
                                      size_t* upload_data_size,
                                      void** con_cls) {
-    static int dummy;
     server_context_t* ctx = (server_context_t*)cls;
+    connection_data_t* con_data = (connection_data_t*)*con_cls;
     
-    // First call for POST/PUT - set up connection
-    if (*con_cls == NULL) {
-        *con_cls = &dummy;
+    // First call - initialize connection data
+    if (con_data == NULL) {
+        con_data = malloc(sizeof(connection_data_t));
+        con_data->body_data = NULL;
+        con_data->body_size = 0;
+        *con_cls = con_data;
         return MHD_YES;
     }
     
-    // Subsequent calls for POST/PUT - skip until all data received
+    // Accumulate POST/PUT body data
     if (*upload_data_size != 0) {
-        *upload_data_size = 0;
+        // Allocate or expand buffer for body data
+        char* new_body = realloc(con_data->body_data, con_data->body_size + *upload_data_size + 1);
+        if (!new_body) {
+            fprintf(stderr, "Failed to allocate memory for request body\n");
+            *upload_data_size = 0;
+            return MHD_NO;
+        }
+        
+        con_data->body_data = new_body;
+        memcpy(con_data->body_data + con_data->body_size, upload_data, *upload_data_size);
+        con_data->body_size += *upload_data_size;
+        con_data->body_data[con_data->body_size] = '\0';  // Null-terminate
+        
+        *upload_data_size = 0;  // Signal that we've processed this chunk
         return MHD_YES;
     }
     
+    // Final call - all data received, process request
     // Create request structure
     server_request_t request;
     request.method = method;
     request.url = url;
     request.path = url;
-    request.body = upload_data;
+    request.body = con_data->body_data ? con_data->body_data : "";
     request.connection = connection;
     
     // Create response structure
@@ -551,7 +630,25 @@ static enum MHD_Result handle_request(void* cls,
     MHD_destroy_response(mhd_resp);
     free_server_response(response);
     
+    // Note: con_data cleanup is handled by request_completed_callback
+    
     return ret;
+}
+
+// Callback for cleaning up connection data when request is completed/aborted
+static void request_completed_callback(void* cls,
+                                       struct MHD_Connection* connection,
+                                       void** con_cls,
+                                       enum MHD_RequestTerminationCode toe) {
+    connection_data_t* con_data = (connection_data_t*)*con_cls;
+    
+    if (con_data != NULL) {
+        if (con_data->body_data) {
+            free(con_data->body_data);
+        }
+        free(con_data);
+        *con_cls = NULL;
+    }
 }
 
 void http_listen(int port, http_handler_t handler) {
@@ -566,6 +663,7 @@ void http_listen(int port, http_handler_t handler) {
         port,
         NULL, NULL,
         &handle_request, ctx,
+        MHD_OPTION_NOTIFY_COMPLETED, &request_completed_callback, NULL,
         MHD_OPTION_END
     );
     

@@ -1,0 +1,43 @@
+// Test POST request body handling
+import http;
+
+void api_handler(ptr request, ptr response) {
+    string method = http.request_get_method(request);
+    string path = http.request_get_path(request);
+    
+    output("=== Received Request ===", string);
+    output("\n", string);
+    output("Method: ", string);
+    output(method, string);
+    output("\n", string);
+    output("Path: ", string);
+    output(path, string);
+    output("\n", string);
+    
+    if (method == "POST") {
+        string body = http.request_get_body(request);
+        output("Body: ", string);
+        output(body, string);
+        output("", string);
+        output("\n", string);
+        output("Body length: ", string);
+        output(strlen(body), int);
+        output("\n\n", string);
+        
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{\"status\":\"received\"}");
+    } else {
+        http.response_set_status(response, 200);
+        http.response_set_body(response, "Hello from PIE!");
+    }
+}
+
+void main() {
+    output("Starting HTTP server on port 8888...", string);
+    output("\n", string);
+    output("Test with: curl -X POST http://localhost:8888/api/data -H 'Content-Type: application/json' -d '{\"name\":\"Ian\"}'", string);
+    output("\n\n", string);
+    
+    http.listen(8888, api_handler);
+}

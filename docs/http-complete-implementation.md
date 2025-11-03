@@ -80,10 +80,10 @@ import http;
 
 void start() {
     string response = http.get("https://httpbin.org/headers");
-    Dictionary headers = http.get_response_headers();
+    dict headers = http.get_response_headers();
     
-    if (headers.has_key("content-type")) {
-        string ct = headers.get("content-type");
+    if (dict_has_key("content-type")) {
+        string ct = dict_get_string("content-type");
         output("Content-Type: ", string);
         output(ct, string);
     }

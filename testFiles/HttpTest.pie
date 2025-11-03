@@ -1,0 +1,27 @@
+//A file to test the HTTP module
+
+//Starting with HTTP client , sending requests and managing responses
+import http;
+
+void sendGetRequest(){
+string response=http.get("https://httpbin.org/status/200");
+
+//get the status of the response
+int status=http.get_status_code();
+if(status!=200){
+	output("Request failed with code: "+status,string);
+}else{
+	output("Request was successful",string);
+}
+//get headers
+dict headers=http.get_response_headers();
+//check if the content-key header is set
+if(dict_has_key(headers,"content-type")==1){
+	output("The content-type received is "+dict_get_string(headers,"content-type"),string);
+}
+
+}
+
+
+
+sendGetRequest();

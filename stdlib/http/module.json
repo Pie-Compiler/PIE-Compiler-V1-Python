@@ -56,8 +56,8 @@
       },
       {
         "name": "get_response_headers",
-        "signature": "string()",
-        "description": "Get HTTP response headers from last request"
+        "signature": "dict()",
+        "description": "Get HTTP response headers from last request as a Dictionary"
       },
       {
         "name": "free_response",

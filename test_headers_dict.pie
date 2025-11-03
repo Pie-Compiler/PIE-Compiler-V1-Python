@@ -1,0 +1,52 @@
+// Test http.get_response_headers() returning a dictionary
+import http;
+
+void main() {
+    output("Testing HTTP response headers as dictionary...", string);
+    output("\n", string);
+    
+    // Make a GET request to a reliable endpoint
+    string response = http.get("https://www.google.com");
+    
+    // Get status code
+    int status = http.get_status_code();
+    output("Status code: ", string);
+    output(status, int);
+    output("\n", string);
+    
+    // Get headers as dictionary
+    dict headers = http.get_response_headers();
+    
+    // Check if specific headers exist and print them
+    if (dict_has_key(headers, "content-type") == 1) {
+        string ct = dict_get_string(headers, "content-type");
+        output("Content-Type: ", string);
+        output(ct, string);
+        output("\n", string);
+    } else {
+        output("Content-Type header not found", string);
+        output("\n", string);
+    }
+    
+    if (dict_has_key(headers, "server") == 1) {
+        string server = dict_get_string(headers, "server");
+        output("Server: ", string);
+        output(server, string);
+        output("\n", string);
+    } else {
+        output("Server header not found", string);
+        output("\n", string);
+    }
+    
+    if (dict_has_key(headers, "date") == 1) {
+        string date = dict_get_string(headers, "date");
+        output("Date: ", string);
+        output(date, string);
+        output("\n", string);
+    } else {
+        output("Date header not found", string);
+        output("\n", string);
+    }
+    
+    output("\nTest completed successfully!", string);
+}

@@ -1,0 +1,31 @@
+// Simple server test
+import http;
+
+void handler(ptr request, ptr response) {
+    string method = http.request_get_method(request);
+    string path = http.request_get_path(request);
+    
+    output("Received: ", string);
+    output(method, string);
+    output(" ", string);
+    output(path, string);
+    output("\n", string);
+    
+    if (method == "POST") {
+        string body = http.request_get_body(request);
+        output("Body: [", string);
+        output(body, string);
+        output("]\n", string);
+        
+        http.response_set_status(response, 200);
+        http.response_set_body(response, "{\"received\":true}");
+    } else {
+        http.response_set_status(response, 200);
+        http.response_set_body(response, "Server is running");
+    }
+}
+
+void main() {
+    output("Server starting on port 9999...\n", string);
+    http.listen(9999, handler);
+}

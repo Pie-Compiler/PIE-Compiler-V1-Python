@@ -1,0 +1,23 @@
+import http;
+
+void api_handler(ptr request, ptr response) {
+    string method = http.request_get_method(request);
+    string path = http.request_get_path(request);
+    
+    if (method == "POST" && path == "/api/data") {
+        // Get the request body
+        string body = http.request_get_body(request);
+        
+        // Process the body (e.g., parse JSON)
+        output("Received POST body: ", string);
+        output(body, string);
+        
+        // Send response
+        http.response_set_status(response, 200);
+        http.response_set_body(response, "Data received");
+    }
+}
+
+void main() {
+    http.listen(8080, api_handler);
+}
