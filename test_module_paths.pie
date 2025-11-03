@@ -1,0 +1,31 @@
+// Test various module import syntax options
+
+// 1. Import from subdirectory (relative path)
+import UserModule from "./testFiles/";
+
+// 2. Import from nested subdirectory (relative path)
+import util from "./testFiles/Utils/";
+
+// 3. Standard import (searches stdlib, cwd, etc.)
+// import http;  // Would work if http module exists in stdlib
+
+output("=== Testing Module Import with Custom Paths ===", string);
+
+// Test UserModule function
+float grade = 92.5;
+string remark = UserModule.remarks(grade);
+output("Grade: ", string);
+output(grade, float, 1);
+output("Remark: " + remark, string);
+
+// Test util module function
+int a = 15;
+int b = 27;
+int sum = util.add(a, b);
+output("Sum of " + a + " and " + b + " is " + sum, string);
+
+string name = "PIE Developer";
+string greeting = util.greet(name);
+output(greeting, string);
+
+output("=== Module System Working! ===", string);

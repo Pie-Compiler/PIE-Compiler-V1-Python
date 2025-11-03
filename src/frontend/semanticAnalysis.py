@@ -124,8 +124,11 @@ class SemanticAnalyzer(Visitor):
             # Get source file directory for relative imports
             source_file_dir = getattr(self, 'source_file_dir', None)
             
+            # Get custom import path if specified
+            import_path = getattr(node, 'import_path', None)
+            
             # Resolve the module
-            module_info = self.module_resolver.resolve_module(node.module_name, source_file_dir)
+            module_info = self.module_resolver.resolve_module(node.module_name, source_file_dir, import_path)
             node.resolved_path = module_info.pie_file
             node.module_info = module_info
             
@@ -192,8 +195,11 @@ class SemanticAnalyzer(Visitor):
                 # Only process if not already imported
                 if import_name not in self.imported_modules:
                     try:
+                        # Get import path if specified
+                        import_path = getattr(stmt, 'import_path', None)
+                        
                         # Resolve the transitive import
-                        transitive_module_info = self.module_resolver.resolve_module(import_name, module_dir)
+                        transitive_module_info = self.module_resolver.resolve_module(import_name, module_dir, import_path)
                         self.imported_modules[import_name] = transitive_module_info
                         
                         # If it's also a user module, recursively process it

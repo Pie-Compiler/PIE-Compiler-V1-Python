@@ -1,0 +1,35 @@
+import http;
+import json;
+
+void handle_request(ptr request, ptr response) {
+       string method = http.request_get_method(request);
+       string path = http.request_get_path(request);
+       if (method == "GET" && path == "/api/users") {
+        // Create JSON response
+        json.array users = json.create_array();
+        
+        json.object user1 = json.create_object();
+        json.set_string(user1, "name", "Alice");
+        json.set_int(user1, "age", 30);
+        
+        json.object user2 = json.create_object();
+        json.set_string(user2, "name", "Bob");
+        json.set_int(user2, "age", 25);
+        
+        // Serialize to JSON string
+        string response_body = json.stringify(users);
+        
+        http.response_set_status(response,200);
+        http.response_set_header("Content-Type", "application/json");
+        http.response_set_body(response,response_body);
+    } else {
+        http.response_set_status(response,404);
+        http.response_set_body(response,"404 - Not Found");
+    }
+}
+
+int main() {
+    output("Starting server on port 8080...", string);
+    http.listen(8080, handle_request);
+    return 0;
+}

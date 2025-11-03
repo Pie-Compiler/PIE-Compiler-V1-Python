@@ -81,10 +81,11 @@ class ReturnStatement(Statement):
         self.value = value
 
 class ImportStatement(Statement):
-    def __init__(self, module_name, alias=None, items=None):
+    def __init__(self, module_name, alias=None, items=None, import_path=None):
         self.module_name = module_name  # e.g., "http" or "std.math"
         self.alias = alias               # e.g., "h" in "import http as h"
         self.items = items or []         # e.g., ["get", "post"] in "from http import get, post"
+        self.import_path = import_path   # e.g., "./" or "./Utils/" or "/absolute/path"
         self.resolved_path = None        # Filled by module resolver
         self.module_info = None          # Filled by module resolver
 

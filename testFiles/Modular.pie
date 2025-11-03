@@ -1,0 +1,17 @@
+import UserModule from "./";
+import util from "./Utils/";
+output("Enter a number",string);
+
+float num;
+
+input(num,float);
+
+//get the remark
+
+string remark=UserModule.remarks(num);
+
+output(remark,string);
+
+int sum=util.add(3,4);
+
+output("The sum is "+sum,string);

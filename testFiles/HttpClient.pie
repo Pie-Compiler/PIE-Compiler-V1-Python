@@ -1,0 +1,22 @@
+import http;
+
+output("=== Testing PIE HTTP Module ===", string);
+
+// Test 1: GET request
+output("Fetching user data...", string);
+string user_response = http.get("https://jsonplaceholder.typicode.com/users/1");
+output("User Data:", string);
+output(user_response, string);
+
+// Test 2: POST request
+output("Creating new post...", string);
+string new_post = "{\"title\":\"Hello from PIE\",\"body\":\"Testing HTTP POST\", \"userId\": 1}";
+string post_response = http.post(
+    "https://48b969335885.ngrok-free.app/tester.php",
+    new_post,
+    null
+);
+output("Created Post:", string);
+output(post_response, string);
+
+output("=== All HTTP tests complete! ===", string);

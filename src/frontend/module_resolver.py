@@ -40,13 +40,14 @@ class ModuleResolver:
         # Add current directory to search paths
         self.user_paths.append(Path.cwd())
     
-    def resolve_module(self, module_name: str, source_file_dir: Optional[Path] = None) -> 'ModuleInfo':
+    def resolve_module(self, module_name: str, source_file_dir: Optional[Path] = None, import_path: Optional[str] = None) -> 'ModuleInfo':
         """
         Resolve a module name to its file path and metadata.
         
         Args:
             module_name: Name of the module (e.g., 'http' or 'std.math')
             source_file_dir: Directory of the file doing the import (for relative imports)
+            import_path: Optional custom path specified in import statement (e.g., "./Utils/" or "/absolute/path")
         
         Returns:
             ModuleInfo object containing module metadata and paths
@@ -58,6 +59,10 @@ class ModuleResolver:
         # Check if already loaded
         if module_name in self.loaded_modules:
             return self.loaded_modules[module_name]
+        
+        # If a custom import path is specified, use it exclusively
+        if import_path:
+            return self._resolve_from_custom_path(module_name, import_path, source_file_dir)
         
         # Convert module name to path (e.g., 'std.math' -> 'std/math')
         module_path_parts = module_name.split('.')
@@ -91,6 +96,61 @@ class ModuleResolver:
             f"  - Standard library: {self.stdlib_path}\n"
             f"  - User paths: {', '.join(str(p) for p in self.user_paths)}\n"
             f"  - Source directory: {source_file_dir if source_file_dir else 'N/A'}"
+        )
+    
+    def _resolve_from_custom_path(self, module_name: str, import_path: str, source_file_dir: Optional[Path] = None) -> 'ModuleInfo':
+        """
+        Resolve a module from a custom import path specified in the import statement.
+        
+        Args:
+            module_name: Name of the module
+            import_path: Custom path from import statement (e.g., "./", "./Utils/", "/absolute/path")
+            source_file_dir: Directory of the file doing the import (for relative paths)
+        
+        Returns:
+            ModuleInfo object
+        
+        Raises:
+            ModuleNotFoundError: If module cannot be found at the specified path
+        """
+        # Determine the base directory for resolving the path
+        if import_path.startswith('/'):
+            # Absolute path
+            base_dir = Path(import_path)
+        else:
+            # Relative path - resolve relative to the source file directory
+            if not source_file_dir:
+                raise ModuleError(
+                    f"Cannot resolve relative import path '{import_path}' without source file directory"
+                )
+            base_dir = source_file_dir / import_path
+        
+        # Normalize the path
+        base_dir = base_dir.resolve()
+        
+        if not base_dir.exists():
+            raise ModuleNotFoundError(
+                f"Import path '{import_path}' does not exist (resolved to: {base_dir})"
+            )
+        
+        # Try to find the module in the specified directory
+        # First, try as a directory-based module with module.json
+        module_dir = base_dir / module_name
+        if module_dir.exists() and module_dir.is_dir():
+            metadata_file = module_dir / 'module.json'
+            if metadata_file.exists():
+                return self._load_module(module_dir, module_name)
+        
+        # Try as a .pie file in the specified directory
+        pie_file = base_dir / f"{module_name}.pie"
+        if pie_file.exists() and pie_file.is_file():
+            return self._load_pie_module(pie_file, module_name)
+        
+        # Module not found in the custom path
+        raise ModuleNotFoundError(
+            f"Module '{module_name}' not found in custom path '{import_path}' (resolved to: {base_dir})\n"
+            f"  - Tried directory module: {module_dir}\n"
+            f"  - Tried .pie file: {pie_file}"
         )
     
     def _load_module(self, module_path: Path, module_name: str) -> 'ModuleInfo':

@@ -1,0 +1,11 @@
+//A sample User Module in PIE
+
+export string remarks(float grade){
+	if(grade>=90){
+		return "Excellent";
+	}else if(grade>=80){
+		return "Good";
+	}else{
+		return "Pass";
+	}
+}

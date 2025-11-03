@@ -428,13 +428,25 @@ class Parser:
     
     def p_import_statement(self, p):
         '''import_statement : KEYWORD_IMPORT module_path SEMICOLON
-                           | KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON'''
+                           | KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON
+                           | KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON
+                           | KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON'''
         if len(p) == 4:
             # import http;
-            p[0] = ImportStatement(p[2], alias=None)
-        else:
+            p[0] = ImportStatement(p[2], alias=None, import_path=None)
+        elif len(p) == 6 and p[3] == 'as':
             # import http as h;
-            p[0] = ImportStatement(p[2], alias=p[4])
+            p[0] = ImportStatement(p[2], alias=p[4], import_path=None)
+        elif len(p) == 6 and p[3] == 'from':
+            # import UserModule from "./path/";
+            # Remove quotes from string literal
+            path = p[4].strip('"').strip("'")
+            p[0] = ImportStatement(p[2], alias=None, import_path=path)
+        else:
+            # import UserModule from "./path/" as alias;
+            # Remove quotes from string literal
+            path = p[4].strip('"').strip("'")
+            p[0] = ImportStatement(p[2], alias=p[6], import_path=path)
     
     def p_module_path(self, p):
         '''module_path : IDENTIFIER
