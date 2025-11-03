@@ -263,7 +263,6 @@ class Parser:
             "file_flush": {"return_type": "void", "params": [("file", "file_handle")]},
             "file_read": {"return_type": "void", "params": [("file", "file_handle"), ("string", "buffer"), ("int", "size")]},
             "file_read_all": {"return_type": "string", "params": [("file", "file_handle")]},
-            "file_read_lines": {"return_type": "d_array_string", "params": [("file", "file_handle")]},
         }
         for name, info in file_functions.items():
             param_types = [p[0] for p in info['params']]
@@ -274,6 +273,32 @@ class Parser:
                 param_types=param_types,
                 params=info['params']
             )
+        
+        # file_read_lines with overloads for optional parameters
+        # Variant 1: file_read_lines(file) - reads all lines
+        self.symbol_table.add_symbol(
+            "file_read_lines",
+            'function',
+            return_type='d_array_string',
+            param_types=['file'],
+            params=[('file', 'file_handle')]
+        )
+        # Variant 2: file_read_lines(file, start_line) - reads from start_line to end
+        self.symbol_table.add_symbol(
+            "file_read_lines",
+            'function',
+            return_type='d_array_string',
+            param_types=['file', 'int'],
+            params=[('file', 'file_handle'), ('int', 'start_line')]
+        )
+        # Variant 3: file_read_lines(file, start_line, end_line) - reads range
+        self.symbol_table.add_symbol(
+            "file_read_lines",
+            'function',
+            return_type='d_array_string',
+            param_types=['file', 'int', 'int'],
+            params=[('file', 'file_handle'), ('int', 'start_line'), ('int', 'end_line')]
+        )
 
     def setup_lexer(self):
         """Create and configure the lexer instance."""

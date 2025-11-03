@@ -1,0 +1,19 @@
+// Simplified test
+file f = file_open("test_lines.txt", "w");
+if (f != null) {
+    file_write(f, "Line 1\n");
+    file_write(f, "Line 2\n");
+    file_close(f);
+}
+
+f = file_open("test_lines.txt", "r");
+if (f != null) {
+    string allLines[] = file_read_lines(f);
+    int count = arr_size(allLines);
+    file_close(f);
+    output("File read with " + count + " lines", string);
+    string line1 = allLines[0];
+    string line2 = allLines[1];
+    output(line1, string);
+    output(line2, string);
+}

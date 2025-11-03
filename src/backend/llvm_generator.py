@@ -230,6 +230,9 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(ir.VoidType(), [file_type]), name="file_flush")
         ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_all")
         ir.Function(self.module, ir.FunctionType(string_type, [file_type]), name="file_read_line")
+        # file_read_lines returns a DArrayString* and takes file handle, start_line, end_line
+        # start_line and end_line are optional (use -1 for default)
+        ir.Function(self.module, ir.FunctionType(d_array_string_type.as_pointer(), [file_type, int_type, int_type]), name="file_read_lines")
 
         # Network Library (if needed)
         # ir.Function(self.module, ir.FunctionType(...), name="...")
@@ -1789,6 +1792,29 @@ class LLVMCodeGenerator(Visitor):
         sym = self.symbol_table.lookup_symbol(node.name)
         ti = sym.get('typeinfo') if sym else None
         
+        # If ti is None, try to infer from LLVM variable type
+        if ti is None and node.name in self.llvm_var_table:
+            llvm_var = self.llvm_var_table[node.name]
+            var_type = llvm_var.type
+            
+            # Check if this is a dynamic array by examining the LLVM type
+            if isinstance(var_type, ir.PointerType) and isinstance(var_type.pointee, ir.PointerType):
+                pointee_type = var_type.pointee
+                # Check if it's one of our dynamic array types
+                if pointee_type == self.d_array_int_type:
+                    # Create a minimal TypeInfo for dynamic int array
+                    from frontend.types import TypeInfo
+                    ti = TypeInfo(base='int', is_dynamic=True, dimensions=1)
+                elif pointee_type == self.d_array_string_type:
+                    from frontend.types import TypeInfo
+                    ti = TypeInfo(base='string', is_dynamic=True, dimensions=1)
+                elif pointee_type == self.d_array_float_type:
+                    from frontend.types import TypeInfo
+                    ti = TypeInfo(base='float', is_dynamic=True, dimensions=1)
+                elif pointee_type == self.d_array_char_type:
+                    from frontend.types import TypeInfo
+                    ti = TypeInfo(base='char', is_dynamic=True, dimensions=1)
+        
         # Handle dictionary access
         if sym and sym.get('type') == 'KEYWORD_DICT':
             # Check both local and global var tables
@@ -1838,6 +1864,10 @@ class LLVMCodeGenerator(Visitor):
         # Handle dynamic arrays
         if ti and ti.is_dynamic:
             base = ti.base
+            # Normalize the base type (remove KEYWORD_ prefix if present)
+            if base.startswith('KEYWORD_'):
+                base = base.split('_')[1].lower()
+            
             dimensions = getattr(ti, 'dimensions', 1)
             num_indices = len(node.indices) if hasattr(node, 'indices') else 1
             
@@ -2024,6 +2054,29 @@ class LLVMCodeGenerator(Visitor):
         # Check if this is a module function call (contains '.')
         if '.' in node.name:
             return self.visit_module_function_call(node)
+        
+        # Special handling for file_read_lines with optional parameters
+        if node.name == 'file_read_lines':
+            func = self.module.get_global("file_read_lines")
+            file_handle = self._load_if_pointer(self.visit(node.args[0]))
+            
+            # Determine how many arguments were passed
+            num_args = len(node.args)
+            
+            if num_args == 1:
+                # file_read_lines(file) - read all lines
+                start_line = ir.Constant(ir.IntType(32), -1)
+                end_line = ir.Constant(ir.IntType(32), -1)
+            elif num_args == 2:
+                # file_read_lines(file, start_line) - read from start to end
+                start_line = self._load_if_pointer(self.visit(node.args[1]))
+                end_line = ir.Constant(ir.IntType(32), -1)
+            else:
+                # file_read_lines(file, start_line, end_line) - read range
+                start_line = self._load_if_pointer(self.visit(node.args[1]))
+                end_line = self._load_if_pointer(self.visit(node.args[2]))
+            
+            return self.builder.call(func, [file_handle, start_line, end_line], 'file_read_lines_result')
         
         # Special handling for dict_get with type inference
 
@@ -2608,11 +2661,16 @@ class LLVMCodeGenerator(Visitor):
         
         # Check if we need to load or if we already have the array struct pointer
         if isinstance(result.type, ir.PointerType):
-            # Check if it points to one of our array types
+            # Check what the pointer points to
             pointee = result.type.pointee if hasattr(result.type, 'pointee') else None
-            if pointee in [self.d_array_int_type, self.d_array_string_type, 
-                          self.d_array_float_type, self.d_array_char_type]:
-                # result is a pointer to an array pointer, load it
+            
+            # Check if pointee is itself a pointer to one of our array structs
+            if isinstance(pointee, ir.PointerType) and hasattr(pointee, 'pointee'):
+                # This is a pointer to a pointer - we need to load to get the array pointer
+                array_val = self.builder.load(result)
+            elif pointee in [self.d_array_int_type.pointee, self.d_array_string_type.pointee, 
+                            self.d_array_float_type.pointee, self.d_array_char_type.pointee]:
+                # result is already pointing to an array struct, load to get the pointer
                 array_val = self.builder.load(result)
             elif result.type in [self.d_array_int_type, self.d_array_string_type,
                                 self.d_array_float_type, self.d_array_char_type]:

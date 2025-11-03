@@ -1,0 +1,21 @@
+int global = 100;
+
+int testScope() {
+    int local = 50;
+    output("Global in function: ", string);
+    output(global, int);
+    output("Local in function: ", string);
+    output(local, int);
+    return local + global;
+}
+
+int main() {
+    output("Global in main: ", string);
+    output(global, int);
+    
+    int result = testScope();
+    output("Function returned: ", string);
+    output(result, int);
+    
+    return 0;
+}

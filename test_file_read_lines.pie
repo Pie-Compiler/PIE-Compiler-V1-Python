@@ -1,0 +1,72 @@
+// Test file_read_lines with different parameter combinations
+
+// First, create a test file with multiple lines
+file f = file_open("test_lines.txt", "w");
+if (f != null) {
+    file_write(f, "Line 1: First line\n");
+    file_write(f, "Line 2: Second line\n");
+    file_write(f, "Line 3: Third line\n");
+    file_write(f, "Line 4: Fourth line\n");
+    file_write(f, "Line 5: Fifth line\n");
+    file_write(f, "Line 6: Sixth line\n");
+    file_write(f, "Line 7: Seventh line\n");
+    file_write(f, "Line 8: Eighth line\n");
+    file_write(f, "Line 9: Ninth line\n");
+    file_write(f, "Line 10: Tenth line\n");
+    file_close(f);
+    output("Test file created successfully", string);
+}
+
+// Test 1: Read all lines
+output("\n=== Test 1: Read all lines ===", string);
+f = file_open("test_lines.txt", "r");
+if (f != null) {
+    string allLines[] = file_read_lines(f);
+    int count = arr_size(allLines);
+    output("Total lines: " + count, string);
+    for (int i = 0; i < count; i = i + 1) {
+        output(allLines[i], string);
+    }
+    file_close(f);
+}
+
+// Test 2: Read from line 3 to end
+output("\n=== Test 2: Read from line 3 to end ===", string);
+f = file_open("test_lines.txt", "r");
+if (f != null) {
+    string linesFrom3[] = file_read_lines(f, 3);
+    int count = arr_size(linesFrom3);
+    output("Lines from index 3: " + count, string);
+    for (int i = 0; i < count; i = i + 1) {
+        output(linesFrom3[i], string);
+    }
+    file_close(f);
+}
+
+// Test 3: Read lines 2 to 5 (inclusive)
+output("\n=== Test 3: Read lines 2 to 5 ===", string);
+f = file_open("test_lines.txt", "r");
+if (f != null) {
+    string rangeLines[] = file_read_lines(f, 2, 5);
+    int count = arr_size(rangeLines);
+    output("Lines from 2 to 5: " + count, string);
+    for (int i = 0; i < count; i = i + 1) {
+        output(rangeLines[i], string);
+    }
+    file_close(f);
+}
+
+// Test 4: Read first 3 lines
+output("\n=== Test 4: Read first 3 lines ===", string);
+f = file_open("test_lines.txt", "r");
+if (f != null) {
+    string firstThree[] = file_read_lines(f, 0, 2);
+    int count = arr_size(firstThree);
+    output("First 3 lines: " + count, string);
+    for (int i = 0; i < count; i = i + 1) {
+        output(firstThree[i], string);
+    }
+    file_close(f);
+}
+
+output("\n=== All tests completed ===", string);

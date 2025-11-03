@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include "d_array.h"
 
@@ -59,21 +60,42 @@ char* file_read_all(intptr_t file_handle) {
     return buffer;
 }
 
-DArrayString* file_read_lines(intptr_t file_handle) {
+DArrayString* file_read_lines(intptr_t file_handle, int start_line, int end_line) {
     FILE* file = (FILE*)file_handle;
     if (!file) return NULL;
 
+    // Default values: if start_line is -1, read from beginning
+    // if end_line is -1, read until end of file
+    int use_start = (start_line >= 0);
+    int use_end = (end_line >= 0);
+    
     DArrayString* arr = d_array_string_create();
     char* line = NULL;
     size_t len = 0;
     ssize_t read;
+    int current_line = 0;
 
     while ((read = getline(&line, &len, file)) != -1) {
+        // Check if we're in the range we want
+        if (use_start && current_line < start_line) {
+            current_line++;
+            continue;
+        }
+        
+        if (use_end && current_line > end_line) {
+            break;
+        }
+        
         // Remove trailing newline
         if (read > 0 && line[read - 1] == '\n') {
             line[read - 1] = '\0';
         }
-        d_array_string_append(arr, line);
+        
+        // Duplicate the line before appending (getline reuses the buffer)
+        char* line_copy = strdup(line);
+        d_array_string_append(arr, line_copy);
+        
+        current_line++;
     }
 
     free(line);

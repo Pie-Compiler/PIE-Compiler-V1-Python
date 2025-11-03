@@ -377,7 +377,14 @@ class SemanticAnalyzer(Visitor):
             else:
                 # Handle expression initializer (like array concatenation, identifier, or subscript access)
                 expr_type = self.visit(node.initializer)
-                if expr_type == 'array':
+                
+                # Handle dynamic array types (d_array_int, d_array_string, d_array_float, d_array_char)
+                if expr_type and expr_type.startswith('d_array_'):
+                    # Extract the element type from d_array_TYPE
+                    darray_element = expr_type.split('_', 2)[2]  # d_array_string -> string
+                    if not self.type_checker.is_compatible(element_type, darray_element):
+                        self.add_error(f"Type mismatch in array initialization: Cannot assign d_array of {darray_element} to array of {element_type}")
+                elif expr_type == 'array':
                     # Check if this is an identifier referring to another array
                     if isinstance(node.initializer, Identifier):
                         # Get the symbol info for the source array
@@ -706,7 +713,34 @@ class SemanticAnalyzer(Visitor):
             node.value_type = value_type
 
             return 'void'
-
+        
+        # Special handling for file_read_lines with optional parameters
+        if node.name == 'file_read_lines':
+            num_args = len(node.args)
+            
+            # Validate number of arguments (1, 2, or 3)
+            if num_args < 1 or num_args > 3:
+                self.add_error(f"file_read_lines requires 1-3 arguments (file[, start_line[, end_line]]), got {num_args}")
+                return 'd_array_string'
+            
+            # Check first argument is a file handle
+            file_type = self.visit(node.args[0])
+            if file_type != 'KEYWORD_FILE' and file_type != 'file':
+                self.add_error(f"First argument to file_read_lines must be a file, got {file_type}")
+            
+            # Check optional arguments are integers
+            if num_args >= 2:
+                start_type = self.visit(node.args[1])
+                if start_type != 'KEYWORD_INT' and start_type != 'int':
+                    self.add_error(f"Second argument to file_read_lines must be an int, got {start_type}")
+            
+            if num_args == 3:
+                end_type = self.visit(node.args[2])
+                if end_type != 'KEYWORD_INT' and end_type != 'int':
+                    self.add_error(f"Third argument to file_read_lines must be an int, got {end_type}")
+            
+            return 'd_array_string'
+        
         function_symbol = self.symbol_table.lookup_function(node.name)
         if not function_symbol:
             # Could be a system call, handle separately
