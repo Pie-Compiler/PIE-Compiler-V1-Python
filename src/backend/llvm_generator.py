@@ -1515,6 +1515,61 @@ class LLVMCodeGenerator(Visitor):
                 return self.builder.sub(ir.Constant(operand_val.type, 0), operand_val, 'i_neg_tmp')
         raise Exception(f"Unknown unary operator: {node.op}")
 
+    def _process_escape_sequences(self, s):
+        """Process escape sequences in a string literal.
+        
+        Handles common escape sequences:
+        \\n - newline
+        \\t - tab
+        \\r - carriage return
+        \\b - backspace
+        \\f - form feed
+        \\\\ - backslash
+        \\" - double quote
+        \\' - single quote
+        \\0 - null character
+        """
+        result = []
+        i = 0
+        while i < len(s):
+            if s[i] == '\\' and i + 1 < len(s):
+                next_char = s[i + 1]
+                if next_char == 'n':
+                    result.append('\n')
+                    i += 2
+                elif next_char == 't':
+                    result.append('\t')
+                    i += 2
+                elif next_char == 'r':
+                    result.append('\r')
+                    i += 2
+                elif next_char == 'b':
+                    result.append('\b')
+                    i += 2
+                elif next_char == 'f':
+                    result.append('\f')
+                    i += 2
+                elif next_char == '\\':
+                    result.append('\\')
+                    i += 2
+                elif next_char == '"':
+                    result.append('"')
+                    i += 2
+                elif next_char == "'":
+                    result.append("'")
+                    i += 2
+                elif next_char == '0':
+                    result.append('\0')
+                    i += 2
+                else:
+                    # Unknown escape sequence, keep the backslash
+                    result.append(s[i])
+                    i += 1
+            else:
+                result.append(s[i])
+                i += 1
+        return ''.join(result)
+
     def visit_primary(self, node):
         val = node.value
         if isinstance(val, str):
@@ -1542,7 +1597,8 @@ class LLVMCodeGenerator(Visitor):
                     ch = inner[0]
                 return ir.Constant(ir.IntType(8), ord(ch))
             if val.startswith('"') and val.endswith('"'):
-                str_val = val[1:-1].replace('\\n', '\n') + '\0'
+                # Process escape sequences in the string
+                str_val = self._process_escape_sequences(val[1:-1]) + '\0'
                 if str_val in self.global_strings:
                     global_var = self.global_strings[str_val]
                 else:

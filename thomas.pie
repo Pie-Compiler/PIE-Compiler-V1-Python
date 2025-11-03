@@ -3,3 +3,6 @@ string name="Thomas";
 
 output(name,string);
 output(num,int);
+
+output("EXecution complete!",string);
+

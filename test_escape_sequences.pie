@@ -1,0 +1,23 @@
+void test_json() {
+    // Test JSON string with escape sequences
+    string json = "{\"message\": \"Hello, World!\", \"status\": \"ok\"}";
+    output(json, string);
+    
+    // Test various escape sequences
+    string newline = "Line 1\nLine 2\nLine 3";
+    output(newline, string);
+    
+    string tab = "Column1\tColumn2\tColumn3";
+    output(tab, string);
+    
+    string quotes = "He said \"Hello\" to me";
+    output(quotes, string);
+    
+    string backslash = "Path: C:\\Users\\Documents";
+    output(backslash, string);
+    
+    string mixed = "Mixed:\n\tQuoted: \"value\"\n\tPath: C:\\\\temp";
+    output(mixed, string);
+}
+
+test_json();

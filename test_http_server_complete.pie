@@ -3,14 +3,28 @@ import http;
 
 void request_handler(ptr request, ptr response) {
     string path = http.request_get_path(request);
-    
+     //set powered-by header
+        http.response_set_header(response, "X-Powered-By", "PIE HTTP Server");
     if (path == "/") {
         http.response_set_body(response, "Welcome to PIE HTTP Server!");
     } else if (path == "/hello") {
         http.response_set_body(response, "Hello, World!");
     } else if (path == "/api/data") {
-        http.response_set_body(response, "{message: This is data, status: ok}");
-    } else {
+        //set content-type header to application/json
+        http.response_set_header(response, "Content-Type", "application/json");
+        //set the server response body to a json string
+        http.response_set_body(response, "{\"message\": \"This is data\", \"status\": \"ok\"}");
+    }
+    else if (path == "/about") {
+        //set content-type header to text/html
+        http.response_set_header(response, "Content-Type", "text/html");
+        http.response_set_body(response, "<html><body><h1>About PIE HTTP Server</h1><p>This server is built using the PIE programming language.</p></body></html>");
+    } else if (path == "/info") {
+        //set content-type header to text/plain
+        http.response_set_header(response, "Content-Type", "text/plain");
+        http.response_set_body(response, "This is a simple HTTP server built with PIE.");
+    }
+     else {
         http.response_set_body(response, "404 - Page Not Found");
     }
 }

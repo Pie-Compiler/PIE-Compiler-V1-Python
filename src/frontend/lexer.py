@@ -282,18 +282,26 @@ def build_master_nfa():
     float_nfa[1].token_type = "FLOAT_LITERAL"
     add_epsilon_transition(master_start, float_nfa[0])
 
-    # String literal: "..."
+    # String literal: "..." (with escape sequence support)
     string_start = NFAState()
     string_body = NFAState()
+    string_escape = NFAState()
     string_end = NFAState()
     
     # Opening quote
     string_start.transitions.setdefault('"', []).append(string_body)
     
-    # String content (any char except quote or newline)
+    # String content (any char except quote, newline, or backslash)
     for ch in range(128):
-        if ch != ord('"') and ch != ord('\n'):
+        if ch != ord('"') and ch != ord('\n') and ch != ord('\\'):
             string_body.transitions.setdefault(chr(ch), []).append(string_body)
+    
+    # Backslash starts an escape sequence
+    string_body.transitions.setdefault('\\', []).append(string_escape)
+    
+    # After backslash, accept any character (including quotes, backslashes, n, t, r, etc.)
+    for ch in range(128):
+        string_escape.transitions.setdefault(chr(ch), []).append(string_body)
     
     # Closing quote
     string_body.transitions.setdefault('"', []).append(string_end)
