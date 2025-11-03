@@ -216,3 +216,35 @@ ptr firstEmp = json.array_get_object(employeesArray, 0);
 ptr firstEmpSkills = json.get_array(firstEmp, "skills");
 string firstSkill = json.array_get_string(firstEmpSkills, 0);
 output("First employee's first skill: "+firstSkill, string);
+
+
+//level 10 Handling JSON from external sources
+// Simulate receiving a complex JSON string from a server
+
+//use a file instead of hardcoding since PIE does not support escaped json literals yet
+
+file serverRequest=file_open("./testFiles/request.json", "r");
+if(serverRequest==null){
+    output("Failed to open request.json", string);
+}else{
+string requestContent=file_read_all(serverRequest);
+output("File read complete.", string);
+output("File content length: "+strlen(requestContent), string);
+file_close(serverRequest);
+output("Received JSON content: "+requestContent, string);
+/*
+{
+    "users": [
+        {"name": "Alice", "age": 30, "active": true},
+        {"name": "Bob", "age": 25, "active": false},
+        {"name": "Charlie", "age": 35, "active": true}
+    ]
+}
+*/
+
+// Parse the received JSON content
+ptr jsonData = json.parse(requestContent);
+ptr users_array = json.get_array(jsonData, "users");
+int num_users = json.array_size(users_array);  // Returns 3
+output("Number of users received: "+num_users, string);
+}
