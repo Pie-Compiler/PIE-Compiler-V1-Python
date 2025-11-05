@@ -1,0 +1,69 @@
+import json;
+
+int main() {
+    // Test case exactly as mentioned: {"success":true}
+    string response = "{\"success\":true}";
+    
+    output("Parsing JSON response: ", string);
+    output(response, string);
+    output("\n", string);
+    
+    // Parse the JSON
+    ptr jsonObj = json.parse(response);
+    
+    // Get the boolean value
+    int success = json.get_bool(jsonObj, "success");
+    
+    output("Success value: ", string);
+    output(success, int);
+    output("\n", string);
+    
+    // Test with false value
+    string response2 = "{\"success\":false}";
+    output("\nParsing JSON response: ", string);
+    output(response2, string);
+    output("\n", string);
+    
+    ptr jsonObj2 = json.parse(response2);
+    int success2 = json.get_bool(jsonObj2, "success");
+    
+    output("Success value: ", string);
+    output(success2, int);
+    output("\n", string);
+    
+    // Test with complex JSON containing multiple boolean fields
+    string complexJson = "{\"authenticated\":true,\"admin\":false,\"verified\":true,\"count\":42,\"name\":\"test\"}";
+    output("\nParsing complex JSON: ", string);
+    output(complexJson, string);
+    output("\n", string);
+    
+    ptr complexObj = json.parse(complexJson);
+    
+    int authenticated = json.get_bool(complexObj, "authenticated");
+    int admin = json.get_bool(complexObj, "admin");
+    int verified = json.get_bool(complexObj, "verified");
+    int count = json.get_int(complexObj, "count");
+    string name = json.get_string(complexObj, "name");
+    
+    output("Authenticated: ", string);
+    output(authenticated, int);
+    output("\n", string);
+    
+    output("Admin: ", string);
+    output(admin, int);
+    output("\n", string);
+    
+    output("Verified: ", string);
+    output(verified, int);
+    output("\n", string);
+    
+    output("Count: ", string);
+    output(count, int);
+    output("\n", string);
+    
+    output("Name: ", string);
+    output(name, string);
+    output("\n", string);
+    
+    return 0;
+}

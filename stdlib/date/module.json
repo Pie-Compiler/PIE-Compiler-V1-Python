@@ -1,0 +1,206 @@
+{
+  "name": "date",
+  "version": "1.0.0",
+  "description": "Date and time parsing, formatting, and manipulation for PIE",
+  "author": "PIE Team",
+  "requires": {
+    "pie_version": ">=1.0.0",
+    "modules": []
+  },
+  "c_bindings": {
+    "headers": ["pie_date.h"],
+    "sources": ["pie_date.c"],
+    "libraries": []
+  },
+  "exports": {
+    "functions": [
+      {
+        "name": "now",
+        "signature": "int()",
+        "description": "Get current Unix timestamp (seconds since epoch)",
+        "c_name": "pie_date_now"
+      },
+      {
+        "name": "now_millis",
+        "signature": "int()",
+        "description": "Get current time in milliseconds since epoch",
+        "c_name": "pie_date_now_millis"
+      },
+      {
+        "name": "format",
+        "signature": "string(int timestamp, string format)",
+        "description": "Format a Unix timestamp using strftime format string",
+        "c_name": "pie_date_format"
+      },
+      {
+        "name": "format_iso",
+        "signature": "string(int timestamp)",
+        "description": "Format timestamp as ISO 8601 (YYYY-MM-DDTHH:MM:SS)",
+        "c_name": "pie_date_format_iso"
+      },
+      {
+        "name": "format_date",
+        "signature": "string(int timestamp)",
+        "description": "Format timestamp as date only (YYYY-MM-DD)",
+        "c_name": "pie_date_format_date"
+      },
+      {
+        "name": "format_time",
+        "signature": "string(int timestamp)",
+        "description": "Format timestamp as time only (HH:MM:SS)",
+        "c_name": "pie_date_format_time"
+      },
+      {
+        "name": "parse",
+        "signature": "int(string date_str, string format)",
+        "description": "Parse a date string using strptime format and return Unix timestamp",
+        "c_name": "pie_date_parse"
+      },
+      {
+        "name": "parse_iso",
+        "signature": "int(string iso_str)",
+        "description": "Parse ISO 8601 date string and return Unix timestamp",
+        "c_name": "pie_date_parse_iso"
+      },
+      {
+        "name": "get_year",
+        "signature": "int(int timestamp)",
+        "description": "Extract year from timestamp",
+        "c_name": "pie_date_get_year"
+      },
+      {
+        "name": "get_month",
+        "signature": "int(int timestamp)",
+        "description": "Extract month (1-12) from timestamp",
+        "c_name": "pie_date_get_month"
+      },
+      {
+        "name": "get_day",
+        "signature": "int(int timestamp)",
+        "description": "Extract day of month (1-31) from timestamp",
+        "c_name": "pie_date_get_day"
+      },
+      {
+        "name": "get_hour",
+        "signature": "int(int timestamp)",
+        "description": "Extract hour (0-23) from timestamp",
+        "c_name": "pie_date_get_hour"
+      },
+      {
+        "name": "get_minute",
+        "signature": "int(int timestamp)",
+        "description": "Extract minute (0-59) from timestamp",
+        "c_name": "pie_date_get_minute"
+      },
+      {
+        "name": "get_second",
+        "signature": "int(int timestamp)",
+        "description": "Extract second (0-59) from timestamp",
+        "c_name": "pie_date_get_second"
+      },
+      {
+        "name": "get_weekday",
+        "signature": "int(int timestamp)",
+        "description": "Get day of week (0=Sunday, 6=Saturday)",
+        "c_name": "pie_date_get_weekday"
+      },
+      {
+        "name": "get_weekday_name",
+        "signature": "string(int timestamp)",
+        "description": "Get weekday name (e.g., 'Monday')",
+        "c_name": "pie_date_get_weekday_name"
+      },
+      {
+        "name": "get_month_name",
+        "signature": "string(int timestamp)",
+        "description": "Get month name (e.g., 'January')",
+        "c_name": "pie_date_get_month_name"
+      },
+      {
+        "name": "add_seconds",
+        "signature": "int(int timestamp, int seconds)",
+        "description": "Add seconds to timestamp",
+        "c_name": "pie_date_add_seconds"
+      },
+      {
+        "name": "add_minutes",
+        "signature": "int(int timestamp, int minutes)",
+        "description": "Add minutes to timestamp",
+        "c_name": "pie_date_add_minutes"
+      },
+      {
+        "name": "add_hours",
+        "signature": "int(int timestamp, int hours)",
+        "description": "Add hours to timestamp",
+        "c_name": "pie_date_add_hours"
+      },
+      {
+        "name": "add_days",
+        "signature": "int(int timestamp, int days)",
+        "description": "Add days to timestamp",
+        "c_name": "pie_date_add_days"
+      },
+      {
+        "name": "diff_seconds",
+        "signature": "int(int timestamp1, int timestamp2)",
+        "description": "Get difference in seconds between two timestamps",
+        "c_name": "pie_date_diff_seconds"
+      },
+      {
+        "name": "diff_minutes",
+        "signature": "int(int timestamp1, int timestamp2)",
+        "description": "Get difference in minutes between two timestamps",
+        "c_name": "pie_date_diff_minutes"
+      },
+      {
+        "name": "diff_hours",
+        "signature": "int(int timestamp1, int timestamp2)",
+        "description": "Get difference in hours between two timestamps",
+        "c_name": "pie_date_diff_hours"
+      },
+      {
+        "name": "diff_days",
+        "signature": "int(int timestamp1, int timestamp2)",
+        "description": "Get difference in days between two timestamps",
+        "c_name": "pie_date_diff_days"
+      },
+      {
+        "name": "is_leap_year",
+        "signature": "int(int timestamp)",
+        "description": "Check if year is a leap year (returns 1 for true, 0 for false)",
+        "c_name": "pie_date_is_leap_year"
+      },
+      {
+        "name": "days_in_month",
+        "signature": "int(int timestamp)",
+        "description": "Get number of days in the month",
+        "c_name": "pie_date_days_in_month"
+      },
+      {
+        "name": "start_of_day",
+        "signature": "int(int timestamp)",
+        "description": "Get timestamp for start of day (00:00:00)",
+        "c_name": "pie_date_start_of_day"
+      },
+      {
+        "name": "end_of_day",
+        "signature": "int(int timestamp)",
+        "description": "Get timestamp for end of day (23:59:59)",
+        "c_name": "pie_date_end_of_day"
+      },
+      {
+        "name": "start_of_month",
+        "signature": "int(int timestamp)",
+        "description": "Get timestamp for first day of month at 00:00:00",
+        "c_name": "pie_date_start_of_month"
+      },
+      {
+        "name": "end_of_month",
+        "signature": "int(int timestamp)",
+        "description": "Get timestamp for last day of month at 23:59:59",
+        "c_name": "pie_date_end_of_month"
+      }
+    ],
+    "types": []
+  }
+}

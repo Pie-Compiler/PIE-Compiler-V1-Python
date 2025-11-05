@@ -1,0 +1,80 @@
+import date;
+import json;
+
+// Example: API response with timestamp that needs parsing
+int main() {
+    output("=== Date Module with API Responses ===\n\n", string);
+    
+    // Simulate an API response with a timestamp
+    string apiResponse = "{\"success\":true,\"timestamp\":\"2025-11-05T14:30:00\",\"data\":\"Sample data\",\"expires\":\"2025-11-05T18:30:00\"}";
+    
+    output("API Response: ", string);
+    output(apiResponse, string);
+    output("\n\n", string);
+    
+    // Parse the JSON
+    ptr response = json.parse(apiResponse);
+    
+    // Extract the boolean and strings
+    int success = json.get_bool(response, "success");
+    string timestampStr = json.get_string(response, "timestamp");
+    string expiresStr = json.get_string(response, "expires");
+    string data = json.get_string(response, "data");
+    
+    output("Success: ", string);
+    if (success == 1) {
+        output("true\n", string);
+    }
+    if (success == 0) {
+        output("false\n", string);
+    }
+    
+    output("Data: ", string);
+    output(data, string);
+    output("\n\n", string);
+    
+    // Parse the timestamps
+    int timestamp = date.parse_iso(timestampStr);
+    int expires = date.parse_iso(expiresStr);
+    
+    output("Received at: ", string);
+    output(date.format(timestamp, "%A, %B %d, %Y at %I:%M %p"), string);
+    output("\n", string);
+    
+    output("Expires at: ", string);
+    output(date.format(expires, "%A, %B %d, %Y at %I:%M %p"), string);
+    output("\n\n", string);
+    
+    // Calculate time until expiration
+    int hoursValid = date.diff_hours(expires, timestamp);
+    output("Valid for: ", string);
+    output(hoursValid, int);
+    output(" hours\n\n", string);
+    
+    // Check if expired
+    int now = date.now();
+    output("Current time: ", string);
+    output(date.format_iso(now), string);
+    output("\n", string);
+    
+    int isExpired = 0;
+    if (now > expires) {
+        isExpired = 1;
+    }
+    
+    output("Is expired: ", string);
+    if (isExpired == 1) {
+        output("Yes\n", string);
+    }
+    if (isExpired == 0) {
+        output("No\n", string);
+        int hoursRemaining = date.diff_hours(expires, now);
+        output("Hours remaining: ", string);
+        output(hoursRemaining, int);
+        output("\n", string);
+    }
+    
+    output("\n=== Complete ===\n", string);
+    
+    return 0;
+}

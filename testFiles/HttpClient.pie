@@ -5,8 +5,15 @@ output("=== Testing PIE HTTP Module ===", string);
 // Test 1: GET request
 output("Fetching user data...", string);
 string user_response = http.get("https://jsonplaceholder.typicode.com/users/1");
-output("User Data:", string);
-output(user_response, string);
+//get status code
+int status_code=http.get_status_code();
+output("Response code: "+status_code,string);
+if(status_code!=200){
+    output("Request Failed with code: "+status_code,string);
+}else{
+    output("User Data:", string);
+    output(user_response, string);
+}
 
 // Test 2: POST request
 output("Creating new post...", string);

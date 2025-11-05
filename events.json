@@ -1,0 +1,115 @@
+{
+    "success": true,
+    "categories": [
+        {
+            "id": "music",
+            "name": "Music",
+            "description": "Concerts, festivals, live performances and music events",
+            "emoji": "🎵",
+            "isActive": true,
+            "sortOrder": 1,
+            "createdAt": "2025-10-02T11:59:57.231Z",
+            "updatedAt": "2025-10-02T11:59:57.231Z"
+        },
+        {
+            "id": "sports",
+            "name": "Sports",
+            "description": "Sporting events, games, tournaments and athletic activities",
+            "emoji": "⚽",
+            "isActive": true,
+            "sortOrder": 2,
+            "createdAt": "2025-10-02T11:59:58.191Z",
+            "updatedAt": "2025-10-02T11:59:58.191Z"
+        },
+        {
+            "id": "technology",
+            "name": "Technology",
+            "description": "Tech conferences, workshops, hackathons and innovation events",
+            "emoji": "💻",
+            "isActive": true,
+            "sortOrder": 3,
+            "createdAt": "2025-10-02T11:59:59.153Z",
+            "updatedAt": "2025-10-02T11:59:59.153Z"
+        },
+        {
+            "id": "business",
+            "name": "Business",
+            "description": "Professional networking, conferences and business meetups",
+            "emoji": "💼",
+            "isActive": true,
+            "sortOrder": 4,
+            "createdAt": "2025-10-02T12:00:00.053Z",
+            "updatedAt": "2025-10-02T12:00:00.053Z"
+        },
+        {
+            "id": "entertainment",
+            "name": "Entertainment",
+            "description": "Movies, theater, comedy shows and general entertainment",
+            "emoji": "🎭",
+            "isActive": true,
+            "sortOrder": 5,
+            "createdAt": "2025-10-02T12:00:01.060Z",
+            "updatedAt": "2025-10-02T12:00:01.060Z"
+        },
+        {
+            "id": "food",
+            "name": "Food & Drink",
+            "description": "Food festivals, cooking classes, wine tasting and culinary events",
+            "emoji": "🍽️",
+            "isActive": true,
+            "sortOrder": 6,
+            "createdAt": "2025-10-02T12:00:02.772Z",
+            "updatedAt": "2025-10-02T12:00:02.772Z"
+        },
+        {
+            "id": "art",
+            "name": "Art & Culture",
+            "description": "Art exhibitions, cultural events, galleries and creative workshops",
+            "emoji": "🎨",
+            "isActive": true,
+            "sortOrder": 7,
+            "createdAt": "2025-10-02T12:00:04.048Z",
+            "updatedAt": "2025-10-02T12:00:04.048Z"
+        },
+        {
+            "id": "education",
+            "name": "Education",
+            "description": "Workshops, seminars, training sessions and educational events",
+            "emoji": "📚",
+            "isActive": true,
+            "sortOrder": 8,
+            "createdAt": "2025-10-02T12:00:05.060Z",
+            "updatedAt": "2025-10-02T12:00:05.060Z"
+        },
+        {
+            "id": "health",
+            "name": "Health & Wellness",
+            "description": "Fitness classes, wellness retreats, health seminars and yoga",
+            "emoji": "🧘",
+            "isActive": true,
+            "sortOrder": 9,
+            "createdAt": "2025-10-02T12:00:06.417Z",
+            "updatedAt": "2025-10-02T12:00:06.417Z"
+        },
+        {
+            "id": "community",
+            "name": "Community",
+            "description": "Local community events, volunteering and social gatherings",
+            "emoji": "👥",
+            "isActive": true,
+            "sortOrder": 10,
+            "createdAt": "2025-10-02T12:00:07.320Z",
+            "updatedAt": "2025-10-02T12:00:07.320Z"
+        },
+        {
+            "id": "other",
+            "name": "Other",
+            "description": "Events that don't fit into other categories",
+            "emoji": "📅",
+            "isActive": true,
+            "sortOrder": 99,
+            "createdAt": "2025-10-02T12:00:08.176Z",
+            "updatedAt": "2025-10-02T12:00:08.176Z"
+        }
+    ]
+}

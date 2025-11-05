@@ -1,0 +1,41 @@
+import http;
+import date;
+
+
+int startTime=date.now();
+string endpoint="https://p01--ikolift-uat--xj67hk72w2nh.code.run/events/categories";
+string response = http.get(endpoint);
+int status_code = http.get_status_code();
+
+if (status_code == 200) {
+    output("Success!", string);
+   // output(response, string);
+} else {
+    output("Request failed", string);
+    output(status_code, int);
+}
+
+//to parse the responses
+import json;
+
+ptr responseObj=json.parse(response);
+int responseStatus=json.get_bool(responseObj,"success");
+output(responseStatus,int);
+string eventCategories[]=[];
+if(responseStatus==1){
+   ptr categories=json.get_array(responseObj,"categories");
+   //To parse all the loaded categories
+   int numCategories=json.array_size(categories);
+   for(int i=0;i<numCategories;i++){
+   	  //Parse each object
+   	  ptr singleCategory=json.array_get_object(categories,i);
+   	  string name=json.get_string(singleCategory,"name");
+   	  arr_push(eventCategories,name);
+   }
+}
+
+output(eventCategories,array);
+
+int endTime=date.now();
+
+output("Request took "+(endTime-startTime)+ " seconds",string);

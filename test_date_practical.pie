@@ -1,0 +1,157 @@
+import date;
+import json;
+
+int main() {
+    output("=== Practical Date Module Examples ===\n\n", string);
+    
+    // Example 1: Working with JSON API responses that include timestamps
+    output("Example 1: Parsing JSON with dates\n", string);
+    output("--------------------------------------\n", string);
+    
+    string jsonResponse = "{\"created_at\":\"2025-11-05T10:30:00\",\"updated_at\":\"2025-11-05T14:30:00\",\"user\":\"John\"}";
+    
+    ptr apiData = json.parse(jsonResponse);
+    string createdStr = json.get_string(apiData, "created_at");
+    string updatedStr = json.get_string(apiData, "updated_at");
+    string user = json.get_string(apiData, "user");
+    
+    output("JSON Response: ", string);
+    output(jsonResponse, string);
+    output("\n\n", string);
+    
+    // Parse the ISO timestamps
+    int createdAt = date.parse_iso(createdStr);
+    int updatedAt = date.parse_iso(updatedStr);
+    
+    output("Created at: ", string);
+    output(date.format(createdAt, "%A, %B %d at %I:%M %p"), string);
+    output("\n", string);
+    
+    output("Updated at: ", string);
+    output(date.format(updatedAt, "%A, %B %d at %I:%M %p"), string);
+    output("\n", string);
+    
+    // Calculate time difference
+    int diffHours = date.diff_hours(updatedAt, createdAt);
+    output("Hours between creation and update: ", string);
+    output(diffHours, int);
+    output(" hours\n", string);
+    
+    // Example 2: Event scheduling and countdown
+    output("\n\nExample 2: Event scheduling\n", string);
+    output("--------------------------------------\n", string);
+    
+    int now = date.now();
+    
+    // Schedule an event for next Friday at 7 PM
+    int nextFriday = date.add_days(now, 2);  // Simulating 2 days from now
+    int eventTime = date.start_of_day(nextFriday);
+    eventTime = date.add_hours(eventTime, 19);  // 7 PM
+    
+    output("Current date: ", string);
+    output(date.format_iso(now), string);
+    output("\n", string);
+    
+    output("Event scheduled for: ", string);
+    output(date.format(eventTime, "%A, %B %d at %I:%M %p"), string);
+    output("\n", string);
+    
+    int daysUntil = date.diff_days(eventTime, now);
+    int hoursUntil = date.diff_hours(eventTime, now);
+    
+    output("Time until event: ", string);
+    output(daysUntil, int);
+    output(" days (", string);
+    output(hoursUntil, int);
+    output(" hours)\n", string);
+    
+    // Example 3: Working with month boundaries for billing
+    output("\n\nExample 3: Monthly billing period\n", string);
+    output("--------------------------------------\n", string);
+    
+    int billingStart = date.start_of_month(now);
+    int billingEnd = date.end_of_month(now);
+    
+    output("Billing period: ", string);
+    output(date.format_date(billingStart), string);
+    output(" to ", string);
+    output(date.format_date(billingEnd), string);
+    output("\n", string);
+    
+    int billingDays = date.days_in_month(now);
+    output("Days in billing period: ", string);
+    output(billingDays, int);
+    output("\n", string);
+    
+    int daysElapsed = date.diff_days(now, billingStart);
+    int daysRemaining = date.diff_days(billingEnd, now);
+    
+    output("Days elapsed: ", string);
+    output(daysElapsed, int);
+    output("\n", string);
+    
+    output("Days remaining: ", string);
+    output(daysRemaining, int);
+    output("\n", string);
+    
+    // Example 4: Date validation and formatting
+    output("\n\nExample 4: Date formatting for logs\n", string);
+    output("--------------------------------------\n", string);
+    
+    // Create a log entry with timestamp
+    output("[", string);
+    output(date.format(now, "%Y-%m-%d %H:%M:%S"), string);
+    output("] INFO: System started\n", string);
+    
+    int logTime2 = date.add_minutes(now, 5);
+    output("[", string);
+    output(date.format(logTime2, "%Y-%m-%d %H:%M:%S"), string);
+    output("] INFO: User logged in\n", string);
+    
+    int logTime3 = date.add_minutes(now, 10);
+    output("[", string);
+    output(date.format(logTime3, "%Y-%m-%d %H:%M:%S"), string);
+    output("] INFO: Request processed\n", string);
+    
+    // Example 5: Age calculation
+    output("\n\nExample 5: Age calculation\n", string);
+    output("--------------------------------------\n", string);
+    
+    int birthdate = date.parse("1990-05-15", "%Y-%m-%d");
+    int ageInDays = date.diff_days(now, birthdate);
+    // Approximate age in years (365 days per year)
+    float ageFloat = int_to_float(ageInDays);
+    float divisor = 365.0;
+    float ageYearsFloat = ageFloat / divisor;
+    int ageInYears = float_to_int(ageYearsFloat);
+    
+    output("Birthdate: ", string);
+    output(date.format_date(birthdate), string);
+    output("\n", string);
+    
+    output("Age: approximately ", string);
+    output(ageInYears, int);
+    output(" years (", string);
+    output(ageInDays, int);
+    output(" days)\n", string);
+    
+    // Example 6: Week planning
+    output("\n\nExample 6: Week overview\n", string);
+    output("--------------------------------------\n", string);
+    
+    output("This week:\n", string);
+    int dayCounter = 0;
+    while (dayCounter < 7) {
+        int currentDay = date.add_days(now, dayCounter);
+        output("  ", string);
+        output(date.get_weekday_name(currentDay), string);
+        output(", ", string);
+        output(date.format_date(currentDay), string);
+        output("\n", string);
+        dayCounter = dayCounter + 1;
+    }
+    
+    output("\n=== Examples Complete ===\n", string);
+    
+    return 0;
+}

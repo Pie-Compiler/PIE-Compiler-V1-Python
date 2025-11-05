@@ -1,0 +1,180 @@
+import date;
+
+int main() {
+    output("=== PIE Date Module Test ===\n\n", string);
+    
+    // Get current timestamp
+    output("1. Current Time:\n", string);
+    int now = date.now();
+    output("Current timestamp: ", string);
+    output(now, int);
+    output("\n", string);
+    
+    // Format current date/time in different ways
+    output("\n2. Formatting:\n", string);
+    
+    string isoFormat = date.format_iso(now);
+    output("ISO 8601 format: ", string);
+    output(isoFormat, string);
+    output("\n", string);
+    
+    string dateOnly = date.format_date(now);
+    output("Date only: ", string);
+    output(dateOnly, string);
+    output("\n", string);
+    
+    string timeOnly = date.format_time(now);
+    output("Time only: ", string);
+    output(timeOnly, string);
+    output("\n", string);
+    
+    string customFormat = date.format(now, "%A, %B %d, %Y at %I:%M %p");
+    output("Custom format: ", string);
+    output(customFormat, string);
+    output("\n", string);
+    
+    // Extract date components
+    output("\n3. Date Components:\n", string);
+    
+    int year = date.get_year(now);
+    output("Year: ", string);
+    output(year, int);
+    output("\n", string);
+    
+    int month = date.get_month(now);
+    output("Month: ", string);
+    output(month, int);
+    output(" (", string);
+    output(date.get_month_name(now), string);
+    output(")\n", string);
+    
+    int day = date.get_day(now);
+    output("Day: ", string);
+    output(day, int);
+    output("\n", string);
+    
+    int weekday = date.get_weekday(now);
+    output("Weekday: ", string);
+    output(weekday, int);
+    output(" (", string);
+    output(date.get_weekday_name(now), string);
+    output(")\n", string);
+    
+    int hour = date.get_hour(now);
+    output("Hour: ", string);
+    output(hour, int);
+    output("\n", string);
+    
+    int minute = date.get_minute(now);
+    output("Minute: ", string);
+    output(minute, int);
+    output("\n", string);
+    
+    int second = date.get_second(now);
+    output("Second: ", string);
+    output(second, int);
+    output("\n", string);
+    
+    // Date arithmetic
+    output("\n4. Date Arithmetic:\n", string);
+    
+    int tomorrow = date.add_days(now, 1);
+    output("Tomorrow: ", string);
+    output(date.format_date(tomorrow), string);
+    output("\n", string);
+    
+    int nextWeek = date.add_days(now, 7);
+    output("Next week: ", string);
+    output(date.format_date(nextWeek), string);
+    output("\n", string);
+    
+    int nextMonth = date.add_days(now, 30);
+    output("In 30 days: ", string);
+    output(date.format_date(nextMonth), string);
+    output("\n", string);
+    
+    int inThreeHours = date.add_hours(now, 3);
+    output("In 3 hours: ", string);
+    output(date.format_time(inThreeHours), string);
+    output("\n", string);
+    
+    // Date differences
+    output("\n5. Date Differences:\n", string);
+    
+    int yesterday = date.add_days(now, -1);
+    int diffDays = date.diff_days(now, yesterday);
+    output("Days between now and yesterday: ", string);
+    output(diffDays, int);
+    output("\n", string);
+    
+    int diffHours = date.diff_hours(inThreeHours, now);
+    output("Hours between now and 3 hours from now: ", string);
+    output(diffHours, int);
+    output("\n", string);
+    
+    // Date properties
+    output("\n6. Date Properties:\n", string);
+    
+    int isLeap = date.is_leap_year(now);
+    output("Is leap year: ", string);
+    if (isLeap == 1) {
+        output("Yes\n", string);
+    }
+    if (isLeap == 0) {
+        output("No\n", string);
+    }
+    
+    int daysInMonth = date.days_in_month(now);
+    output("Days in current month: ", string);
+    output(daysInMonth, int);
+    output("\n", string);
+    
+    // Start/end of day
+    output("\n7. Day Boundaries:\n", string);
+    
+    int startDay = date.start_of_day(now);
+    output("Start of day: ", string);
+    output(date.format_time(startDay), string);
+    output("\n", string);
+    
+    int endDay = date.end_of_day(now);
+    output("End of day: ", string);
+    output(date.format_time(endDay), string);
+    output("\n", string);
+    
+    // Start/end of month
+    output("\n8. Month Boundaries:\n", string);
+    
+    int startMonth = date.start_of_month(now);
+    output("Start of month: ", string);
+    output(date.format_date(startMonth), string);
+    output("\n", string);
+    
+    int endMonth = date.end_of_month(now);
+    output("End of month: ", string);
+    output(date.format_date(endMonth), string);
+    output("\n", string);
+    
+    // Parse dates
+    output("\n9. Parsing Dates:\n", string);
+    
+    int parsed = date.parse_iso("2025-12-25T00:00:00");
+    output("Parsed Christmas 2025: ", string);
+    output(date.format_iso(parsed), string);
+    output("\n", string);
+    
+    int customParsed = date.parse("2025/01/01", "%Y/%m/%d");
+    output("Parsed New Year 2025: ", string);
+    output(date.format_date(customParsed), string);
+    output("\n", string);
+    
+    // Calculate days until Christmas
+    int daysUntilChristmas = date.diff_days(parsed, now);
+    output("\nDays until Christmas 2025: ", string);
+    output(daysUntilChristmas, int);
+    output("\n", string);
+    
+    output("\n=== Test Complete ===\n", string);
+    
+    return 0;
+}

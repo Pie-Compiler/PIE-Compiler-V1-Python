@@ -1,0 +1,38 @@
+import json;
+
+int main() {
+    // Test parsing JSON with boolean values
+    string jsonText = "{\"success\":true,\"enabled\":false,\"count\":42}";
+    
+    ptr obj = json.parse(jsonText);
+    
+    // Get boolean values from JSON
+    int successValue = json.get_bool(obj, "success");
+    int enabledValue = json.get_bool(obj, "enabled");
+    int countValue = json.get_int(obj, "count");
+    
+    output("Success: ", string);
+    output(successValue, int);
+    output("\n", string);
+    
+    output("Enabled: ", string);
+    output(enabledValue, int);
+    output("\n", string);
+    
+    output("Count: ", string);
+    output(countValue, int);
+    output("\n", string);
+    
+    // Test setting boolean values
+    ptr newObj = json.create_object();
+    json.set_bool(newObj, "active", 1);
+    json.set_bool(newObj, "inactive", 0);
+    json.set_int(newObj, "value", 100);
+    
+    string result = json.stringify(newObj);
+    output("Created JSON: ", string);
+    output(result, string);
+    output("\n", string);
+    
+    return 0;
+}

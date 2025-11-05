@@ -1,31 +1,65 @@
+// ============================================
+// PIE JSON MODULE REGRESSION TEST
+// ============================================
+// Validates: creation, access, mutation, nesting,
+// parsing, stringification, and error handling.
+//
+// Author: Ian
+// Target: PIE 1.0.0 JSON module
+// ============================================
+
 import json;
-//basic retrieval
+
+// Utility: Pretty output separator
+void section(string title) {
+    output("\n\n=============================", string);
+    output(title, string);
+    output("=============================\n", string);
+}
+
+// Utility: Print JSON
+void printJson(ptr obj) {
+    output(json.stringify(obj), string);
+}
+
+// ============================================
+// SECTION 1: Basic Object Creation and Access
+// ============================================
+
+section("1. Basic Object Creation and Access");
+
 ptr user = json.create_object();
 json.set_string(user, "name", "Ian");
 json.set_int(user, "age", 22);
 
-// Retrieve values
 string name = json.get_string(user, "name");
 int age = json.get_int(user, "age");
 output("User: "+name+" is "+age+" years old", string);
 
-// Modify existing values
 json.set_int(user, "age", 23);
 output("After birthday: "+json.stringify(user), string);
 
-//level2 array of primitives
+// ============================================
+// SECTION 2: Arrays of Primitives
+// ============================================
+
+section("2. Arrays of Primitives");
+
 ptr scores = json.create_array();
 json.array_push_int(scores, 90);
 json.array_push_int(scores, 80);
 json.array_push_int(scores, 100);
 
 output("Scores: "+json.stringify(scores), string);
-int firstScore = json.array_get_int(scores, 0);
-output("First score: "+firstScore, string);
-int scoreCount = json.array_size(scores);
-output("Total scores: "+scoreCount, string);
+output("First score: "+json.array_get_int(scores, 0), string);
+output("Total scores: "+json.array_size(scores), string);
 
-//level3 array of objects
+// ============================================
+// SECTION 3: Array of Objects
+// ============================================
+
+section("3. Arrays of Objects");
+
 ptr users = json.create_array();
 
 ptr user1 = json.create_object();
@@ -40,15 +74,17 @@ json.array_push_object(users, user2);
 
 output("Array of users: "+json.stringify(users), string);
 
-// Access nested data
 ptr u0 = json.array_get_object(users, 0);
-string n0 = json.get_string(u0, "name");
-output("First user: "+n0, string);
+output("First user: "+json.get_string(u0, "name"), string);
 
-//level4 object containing an array of objects
+// ============================================
+// SECTION 4: Nested Object Containing Array of Objects
+// ============================================
+
+section("4. Nested Object Containing Array of Objects");
+
 ptr response = json.create_object();
 json.set_string(response, "status", "success");
-
 ptr users2 = json.create_array();
 
 ptr userA = json.create_object();
@@ -62,16 +98,18 @@ json.set_string(userB, "role", "viewer");
 json.array_push_object(users2, userB);
 
 json.set_array(response, "data", users2);
-
 output("Complex response: "+json.stringify(response), string);
 
-// Access nested user data
 ptr data = json.get_array(response, "data");
 ptr firstUser = json.array_get_object(data, 0);
 output("First user is "+json.get_string(firstUser, "username"), string);
 
+// ============================================
+// SECTION 5: Object in Object in Array
+// ============================================
 
-//level5 object in object in array
+section("5. Object in Object in Array");
+
 ptr network = json.create_object();
 ptr nodes = json.create_array();
 
@@ -84,19 +122,20 @@ json.set_int(connection, "weight", 5);
 
 json.set_object(node1, "connection", connection);
 json.array_push_object(nodes, node1);
-
 json.set_array(network, "nodes", nodes);
 
 output("Network structure: "+json.stringify(network), string);
-
-// Access nested connection data
 ptr nodesArray = json.get_array(network, "nodes");
 ptr firstNode = json.array_get_object(nodesArray, 0);
 ptr conn = json.get_object(firstNode, "connection");
-string target = json.get_string(conn, "target");
-output("First node connects to "+target, string);
+output("First node connects to "+json.get_string(conn, "target"), string);
 
-//level 6 deeply nested structure
+// ============================================
+// SECTION 6: Deeply Nested Structure
+// ============================================
+
+section("6. Deeply Nested Structure");
+
 ptr root = json.create_object();
 ptr level1 = json.create_object();
 ptr level2 = json.create_object();
@@ -108,14 +147,17 @@ json.set_object(level1, "level2", level2);
 json.set_object(root, "level1", level1);
 
 output("Deep nested object: "+json.stringify(root), string);
-// Access deep nested value
 ptr l1 = json.get_object(root, "level1");
 ptr l2 = json.get_object(l1, "level2");
 ptr l3 = json.get_object(l2, "level3");
-string finalVal = json.get_string(l3, "final_value");
-output("Accessed deep value: "+finalVal, string);
+output("Accessed deep value: "+json.get_string(l3, "final_value"), string);
 
-//level 7 array in object in array in object
+// ============================================
+// SECTION 7: Array in Object in Array in Object
+// ============================================
+
+section("7. Array in Object in Array in Object");
+
 ptr catalog = json.create_object();
 ptr products = json.create_array();
 ptr product1 = json.create_object();
@@ -128,23 +170,26 @@ json.array_push_object(reviews, review1);
 json.set_array(product1, "reviews", reviews);
 json.array_push_object(products, product1);
 json.set_array(catalog, "products", products);
+
 output("Catalog: "+json.stringify(catalog), string);
-// Access review data
 ptr prods = json.get_array(catalog, "products");
 ptr firstProd = json.array_get_object(prods, 0);
 ptr revs = json.get_array(firstProd, "reviews");
 ptr firstRev = json.array_get_object(revs, 0);
-string reviewer = json.get_string(firstRev, "user");
-output("First review by "+reviewer, string);    
+output("First review by "+json.get_string(firstRev, "user"), string);
 
-//level 8 Arrays of mixed nested objects
+// ============================================
+// SECTION 8: Arrays of Mixed Nested Objects
+// ============================================
+
+section("8. Arrays of Mixed Nested Objects");
+
 ptr post = json.create_object();
 json.set_string(post, "author", "Ian");
 json.set_string(post, "title", "Testing PIE JSON");
 json.set_string(post, "content", "Exploring nested JSON handling in PIE");
 
 ptr comments = json.create_array();
-
 ptr c1 = json.create_object();
 json.set_string(c1, "user", "Alice");
 json.set_string(c1, "message", "Great work!");
@@ -158,22 +203,22 @@ json.array_push_object(comments, c2);
 json.set_array(post, "comments", comments);
 output("Post with comments: "+json.stringify(post), string);
 
-// Access comments
 ptr comms = json.get_array(post, "comments");
 int commCount = json.array_size(comms);
 output("Total comments: "+commCount, string);
 for(int i=0; i<commCount; i++){
     ptr com = json.array_get_object(comms, i);
-    string commenter = json.get_string(com, "user");
-    string message = json.get_string(com, "message");
-    output("Comment by "+commenter+": "+message, string);
+    output("Comment by "+json.get_string(com, "user")+": "+json.get_string(com, "message"), string);
 }
 
-//level 9 Parsing complex JSON strings
-// Build the JSON string programmatically to avoid escaping issues
+// ============================================
+// SECTION 9: Parsing and Round-Trip Tests
+// ============================================
+
+section("9. Parsing and Round-Trip Tests");
+
 ptr company = json.create_object();
 ptr employees = json.create_array();
-
 ptr emp1 = json.create_object();
 json.set_string(emp1, "name", "John");
 json.set_string(emp1, "role", "developer");
@@ -195,77 +240,47 @@ json.array_push_object(employees, emp2);
 json.set_array(company, "employees", employees);
 
 output("Built company: "+json.stringify(company), string);
-ptr employeesArray = json.get_array(company, "employees");
-int empCount = json.array_size(employeesArray);
-output("Total employees: "+empCount, string);
-for(int i=0; i<empCount; i++){
-    ptr emp = json.array_get_object(employeesArray, i);
-    string empName = json.get_string(emp, "name");
-    string empRole = json.get_string(emp, "role");
-    output("Employee: "+empName+", Role: "+empRole, string);
-    ptr skills = json.get_array(emp, "skills");
-    int skillCount = json.array_size(skills);
-    output("Skills: ", string);
-    for(int j=0; j<skillCount; j++){
-        string skill = json.array_get_string(skills, j);
-        output(" - "+skill, string);
-    }
-}
-// Access first employee's first skill
-ptr firstEmp = json.array_get_object(employeesArray, 0);
-ptr firstEmpSkills = json.get_array(firstEmp, "skills");
-string firstSkill = json.array_get_string(firstEmpSkills, 0);
-output("First employee's first skill: "+firstSkill, string);
+string serialized = json.stringify(company);
+ptr reparsed = json.parse(serialized);
+output("Round-trip result: "+json.stringify(reparsed), string);
 
+// ============================================
+// SECTION 10: Error & Stress Tests
+// ============================================
 
-//level 10 Handling JSON from external sources
-// Simulate receiving a complex JSON string from a server
+section("10. Error & Stress Tests");
 
-//use a file instead of hardcoding since PIE does not support escaped json literals yet
-
-file serverRequest=file_open("./testFiles/request.json", "r");
-if(serverRequest==null){
-    output("Failed to open request.json", string);
+// Invalid JSON Parsing
+string badJson = "{ 'name': 'Ian' ";
+ptr bad = json.parse(badJson);
+if(bad == null){
+    output("Invalid JSON correctly failed to parse.", string);
 }else{
-string requestContent=file_read_all(serverRequest);
-output("File read complete.", string);
-output("File content length: "+strlen(requestContent), string);
-file_close(serverRequest);
-output("Received JSON content: "+requestContent, string);
-/*
-{
-    "users": [
-        {"name": "Alice", "age": 30, "active": true},
-        {"name": "Bob", "age": 25, "active": false},
-        {"name": "Charlie", "age": 35, "active": true}
-    ]
-}
-*/
-
-// Parse the received JSON content
-ptr jsonData = json.parse(requestContent);
-ptr users_array = json.get_array(jsonData, "users");
-int num_users = json.array_size(users_array);  // Returns 3
-output("Number of users received: "+num_users, string);
+    output("Unexpected success parsing invalid JSON.", string);
 }
 
+// Mixed-type access
+int invalidAccess = json.get_int(user, "name");  // should be default 0
+output("Invalid type access returned: "+invalidAccess, string);
 
-//mutability test
-ptr parsed = json.parse(json.stringify(company));
+// Large array stress test
+ptr bigArr = json.create_array();
+for(int i=0; i<1000; i++){
+    json.array_push_int(bigArr, i);
+}
+output("Large array size: "+json.array_size(bigArr), string);
+
+// Repeated stringify test
+for(int j=0; j<100; j++){
+    string s = json.stringify(company);
+}
+output("Repeated stringify test completed.", string);
+
+// Mutability test
+ptr parsed = json.parse(serialized);
 ptr empArr = json.get_array(parsed, "employees");
 ptr first = json.array_get_object(empArr, 0);
 json.set_string(first, "name", "Modified");
 output("After mutation: "+json.stringify(parsed), string);
 
-//Mixed-type error handling
-int invalidAccess = json.get_int(user, "name");  // "name" is string
-output("Invalid access test (should be default 0): "+invalidAccess, string);
-string missingKey = json.get_string(user, "nonexistent"); // key doesn't exist
-output("Missing key test (should be empty): '"+missingKey+"'", string);
-
-
-//round-trip test
-string serialized = json.stringify(user);
-ptr reparsed = json.parse(serialized);
-output("Round-trip result: "+json.stringify(reparsed), string);
-output("All tests completed.", string);
+output("\nAll tests completed successfully!", string);

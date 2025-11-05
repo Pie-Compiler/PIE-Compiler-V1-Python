@@ -1,0 +1,6 @@
+import json;
+ptr parsed = json.parse(json.stringify(company));
+ptr empArr = json.get_array(parsed, "employees");
+ptr first = json.array_get_object(empArr, 0);
+json.set_string(first, "name", "Modified");
+output("After mutation: "+json.stringify(parsed), string);

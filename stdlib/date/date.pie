@@ -1,0 +1,51 @@
+// PIE Date Module
+// This is a stub file for the date module
+// All functionality is implemented in C (pie_date.c)
+
+// The date module provides comprehensive date and time functionality
+// including parsing, formatting, arithmetic, and manipulation
+
+// Current time functions:
+// - date.now() -> Get current Unix timestamp
+// - date.now_millis() -> Get current time in milliseconds
+
+// Formatting functions:
+// - date.format(timestamp, format) -> Custom format
+// - date.format_iso(timestamp) -> ISO 8601 format
+// - date.format_date(timestamp) -> YYYY-MM-DD
+// - date.format_time(timestamp) -> HH:MM:SS
+
+// Parsing functions:
+// - date.parse(date_str, format) -> Parse custom format
+// - date.parse_iso(iso_str) -> Parse ISO 8601
+
+// Component extraction:
+// - date.get_year(timestamp) -> Extract year
+// - date.get_month(timestamp) -> Extract month (1-12)
+// - date.get_day(timestamp) -> Extract day (1-31)
+// - date.get_hour(timestamp) -> Extract hour (0-23)
+// - date.get_minute(timestamp) -> Extract minute (0-59)
+// - date.get_second(timestamp) -> Extract second (0-59)
+// - date.get_weekday(timestamp) -> Day of week (0-6)
+// - date.get_weekday_name(timestamp) -> Weekday name
+// - date.get_month_name(timestamp) -> Month name
+
+// Date arithmetic:
+// - date.add_seconds(timestamp, seconds) -> Add seconds
+// - date.add_minutes(timestamp, minutes) -> Add minutes
+// - date.add_hours(timestamp, hours) -> Add hours
+// - date.add_days(timestamp, days) -> Add days
+
+// Date differences:
+// - date.diff_seconds(ts1, ts2) -> Difference in seconds
+// - date.diff_minutes(ts1, ts2) -> Difference in minutes
+// - date.diff_hours(ts1, ts2) -> Difference in hours
+// - date.diff_days(ts1, ts2) -> Difference in days
+
+// Date properties:
+// - date.is_leap_year(timestamp) -> Check leap year
+// - date.days_in_month(timestamp) -> Days in month
+// - date.start_of_day(timestamp) -> Start of day
+// - date.end_of_day(timestamp) -> End of day
+// - date.start_of_month(timestamp) -> Start of month
+// - date.end_of_month(timestamp) -> End of month

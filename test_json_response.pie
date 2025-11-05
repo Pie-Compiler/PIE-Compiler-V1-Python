@@ -1,0 +1,62 @@
+//A file to test JSON response creation
+
+//import the json module
+
+import json;
+
+string users[]=["John", "Alice","Bob"];
+int ages[]=[23,21,19];
+
+//create the object
+
+ptr response=json.create_object();
+
+json.set_string(response,"success","true");
+
+//create the users array
+ptr data=json.create_object();
+ptr userData=json.create_array();
+
+for(int i=0;i<arr_size(users);i++){
+ptr user=json.create_object();
+string name=users[i];
+int age=ages[i];
+json.set_string(user,"username",name);
+json.set_int(user,"age",age);
+json.array_push_object(userData,user);
+}
+
+//get the time of sending the response
+int currentTime=time();
+string local_time=time_to_local(currentTime);
+
+json.set_string(response,"Time",local_time);
+json.set_array(data,"users",userData);
+json.set_array(response,"data",data);
+
+
+//output the resulting json
+output(json.stringify(response),string);
+
+//
+string age1=json.get_string(response,"age");
+output(age1,string);
+if(age1==null || age1==""){
+	output("The value is null",string);
+}
+
+
+//stress test
+ptr bigArray = json.create_array();
+for(int i=0; i<1000; i++){
+    json.array_push_int(bigArray, i);
+}
+output("Large array created successfully. Size: "+json.array_size(bigArray), string);
+
+//write it into a file
+file save=file_open("stress.json","w");
+
+file_write(save,json.stringify(bigArray));
+file_flush(save);
+
+file_close(save);
