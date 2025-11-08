@@ -1,0 +1,51 @@
+import http;
+import json;
+
+// Test 1: POST with multiple custom headers
+output("=== Test 1: POST with Multiple Custom Headers ===", string);
+ptr json_obj = json.create_object();
+json.set_string(json_obj, "test", "custom headers");
+json.set_int(json_obj, "value", 42);
+string json_data = json.stringify(json_obj);
+
+dict headers = {};
+dict_set(headers, "Content-Type", "application/json");
+dict_set(headers, "X-Custom-Header", "PIE-Language");
+dict_set(headers, "X-API-Key", "secret-key-12345");
+dict_set(headers, "Accept", "application/json");
+
+string response1 = http.post("https://httpbin.org/post", json_data, headers);
+output(response1, string);
+
+// Test 2: GET with custom headers
+output("\n=== Test 2: GET with Custom Headers ===", string);
+dict get_headers = {};
+dict_set(get_headers, "Authorization", "Bearer token123");
+dict_set(get_headers, "X-Request-ID", "pie-test-001");
+
+string response2 = http.get_headers("https://httpbin.org/get", get_headers);
+output(response2, string);
+
+// Test 3: PUT with custom headers
+output("\n=== Test 3: PUT with Custom Headers ===", string);
+dict put_headers = {};
+dict_set(put_headers, "Content-Type", "application/json");
+dict_set(put_headers, "X-Updated-By", "PIE-Compiler");
+
+ptr update_obj = json.create_object();
+json.set_string(update_obj, "status", "updated");
+string update_data = json.stringify(update_obj);
+
+string response3 = http.put("https://httpbin.org/put", update_data, put_headers);
+output(response3, string);
+
+// Test 4: DELETE with authentication headers
+output("\n=== Test 4: DELETE with Authentication ===", string);
+dict delete_headers = {};
+dict_set(delete_headers, "Authorization", "Bearer delete-token");
+dict_set(delete_headers, "X-Reason", "Cleanup operation");
+
+string response4 = http.delete("https://httpbin.org/delete", delete_headers);
+output(response4, string);
+
+output("\n=== All Tests Complete ===", string);

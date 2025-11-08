@@ -1,13 +1,18 @@
 import http;
+import json;
 
+ptr body=json.create_object();
+json.set_string(body,"name","PIE Lang");
+json.set_string(body,"version","1.0");
 // Prepare JSON body
-string json_body = "{\"name\": \"PIE Lang\", \"version\": \"1.0\"}";
-
+string json_body = json.stringify(body);
+dict headers={};
+dict_set(headers,"Content-Type","application/json");
 // Make POST request
 string response = http.post(
     "https://httpbin.org/post",
     json_body,
-    null  // headers parameter (optional)
+    headers // headers parameter (optional)
 );
 
 output("POST Response: ", string);

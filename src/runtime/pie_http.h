@@ -79,9 +79,10 @@ char* http_put(const char* url, const char* body, Dictionary* headers);
 /**
  * Perform HTTP DELETE request
  * @param url The URL to request
+ * @param headers Dictionary of HTTP headers (can be NULL)
  * @return Response body as string (caller must free)
  */
-char* http_delete(const char* url);
+char* http_delete(const char* url, Dictionary* headers);
 
 /**
  * Get HTTP status code from last request
@@ -155,6 +156,13 @@ const char* http_request_get_body(http_request_t request);
  * @return Header value or NULL if not found (do not free)
  */
 const char* http_request_get_header(http_request_t request, const char* header_name);
+
+/**
+ * Get all request headers as a Dictionary
+ * @param request HTTP request object
+ * @return Dictionary with header names as keys and header values as strings (caller must free)
+ */
+Dictionary* http_request_get_headers(http_request_t request);
 
 /**
  * Set response status code

@@ -26,27 +26,27 @@
       },
       {
         "name": "get_headers",
-        "signature": "string(string url, ptr headers)",
+        "signature": "string(string url, dict headers)",
         "description": "Perform HTTP GET request with custom headers"
       },
       {
         "name": "post",
-        "signature": "string(string url, string body, ptr headers)",
+        "signature": "string(string url, string body, dict headers)",
         "description": "Perform HTTP POST request"
       },
       {
         "name": "post_full",
-        "signature": "ptr(string url, string body, ptr headers)",
+        "signature": "ptr(string url, string body, dict headers)",
         "description": "Perform HTTP POST request with full response info"
       },
       {
         "name": "put",
-        "signature": "string(string url, string body, ptr headers)",
+        "signature": "string(string url, string body, dict headers)",
         "description": "Perform HTTP PUT request"
       },
       {
         "name": "delete",
-        "signature": "string(string url)",
+        "signature": "string(string url, dict headers)",
         "description": "Perform HTTP DELETE request"
       },
       {
@@ -93,6 +93,11 @@
         "name": "request_get_header",
         "signature": "string(ptr request, string header_name)",
         "description": "Get request header value from server request"
+      },
+      {
+        "name": "request_get_headers",
+        "signature": "dict(ptr request)",
+        "description": "Get all request headers as a Dictionary from server request"
       },
       {
         "name": "response_set_status",

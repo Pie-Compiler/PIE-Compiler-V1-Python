@@ -1,0 +1,41 @@
+import http;
+import json;
+
+output("=== HTTP DELETE with Authentication Test ===\n", string);
+
+// Test 1: DELETE without authentication (should work for httpbin)
+output("Test 1: DELETE without custom headers", string);
+dict empty_headers = {};
+string response1 = http.delete("https://httpbin.org/delete", empty_headers);
+output(response1, string);
+
+// Test 2: DELETE with Bearer token authentication
+output("\n\nTest 2: DELETE with Bearer token", string);
+dict auth_headers = {};
+dict_set(auth_headers, "Authorization", "Bearer secret-token-12345");
+dict_set(auth_headers, "X-Request-ID", "delete-001");
+
+string response2 = http.delete("https://httpbin.org/delete", auth_headers);
+output(response2, string);
+
+// Test 3: DELETE with API key authentication
+output("\n\nTest 3: DELETE with API Key", string);
+dict api_headers = {};
+dict_set(api_headers, "X-API-Key", "my-api-key");
+dict_set(api_headers, "X-Client-ID", "pie-compiler");
+
+string response3 = http.delete("https://httpbin.org/delete", api_headers);
+output(response3, string);
+
+// Test 4: DELETE with multiple custom headers
+output("\n\nTest 4: DELETE with multiple headers", string);
+dict multi_headers = {};
+dict_set(multi_headers, "Authorization", "Bearer token123");
+dict_set(multi_headers, "If-Match", "etag-value");
+dict_set(multi_headers, "X-Delete-Reason", "User requested");
+dict_set(multi_headers, "X-Cascade-Delete", "true");
+
+string response4 = http.delete("https://httpbin.org/delete", multi_headers);
+output(response4, string);
+
+output("\n\n=== All DELETE Tests Complete ===", string);

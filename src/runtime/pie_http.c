@@ -196,9 +196,93 @@ http_client_response_t* http_get_full(const char* url) {
 }
 
 char* http_get_headers(const char* url, Dictionary* headers) {
-    // TODO: Implement custom headers using Dictionary when available
-    // For now, just do a standard GET
-    return http_get(url);
+    CURL* curl;
+    CURLcode res;
+    http_response_buffer_t response;
+    http_header_buffer_t resp_headers;
+    struct curl_slist* header_list = NULL;
+    long response_code;
+    
+    response.data = malloc(1);
+    response.size = 0;
+    resp_headers.data = malloc(1);
+    resp_headers.size = 0;
+    
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+    
+    if (!curl) {
+        free(response.data);
+        free(resp_headers.data);
+        return strdup("[ERROR] Failed to initialize CURL");
+    }
+    
+    // Set URL
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    
+    // Add custom headers from dictionary
+    if (headers) {
+        for (uint32_t i = 0; i < headers->capacity; i++) {
+            DictNode* node = headers->buckets[i];
+            while (node) {
+                if (node->value && node->value->type == DICT_VALUE_STRING) {
+                    // Format: "Header-Name: header-value"
+                    size_t header_len = strlen(node->key) + strlen(node->value->as.string_val) + 3;
+                    char* header_str = malloc(header_len);
+                    snprintf(header_str, header_len, "%s: %s", node->key, node->value->as.string_val);
+                    header_list = curl_slist_append(header_list, header_str);
+                    free(header_str);
+                }
+                node = node->next;
+            }
+        }
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+    }
+    
+    // Set callbacks
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&response);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)&resp_headers);
+    
+    // Follow redirects
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    
+    // Set user agent
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "PIE-HTTP/1.0");
+    
+    // Perform the request
+    res = curl_easy_perform(curl);
+    
+    // Get response code
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+    
+    // Store in global vars
+    last_status_code = (int)response_code;
+    if (last_response_headers) {
+        free(last_response_headers);
+    }
+    last_response_headers = strdup(resp_headers.data);
+    
+    // Check for errors
+    if (res != CURLE_OK) {
+        char* error_msg = malloc(256);
+        snprintf(error_msg, 256, "[ERROR] HTTP GET failed: %s", curl_easy_strerror(res));
+        free(response.data);
+        free(resp_headers.data);
+        if (header_list) curl_slist_free_all(header_list);
+        curl_easy_cleanup(curl);
+        curl_global_cleanup();
+        return error_msg;
+    }
+    
+    // Clean up
+    free(resp_headers.data);
+    if (header_list) curl_slist_free_all(header_list);
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+    
+    return response.data;
 }
 
 char* http_post(const char* url, const char* body, Dictionary* headers) {
@@ -242,9 +326,36 @@ http_client_response_t* http_post_full(const char* url, const char* body, Dictio
     // Set POST data
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
     
-    // Add headers
-    header_list = curl_slist_append(header_list, "Content-Type: application/json");
-    // TODO: Add custom headers from Dictionary when available
+    // Add custom headers from dictionary
+    int has_content_type = 0;
+    if (headers) {
+        for (uint32_t i = 0; i < headers->capacity; i++) {
+            DictNode* node = headers->buckets[i];
+            while (node) {
+                if (node->value && node->value->type == DICT_VALUE_STRING) {
+                    // Format: "Header-Name: header-value"
+                    size_t header_len = strlen(node->key) + strlen(node->value->as.string_val) + 3;
+                    char* header_str = malloc(header_len);
+                    snprintf(header_str, header_len, "%s: %s", node->key, node->value->as.string_val);
+                    header_list = curl_slist_append(header_list, header_str);
+                    
+                    // Check if Content-Type was provided
+                    if (strcasecmp(node->key, "Content-Type") == 0) {
+                        has_content_type = 1;
+                    }
+                    
+                    free(header_str);
+                }
+                node = node->next;
+            }
+        }
+    }
+    
+    // Add default Content-Type if not provided
+    if (!has_content_type) {
+        header_list = curl_slist_append(header_list, "Content-Type: application/json");
+    }
+    
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
     
     // Set callbacks
@@ -331,8 +442,36 @@ char* http_put(const char* url, const char* body, Dictionary* headers) {
     // Set PUT data
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
     
-    // Add headers
-    header_list = curl_slist_append(header_list, "Content-Type: application/json");
+    // Add custom headers from dictionary
+    int has_content_type = 0;
+    if (headers) {
+        for (uint32_t i = 0; i < headers->capacity; i++) {
+            DictNode* node = headers->buckets[i];
+            while (node) {
+                if (node->value && node->value->type == DICT_VALUE_STRING) {
+                    // Format: "Header-Name: header-value"
+                    size_t header_len = strlen(node->key) + strlen(node->value->as.string_val) + 3;
+                    char* header_str = malloc(header_len);
+                    snprintf(header_str, header_len, "%s: %s", node->key, node->value->as.string_val);
+                    header_list = curl_slist_append(header_list, header_str);
+                    
+                    // Check if Content-Type was provided
+                    if (strcasecmp(node->key, "Content-Type") == 0) {
+                        has_content_type = 1;
+                    }
+                    
+                    free(header_str);
+                }
+                node = node->next;
+            }
+        }
+    }
+    
+    // Add default Content-Type if not provided
+    if (!has_content_type) {
+        header_list = curl_slist_append(header_list, "Content-Type: application/json");
+    }
+    
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
     
     // Set callbacks
@@ -363,7 +502,7 @@ char* http_put(const char* url, const char* body, Dictionary* headers) {
         snprintf(error_msg, 256, "[ERROR] HTTP PUT failed: %s", curl_easy_strerror(res));
         free(response.data);
         free(resp_headers.data);
-        curl_slist_free_all(header_list);
+        if (header_list) curl_slist_free_all(header_list);
         curl_easy_cleanup(curl);
         curl_global_cleanup();
         return error_msg;
@@ -371,18 +510,19 @@ char* http_put(const char* url, const char* body, Dictionary* headers) {
     
     // Clean up
     free(resp_headers.data);
-    curl_slist_free_all(header_list);
+    if (header_list) curl_slist_free_all(header_list);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
     
     return response.data;
 }
 
-char* http_delete(const char* url) {
+char* http_delete(const char* url, Dictionary* headers) {
     CURL* curl;
     CURLcode res;
     http_response_buffer_t response;
     http_header_buffer_t resp_headers;
+    struct curl_slist* header_list = NULL;
     long response_code;
     
     response.data = malloc(1);
@@ -404,6 +544,25 @@ char* http_delete(const char* url) {
     
     // Set custom request method to DELETE
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+    
+    // Add custom headers from dictionary
+    if (headers) {
+        for (uint32_t i = 0; i < headers->capacity; i++) {
+            DictNode* node = headers->buckets[i];
+            while (node) {
+                if (node->value && node->value->type == DICT_VALUE_STRING) {
+                    // Format: "Header-Name: header-value"
+                    size_t header_len = strlen(node->key) + strlen(node->value->as.string_val) + 3;
+                    char* header_str = malloc(header_len);
+                    snprintf(header_str, header_len, "%s: %s", node->key, node->value->as.string_val);
+                    header_list = curl_slist_append(header_list, header_str);
+                    free(header_str);
+                }
+                node = node->next;
+            }
+        }
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+    }
     
     // Set callbacks
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -433,6 +592,7 @@ char* http_delete(const char* url) {
         snprintf(error_msg, 256, "[ERROR] HTTP DELETE failed: %s", curl_easy_strerror(res));
         free(response.data);
         free(resp_headers.data);
+        if (header_list) curl_slist_free_all(header_list);
         curl_easy_cleanup(curl);
         curl_global_cleanup();
         return error_msg;
@@ -440,6 +600,7 @@ char* http_delete(const char* url) {
     
     // Clean up
     free(resp_headers.data);
+    if (header_list) curl_slist_free_all(header_list);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
     
@@ -719,6 +880,29 @@ const char* http_request_get_body(http_request_t request) {
 const char* http_request_get_header(http_request_t request, const char* header_name) {
     server_request_t* req = (server_request_t*)request;
     return MHD_lookup_connection_value(req->connection, MHD_HEADER_KIND, header_name);
+}
+
+// Helper callback for MHD_get_connection_values to collect headers into a dictionary
+static enum MHD_Result header_iterator(void* cls, enum MHD_ValueKind kind,
+                                       const char* key, const char* value) {
+    Dictionary* headers_dict = (Dictionary*)cls;
+    
+    // Add header to dictionary
+    DictValue* dict_val = dict_value_create_string(value);
+    dict_set(headers_dict, key, dict_val);
+    
+    return MHD_YES;  // Continue iteration
+}
+
+Dictionary* http_request_get_headers(http_request_t request) {
+    server_request_t* req = (server_request_t*)request;
+    Dictionary* headers_dict = dict_create();
+    
+    // Iterate through all headers and add them to the dictionary
+    MHD_get_connection_values(req->connection, MHD_HEADER_KIND, 
+                              &header_iterator, headers_dict);
+    
+    return headers_dict;
 }
 
 void http_response_set_status(http_response_t response, int status_code) {

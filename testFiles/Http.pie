@@ -1,0 +1,68 @@
+//This file is to test the http module and showcase all the useful functionalities
+
+import http;
+import json;
+
+//PIE's http module supports both the http client and server
+
+//http client
+
+//get requests
+output_string("===== SENDING SIMPLE GET REQUEST ===");
+string BASE_URL="https://httpbin.org";
+string getUrl=BASE_URL+"/get";
+string response=http.get(getUrl); //sending a get requests
+output_string(response); //output the response -> same as output(response,string);
+
+//get the response code
+int status_code=http.get_status_code();
+output("The response status code is : "+status_code,string);
+
+
+output_string("======= TESTING GET WITH CUSTOM HEADERS ======");
+//PIE headers are in a dictionary
+
+dict get_headers={};
+
+dict_set(get_headers, "User-Agent", "PIE-Client/1.0");
+dict_set(get_headers, "Accept", "application/json");
+
+response=http.get_headers(getUrl,get_headers);
+output_string(response);
+
+output_string("===== SENDING A POST REQUEST ==========");
+//We can use the json module to create a basic payload
+ptr body = json.create_object();
+json.set_string(body, "name", "John Doe");
+string json_body = json.stringify(body);
+
+// Set custom headers
+dict post_headers = {};
+dict_set(post_headers, "Content-Type", "application/json");
+dict_set(post_headers, "Authorization", "Bearer my-secret-token");
+dict_set(post_headers, "X-API-Version", "v1");
+
+// Make POST request
+response = http.post(
+    (BASE_URL+"/post"), //url
+    json_body, //payload
+    post_headers // (optional - can be null)
+);
+
+output_string(response);
+
+
+
+output_string("====== SENDING PUT REQUEST =========");
+ptr payload=body;
+dict putHeaders=get_headers;
+json.set_string(payload, "update", "true");
+string putBody = json.stringify(payload);
+response = http.put("https://httpbin.org/put", putBody, putHeaders);
+int response_code=http.get_status_code();
+output_string("PUT Response Code: " +  response_code);
+
+output_string("========= SENDING DELETE REQUEST ========");
+response = http.delete((BASE_URL+"/delete"),putHeaders);
+response_code=http.get_status_code();
+output_string("DELETE Response Code: "+ response_code);

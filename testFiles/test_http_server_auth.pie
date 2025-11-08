@@ -1,0 +1,80 @@
+import http;
+
+// Handler function for HTTP requests
+void handle_request(ptr request, ptr response) {
+    // Get the request path and method
+    string method = http.request_get_method(request);
+    string path = http.request_get_path(request);
+    
+    output("Received request: ", string);
+    output(method, string);
+    output(" ", string);
+    output(path, string);
+    output("\n", string);
+    
+    // Get all request headers as a dictionary
+    dict headers = http.request_get_headers(request);
+    
+    // Check for Authorization header
+    string auth = dict_get(headers, "Authorization");
+    int is_empty = string_is_empty(auth);
+    
+    // Example: Simple Bearer token authentication
+    if (is_empty == 1) {
+        output("No authorization header found\n", string);
+        http.response_set_status(response, 401);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{\"error\":\"Unauthorized\",\"message\":\"No authorization header\"}");
+        return;
+    }
+    
+    output("Authorization: ", string);
+    output(auth, string);
+    output("\n", string);
+    
+    // Check if it's a valid Bearer token (simple example)
+    int is_bearer = string_starts_with(auth, "Bearer ");
+    if (is_bearer == 1) {
+        output("Valid Bearer token format\n", string);
+        
+        // You could extract and validate the token here
+        // For this example, we'll accept any Bearer token
+        
+        http.response_set_status(response, 200);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{\"status\":\"success\",\"message\":\"Authenticated\"}");
+    } else {
+        output("Invalid authorization format\n", string);
+        http.response_set_status(response, 401);
+        http.response_set_header(response, "Content-Type", "application/json");
+        http.response_set_body(response, "{\"error\":\"Unauthorized\",\"message\":\"Invalid authorization format\"}");
+    }
+    
+    // Optional: Log other interesting headers
+    string user_agent = dict_get(headers, "User-Agent");
+    int has_ua = string_is_empty(user_agent);
+    if (has_ua == 0) {
+        output("User-Agent: ", string);
+        output(user_agent, string);
+        output("\n", string);
+    }
+    
+    string content_type = dict_get(headers, "Content-Type");
+    int has_ct = string_is_empty(content_type);
+    if (has_ct == 0) {
+        output("Content-Type: ", string);
+        output(content_type, string);
+        output("\n", string);
+    }
+}
+
+// Start the server
+void main() {
+    output("Starting authenticated HTTP server on port 8080...\n", string);
+    output("Try:\n", string);
+    output("  curl http://localhost:8080/\n", string);
+    output("  curl -H \"Authorization: Bearer mytoken123\" http://localhost:8080/\n", string);
+    output("\n", string);
+    
+    http.listen(8080, handle_request);
+}

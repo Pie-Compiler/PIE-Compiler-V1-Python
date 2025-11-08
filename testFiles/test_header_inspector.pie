@@ -1,0 +1,97 @@
+import http;
+import json;
+
+// Handler to display all request headers
+void header_inspector(ptr request, ptr response) {
+    string method = http.request_get_method(request);
+    string path = http.request_get_path(request);
+    
+    output("\n=== Request Received ===\n", string);
+    output("Method: ", string);
+    output(method, string);
+    output("\nPath: ", string);
+    output(path, string);
+    output("\n\n", string);
+    
+    // Get all headers as a dictionary
+    dict headers = http.request_get_headers(request);
+    
+    output("Headers:\n", string);
+    
+    // Display common headers
+    string auth = dict_get(headers, "Authorization");
+    int has_auth = string_is_empty(auth);
+    if (has_auth == 0) {
+        output("  Authorization: ", string);
+        output(auth, string);
+        output("\n", string);
+    }
+    
+    string user_agent = dict_get(headers, "User-Agent");
+    int has_ua = string_is_empty(user_agent);
+    if (has_ua == 0) {
+        output("  User-Agent: ", string);
+        output(user_agent, string);
+        output("\n", string);
+    }
+    
+    string content_type = dict_get(headers, "Content-Type");
+    int has_ct = string_is_empty(content_type);
+    if (has_ct == 0) {
+        output("  Content-Type: ", string);
+        output(content_type, string);
+        output("\n", string);
+    }
+    
+    string host = dict_get(headers, "Host");
+    int has_host = string_is_empty(host);
+    if (has_host == 0) {
+        output("  Host: ", string);
+        output(host, string);
+        output("\n", string);
+    }
+    
+    string accept = dict_get(headers, "Accept");
+    int has_accept = string_is_empty(accept);
+    if (has_accept == 0) {
+        output("  Accept: ", string);
+        output(accept, string);
+        output("\n", string);
+    }
+    
+    // Check for custom headers
+    string custom = dict_get(headers, "X-Custom-Header");
+    int has_custom = string_is_empty(custom);
+    if (has_custom == 0) {
+        output("  X-Custom-Header: ", string);
+        output(custom, string);
+        output("\n", string);
+    }
+    
+    string api_key = dict_get(headers, "X-API-Key");
+    int has_key = string_is_empty(api_key);
+    if (has_key == 0) {
+        output("  X-API-Key: ", string);
+        output(api_key, string);
+        output("\n", string);
+    }
+    
+    output("\n", string);
+    
+    // Send response
+    http.response_set_status(response, 200);
+    http.response_set_header(response, "Content-Type", "text/plain");
+    http.response_set_body(response, "Headers received and logged to console");
+}
+
+void main() {
+    output("=== HTTP Header Inspector Server ===\n", string);
+    output("Starting server on port 8080...\n", string);
+    output("\nTest with:\n", string);
+    output("  curl http://localhost:8080/\n", string);
+    output("  curl -H \"Authorization: Bearer token123\" http://localhost:8080/\n", string);
+    output("  curl -H \"X-Custom-Header: MyValue\" -H \"X-API-Key: secret\" http://localhost:8080/\n", string);
+    output("\nPress Ctrl+C to stop\n\n", string);
+    
+    http.listen(8080, header_inspector);
+}
