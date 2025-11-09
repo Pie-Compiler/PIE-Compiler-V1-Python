@@ -6,7 +6,18 @@ import json;
 //middleware
 string accessToken="12345678";
 
-int checkAuth(string authHeader){
+//error sending
+void sendError(ptr response, int status, string message, string error) {
+    http.response_set_status(response, status);
+    ptr jsonResponse = json.create_object();
+    json.set_string(jsonResponse, "message", message);
+    json.set_string(jsonResponse, "Error", error);
+    http.response_set_header(response, "Content-Type", "application/json");
+    http.response_set_body(response, json.stringify(jsonResponse));
+}
+
+
+bool checkAuth(string authHeader){
 	//check if the header is a bearer type
 	if(string_contains(authHeader,"Bearer")==1){
 		//extract the token
@@ -15,41 +26,29 @@ int checkAuth(string authHeader){
 		token=string_trim(token);
 		output("Token: "+token,string);
 		if(accessToken==token){
-			return 1;
+			return true;
 		}
-		return 0;
+		return false;
 	}else{
 		output("Wrong authorization type",string);
-		return 0;
+		return false;
 	}
 }
 
 
-int authenticate(ptr request,ptr response){
+bool authenticate(ptr request,ptr response){
 	dict requestHeaders=http.request_get_headers(request);
 	if(dict_has_key(requestHeaders,"Authorization")!=1){
 	output_string("Unauthorized request");
-		http.response_set_status(response,401); //set unauthorized header
-
-		ptr jsonResponse=json.create_object();
-		json.set_string(jsonResponse,"message","Unauthorized");
-		json.set_string(jsonResponse,"Error","Missing authorization header");
-		http.response_set_header(response, "Content-Type", "application/json");
-		http.response_set_body(response,json.stringify(jsonResponse));
-
-		return 0;
+		sendError(response,400,"Bad Request","Missing Authorization Header");
+		return false;
 	}else{
 		output("Request Auth Header received! ",string);
 		string authHeader=dict_get(requestHeaders,"Authorization");
-		int authCheck=checkAuth(authHeader);
-		if(authCheck==0){
-			http.response_set_status(response,401); //set unauthorized header
-			ptr jsonResponse=json.create_object();
-			json.set_string(jsonResponse,"message","Unauthorized");
-			json.set_string(jsonResponse,"Error","Invalid Token");
-			http.response_set_header(response, "Content-Type", "application/json");
-			http.response_set_body(response,json.stringify(jsonResponse));
-			return 0;
+		bool authCheck=checkAuth(authHeader);
+		if(authCheck==false){
+			sendError(response,403,"Forbidden","Invalid or expired token");
+			return false;
 		}else{
 			return authCheck;
 		}
@@ -103,12 +102,7 @@ void addUser(ptr request,ptr response){
 	string userName=json.get_string(user,"name");
 	if(string_is_empty(userMail)==1||string_is_empty(userName)==1){
 		output("Invalid Body Detected!",string);
-		http.response_set_status(response,400); //set unauthorized header
-		ptr jsonResponse=json.create_object();
-		json.set_string(jsonResponse,"message","Invalid Request Data");
-		json.set_string(jsonResponse,"Error","Missing email and name");
-		http.response_set_header(response, "Content-Type", "application/json");
-		http.response_set_body(response,json.stringify(jsonResponse));
+		sendError(response,400,"Bad Request","Invalid or missing user data");
 		return;
 	}else{
 		//to record the data
@@ -131,8 +125,8 @@ void addUser(ptr request,ptr response){
 void router(string method,string path,ptr request,ptr response){
 	//authenticate all post requests
 	if(method=="POST"){
-		int securityCheck=authenticate(request,response);
-		if(securityCheck==0){
+		bool securityCheck=authenticate(request,response);
+		if(securityCheck==false){
 			return;
 		}
 	}
