@@ -118,12 +118,7 @@ void addUser(ptr request,ptr response){
 		}
 		if(userExists==1){
 			output("User already exists!",string);
-			http.response_set_status(response,409); //set conflict header
-			ptr jsonResponse=json.create_object();
-			json.set_string(jsonResponse,"message","User already exists");
-			json.set_string(jsonResponse,"Error","Conflict");
-			http.response_set_header(response, "Content-Type", "application/json");
-			http.response_set_body(response,json.stringify(jsonResponse));
+			sendError(response,409,"Conflict","User already exists");
 			return;
 		}
 		//proceed
