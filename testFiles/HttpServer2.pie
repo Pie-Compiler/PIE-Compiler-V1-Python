@@ -111,6 +111,28 @@ void addUser(ptr request,ptr response){
 		http.response_set_body(response,json.stringify(jsonResponse));
 		return;
 	}else{
+		//check if user exists
+		ptr users=getDBData();
+		int userExists=0;
+		int usersCount=json.array_size(users);
+		for(int i=0;i<usersCount;i=i+1){
+			ptr existingUser=json.array_get_object(users,i);
+			string existingEmail=json.get_string(existingUser,"email");
+			if(existingEmail==userMail){
+				userExists=1;
+			}
+		}
+		if(userExists==1){
+			output("User already exists!",string);
+			http.response_set_status(response,409); //set conflict header
+			ptr jsonResponse=json.create_object();
+			json.set_string(jsonResponse,"message","User already exists");
+			json.set_string(jsonResponse,"Error","Conflict");
+			http.response_set_header(response, "Content-Type", "application/json");
+			http.response_set_body(response,json.stringify(jsonResponse));
+			return;
+		}
+		//proceed
 		//to record the data
 		ptr userObj=json.create_object();
 		json.set_string(userObj,"name",userName);
@@ -140,6 +162,24 @@ void router(string method,string path,ptr request,ptr response){
 		addUser(request,response);
 		return;
 	}
+	//health check route
+	if(method=="GET" && path=="/health"){
+		http.response_set_header(response, "Content-Type", "application/json");
+		http.response_set_status(response, 200);
+		ptr jsonResponse=json.create_object();
+		json.set_string(jsonResponse,"status","OK");
+		json.set_string(jsonResponse,"message","Server is healthy");
+		http.response_set_body(response,json.stringify(jsonResponse));
+		return;
+	}
+	//fetch users route
+	if(method=="GET" && path=="/users"){
+		http.response_set_header(response, "Content-Type", "application/json");
+		http.response_set_status(response, 200);
+		ptr users=getDBData();
+		http.response_set_body(response,json.stringify(users));
+		return;
+	}
 	//Catch all
 	http.response_set_header(response, "Content-Type", "text/plain");
 	http.response_set_status(response, 404);
@@ -152,7 +192,7 @@ void pieServer(ptr request, ptr response){
    string path=http.request_get_path(request);
    //getting the method
    string method=http.request_get_method(request);
-   output_string(method + "Request Received" + "Path: "+path);
+   output_string(method + " Request Received " + "Path: "+path);
    router(method,path,request,response); 
 }
 
