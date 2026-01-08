@@ -1,0 +1,13 @@
+//Test a recursive function that calculates factorial of a number
+int factorial(int n){
+    if(n==0){
+        return 1;
+    }else{
+        return n*factorial(n-1);
+    }
+}
+void main(){
+    int num=5;
+    int result=factorial(num);
+    output("Factorial of "+num+" is "+result,string);
+}

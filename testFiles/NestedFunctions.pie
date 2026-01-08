@@ -1,0 +1,31 @@
+int add(int a, int b){
+    return a+b;
+}
+
+int subtract(int a, int b){
+    return a-b;
+}
+
+int operation(string op,int x,int y){
+    if(op=="add"){
+        return add(x,y);
+    }
+    else if(op=="subtract"){
+        return subtract(x,y);
+    }
+    else{
+        output("Invalid operation",string);
+        return 0;
+    }
+}
+
+void main(){
+    int result1=operation("add",10,5);
+    output("Addition Result: "+result1,string);
+
+    int result2=operation("subtract",10,5);
+    output("Subtraction Result: "+result2,string);
+
+    int result3=operation("multiply",10,5);
+    output("Invalid Operation Result: "+result3,string);
+}
