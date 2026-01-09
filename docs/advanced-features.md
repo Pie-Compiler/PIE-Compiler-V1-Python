@@ -172,6 +172,88 @@ output("Remaining size: ", string);
 output(arr_size(stack), int);  // 1
 ```
 
+### Arrays of Dictionaries
+
+PIE supports arrays of dictionaries (`dict[]`), enabling you to work with collections of structured data like records, objects, or configuration entries.
+
+#### Creating Arrays of Dictionaries
+
+```pie
+// Empty array of dictionaries
+dict records[] = [];
+
+// Array with initial dictionaries
+dict users[] = [
+    {"name": "Alice", "email": "alice@example.com", "age": 28},
+    {"name": "Bob", "email": "bob@example.com", "age": 32},
+    {"name": "Charlie", "email": "charlie@example.com", "age": 25}
+];
+```
+
+#### Accessing Elements
+
+```pie
+dict users[] = [
+    {"name": "Alice", "role": "admin"},
+    {"name": "Bob", "role": "user"}
+];
+
+// Access by index
+dict firstUser = users[0];
+string name = dict_get_string(firstUser, "name");  // "Alice"
+string role = dict_get_string(firstUser, "role");  // "admin"
+
+// Iterate over all dictionaries
+for (int i = 0; i < arr_size(users); i++) {
+    dict user = users[i];
+    output(dict_get_string(user, "name"), string);
+}
+```
+
+#### Adding Dictionaries
+
+```pie
+dict products[] = [{"id": 1, "name": "Widget"}];
+
+// Add a new dictionary
+dict newProduct = {"id": 2, "name": "Gadget", "price": 29.99};
+arr_push(products, newProduct);
+
+// Add inline
+arr_push(products, {"id": 3, "name": "Gizmo", "price": 39.99});
+
+output(arr_size(products), int);  // 3
+```
+
+#### Practical Example: Employee Database
+
+```pie
+dict employees[] = [
+    {"id": 101, "name": "Alice Smith", "department": "Engineering", "salary": 75000},
+    {"id": 102, "name": "Bob Jones", "department": "Marketing", "salary": 65000},
+    {"id": 103, "name": "Carol White", "department": "Engineering", "salary": 80000}
+];
+
+// Find all employees in Engineering
+output("Engineering Team:", string);
+for (int i = 0; i < arr_size(employees); i++) {
+    dict emp = employees[i];
+    string dept = dict_get_string(emp, "department");
+    if (dept == "Engineering") {
+        output(dict_get_string(emp, "name"), string);
+    }
+}
+
+// Calculate total salary
+int totalSalary = 0;
+for (int i = 0; i < arr_size(employees); i++) {
+    dict emp = employees[i];
+    totalSalary = totalSalary + dict_get_int(emp, "salary");
+}
+output("Total payroll: ", string);
+output(totalSalary, int);
+```
+
 ---
 
 ## Dictionaries

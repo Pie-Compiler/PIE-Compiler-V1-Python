@@ -815,6 +815,40 @@ float avg = arr_avg(numbers);
 
 **Note:** `arr_push` and `arr_pop` only work with dynamic arrays (`int[]`).
 
+### Arrays of Dictionaries
+
+PIE supports arrays of dictionaries, allowing you to store collections of key-value objects:
+
+```pie
+// Create an array of dictionaries with initial values
+dict people[] = [
+    {"name": "Alice", "age": 25},
+    {"name": "Bob", "age": 30},
+    {"name": "Charlie", "age": 35}
+];
+
+// Access elements by index
+dict person = people[0];
+string name = dict_get_string(person, "name");  // "Alice"
+
+// Get array size
+int count = arr_size(people);  // 3
+
+// Push a new dictionary
+dict newPerson = {"name": "Diana", "age": 28};
+arr_push(people, newPerson);
+
+// Access the pushed element
+dict last = people[3];
+output(dict_get_string(last, "name"), string);  // Diana
+```
+
+**Supported Operations:**
+- `arr_push(dictArray, dict)` - Add dictionary to end
+- `arr_pop(dictArray)` - Remove and return last dictionary
+- `arr_size(dictArray)` - Get number of dictionaries
+- `dictArray[index]` - Access dictionary at index
+
 ### Printing Arrays
 
 ```pie

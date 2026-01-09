@@ -1,0 +1,36 @@
+// Test file for array of dictionaries feature
+// Tests: declaration, initialization, access, arr_size, arr_push
+
+// Create an array of dictionaries with initial values
+dict people[] = [
+    {"name": "Alice", "age": 25},
+    {"name": "Bob", "age": 30},
+    {"name": "Charlie", "age": 35}
+];
+
+// Get size of array
+output("Array size: ", string);
+output(arr_size(people), int);
+
+// Access first element by index
+dict person = people[0];
+output("First person: ", string);
+output(dict_get_string(person, "name"), string);
+
+// Access second element age
+dict person2 = people[1];
+output("Second person age: ", string);
+output(dict_get_int(person2, "age"), int);
+
+// Create a new dictionary and push it
+dict newPerson = {"name": "Diana", "age": 28};
+arr_push(people, newPerson);
+
+// Check new size
+output("New array size: ", string);
+output(arr_size(people), int);
+
+// Access the pushed element
+dict lastPerson = people[3];
+output("Last person: ", string);
+output(dict_get_string(lastPerson, "name"), string);

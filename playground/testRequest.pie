@@ -1,0 +1,18 @@
+//A file to test sending requests to external endpoints
+import http;
+dict get_headers = {};
+dict_set(get_headers, "Authorization", "Bearer token123");
+dict_set(get_headers, "X-Request-ID", "pie-test-001");
+string response = http.get_headers("https://c5e08e36704e.ngrok-free.app",get_headers);
+dict response_headers=http.get_response_headers();
+string content_type=dict_get(response_headers,"content-type");
+output(content_type,string);
+int status = http.get_status_code();
+
+if (status == 200) {
+    output("Success!", string);
+    output(response,string);
+} else {
+    output("Failed with status:", string);
+    output(status, int);
+}

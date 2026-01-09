@@ -78,6 +78,11 @@ int size = arr_size(arr);
 int exists = arr_contains(arr, 2);
 int idx = arr_indexof(arr, 3);
 float avg = arr_avg(arr);
+
+// Array of dictionaries
+dict people[] = [{"name": "Alice"}, {"name": "Bob"}];
+dict person = people[0];
+arr_push(people, {"name": "Charlie"});
 ```
 
 ## Dictionaries
@@ -88,6 +93,9 @@ dict_set(d, "new", "data");
 string val = dict_get(d, "key");
 int exists = dict_has_key(d, "key");
 dict_delete(d, "key");
+
+// Array of dictionaries (see Arrays section)
+dict items[] = [{"id": 1}, {"id": 2}];
 ```
 
 ## Functions

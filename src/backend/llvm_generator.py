@@ -77,6 +77,15 @@ class LLVMCodeGenerator(Visitor):
         )
         self.dict_type = dict_struct.as_pointer()
 
+        # Dictionary array struct (DArrayDict)
+        d_array_dict_struct = self.module.context.get_identified_type("DArrayDict")
+        d_array_dict_struct.set_body(
+            self.dict_type.as_pointer(),  # data (Dictionary**)
+            ir.IntType(64),  # size
+            ir.IntType(64)   # capacity
+        )
+        self.d_array_dict_type = d_array_dict_struct.as_pointer()
+
     def get_llvm_type(self, type_str):
         if type_str.startswith('KEYWORD_'):
             type_str = type_str.split('_')[1].lower()
@@ -107,6 +116,8 @@ class LLVMCodeGenerator(Visitor):
             return self.d_array_float_type
         elif type_str == 'd_array_char':
             return self.d_array_char_type
+        elif type_str == 'd_array_dict':
+            return self.d_array_dict_type
         elif type_str == 'dict':
             return self.dict_type
         elif type_str == 'regex':
@@ -351,6 +362,19 @@ class LLVMCodeGenerator(Visitor):
         ir.Function(self.module, ir.FunctionType(int_type, [float_array_ptr, float_type]), name="d_array_float_indexof")
         ir.Function(self.module, ir.FunctionType(float_type, [float_array_ptr]), name="d_array_float_avg")
         ir.Function(self.module, ir.FunctionType(float_array_ptr, [float_array_ptr]), name="d_array_float_copy")
+
+        # Dictionary array functions
+        dict_array_ptr = self.d_array_dict_type
+        ir.Function(self.module, ir.FunctionType(dict_array_ptr, []), name="d_array_dict_create")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_array_ptr, self.dict_type]), name="d_array_dict_append")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_array_ptr, self.dict_type]), name="d_array_dict_push")
+        ir.Function(self.module, ir.FunctionType(self.dict_type, [dict_array_ptr, int_type]), name="d_array_dict_get")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_array_ptr, int_type, self.dict_type]), name="d_array_dict_set")
+        ir.Function(self.module, ir.FunctionType(int_type, [dict_array_ptr]), name="d_array_dict_size")
+        ir.Function(self.module, ir.FunctionType(self.dict_type, [dict_array_ptr]), name="d_array_dict_pop")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_array_ptr]), name="d_array_dict_free")
+        ir.Function(self.module, ir.FunctionType(dict_array_ptr, [dict_array_ptr]), name="d_array_dict_copy")
+        ir.Function(self.module, ir.FunctionType(ir.VoidType(), [dict_array_ptr]), name="print_dict_array")
     
     def _declare_module_functions(self):
         """Declare external functions from imported modules."""
@@ -1651,6 +1675,13 @@ class LLVMCodeGenerator(Visitor):
             if raw_val.type == ir.IntType(8).as_pointer():
                 return raw_val
         
+        # For dictionary arrays: expecting Dictionary* (pointer type), return as-is
+        # Check if expected is a pointer to a struct (like Dictionary*)
+        elif isinstance(expected_elem_type, ir.PointerType):
+            # If the raw value already matches the expected pointer type, return as-is
+            if raw_val.type == expected_elem_type:
+                return raw_val
+        
         # Otherwise normal pointer load semantics
         return self._load_if_pointer(raw_val)
 
@@ -1828,6 +1859,9 @@ class LLVMCodeGenerator(Visitor):
                 elif pointee_type == self.d_array_char_type:
                     from frontend.types import TypeInfo
                     ti = TypeInfo(base='char', is_dynamic=True, dimensions=1)
+                elif pointee_type == self.d_array_dict_type:
+                    from frontend.types import TypeInfo
+                    ti = TypeInfo(base='dict', is_dynamic=True, dimensions=1)
         
         # Handle dictionary access
         if sym and sym.get('type') == 'KEYWORD_DICT':
@@ -2655,6 +2689,18 @@ class LLVMCodeGenerator(Visitor):
             push_func = self.module.get_global("d_array_char_append")
             expected_elem_type = push_func.function_type.args[1]
             value_val = self._coerce_char_array_element(expected_elem_type, raw_value_val)
+        elif array_type == self.d_array_dict_type:
+            push_func = self.module.get_global("d_array_dict_push")
+            # For dict arrays, we expect a Dictionary* pointer
+            # If raw_value_val is already Dictionary*, use it directly
+            if raw_value_val.type == self.dict_type:
+                value_val = raw_value_val
+            # If raw_value_val is a pointer to Dictionary* (i.e., Dictionary**), load it
+            elif isinstance(raw_value_val.type, ir.PointerType) and raw_value_val.type.pointee == self.dict_type:
+                value_val = self.builder.load(raw_value_val)
+            else:
+                # Try loading and hope for the best
+                value_val = self._load_if_pointer(raw_value_val)
         else:
             raise Exception(f"Unsupported array type for push: {array_type}")
         self.builder.call(push_func, [array_val, value_val])
@@ -2700,11 +2746,13 @@ class LLVMCodeGenerator(Visitor):
                 # This is a pointer to a pointer - we need to load to get the array pointer
                 array_val = self.builder.load(result)
             elif pointee in [self.d_array_int_type.pointee, self.d_array_string_type.pointee, 
-                            self.d_array_float_type.pointee, self.d_array_char_type.pointee]:
+                            self.d_array_float_type.pointee, self.d_array_char_type.pointee,
+                            self.d_array_dict_type.pointee]:
                 # result is already pointing to an array struct, load to get the pointer
                 array_val = self.builder.load(result)
             elif result.type in [self.d_array_int_type, self.d_array_string_type,
-                                self.d_array_float_type, self.d_array_char_type]:
+                                self.d_array_float_type, self.d_array_char_type,
+                                self.d_array_dict_type]:
                 # result is already the array struct pointer
                 array_val = result
             else:
@@ -2723,6 +2771,8 @@ class LLVMCodeGenerator(Visitor):
             size_func = self.module.get_global("d_array_float_size")
         elif array_type == self.d_array_char_type:
             size_func = self.module.get_global("d_array_char_size")
+        elif array_type == self.d_array_dict_type:
+            size_func = self.module.get_global("d_array_dict_size")
         else:
             raise Exception(f"Unsupported array type for size: {array_type}")
         

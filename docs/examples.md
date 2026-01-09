@@ -752,6 +752,44 @@ output(total, int);
 
 ---
 
+### Array of Dictionaries - Contact List
+
+```pie
+// Create a contact list as an array of dictionaries
+dict contacts[] = [
+    {"name": "Alice", "phone": "555-1234", "email": "alice@example.com"},
+    {"name": "Bob", "phone": "555-5678", "email": "bob@example.com"},
+    {"name": "Carol", "phone": "555-9012", "email": "carol@example.com"}
+];
+
+// Display all contacts
+output("=== Contact List ===", string);
+for (int i = 0; i < arr_size(contacts); i++) {
+    dict contact = contacts[i];
+    output(dict_get_string(contact, "name"), string);
+    output("  Phone: " + dict_get_string(contact, "phone"), string);
+    output("  Email: " + dict_get_string(contact, "email"), string);
+}
+
+// Add a new contact
+dict newContact = {"name": "Dave", "phone": "555-3456", "email": "dave@example.com"};
+arr_push(contacts, newContact);
+
+output("Total contacts: ", string);
+output(arr_size(contacts), int);  // 4
+
+// Search for a contact by name
+string searchName = "Bob";
+for (int i = 0; i < arr_size(contacts); i++) {
+    dict c = contacts[i];
+    if (dict_get_string(c, "name") == searchName) {
+        output("Found: " + dict_get_string(c, "email"), string);
+    }
+}
+```
+
+---
+
 ## File I/O Examples
 
 ### Writing to a File
