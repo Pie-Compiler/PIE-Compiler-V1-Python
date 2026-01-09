@@ -390,6 +390,11 @@ class SemanticAnalyzer(Visitor):
                     darray_element = expr_type.split('_', 2)[2]  # d_array_string -> string
                     if not self.type_checker.is_compatible(element_type, darray_element):
                         self.add_error(f"Type mismatch in array initialization: Cannot assign d_array of {darray_element} to array of {element_type}")
+                # Handle type[] format (like dict[] from module functions)
+                elif expr_type and expr_type.endswith('[]'):
+                    array_element = expr_type[:-2]  # dict[] -> dict
+                    if not self.type_checker.is_compatible(element_type, array_element):
+                        self.add_error(f"Type mismatch in array initialization: Cannot assign array of {array_element} to array of {element_type}")
                 elif expr_type == 'array':
                     # Check if this is an identifier referring to another array
                     if isinstance(node.initializer, Identifier):

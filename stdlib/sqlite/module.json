@@ -1,0 +1,87 @@
+{
+    "name": "sqlite",
+    "version": "1.0.0",
+    "description": "SQLite database support for PIE",
+    "author": "PIE Team",
+    "requires": {
+        "pie_version": ">=1.0.0",
+        "modules": []
+    },
+    "c_bindings": {
+        "headers": [
+            "pie_sqlite.h"
+        ],
+        "sources": [
+            "pie_sqlite.c"
+        ],
+        "libraries": [
+            "sqlite3"
+        ]
+    },
+    "exports": {
+        "functions": [
+            {
+                "name": "open",
+                "signature": "database(string path)",
+                "description": "Open a SQLite database file. Returns database handle or 0 on error.",
+                "c_name": "pie_sqlite_open"
+            },
+            {
+                "name": "close",
+                "signature": "void(database db)",
+                "description": "Close a database connection.",
+                "c_name": "pie_sqlite_close"
+            },
+            {
+                "name": "exec",
+                "signature": "int(database db, string sql)",
+                "description": "Execute SQL statement. Returns 1 on success, 0 on error.",
+                "c_name": "pie_sqlite_exec"
+            },
+            {
+                "name": "query",
+                "signature": "dict[](database db, string sql)",
+                "description": "Execute SQL query and return results as array of dictionaries.",
+                "c_name": "pie_sqlite_query"
+            },
+            {
+                "name": "last_error",
+                "signature": "string(database db)",
+                "description": "Get the last error message for the database.",
+                "c_name": "pie_sqlite_last_error"
+            },
+            {
+                "name": "begin",
+                "signature": "int(database db)",
+                "description": "Begin a transaction. Returns 1 on success.",
+                "c_name": "pie_sqlite_begin"
+            },
+            {
+                "name": "commit",
+                "signature": "int(database db)",
+                "description": "Commit current transaction. Returns 1 on success.",
+                "c_name": "pie_sqlite_commit"
+            },
+            {
+                "name": "rollback",
+                "signature": "int(database db)",
+                "description": "Rollback current transaction. Returns 1 on success.",
+                "c_name": "pie_sqlite_rollback"
+            },
+            {
+                "name": "changes",
+                "signature": "int(database db)",
+                "description": "Get number of rows changed by last INSERT/UPDATE/DELETE.",
+                "c_name": "pie_sqlite_changes"
+            }
+        ],
+        "types": [
+            {
+                "name": "database",
+                "type": "alias",
+                "base": "ptr",
+                "description": "SQLite database connection handle"
+            }
+        ]
+    }
+}

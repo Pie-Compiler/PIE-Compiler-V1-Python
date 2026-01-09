@@ -1,52 +1,58 @@
 //PIE uses sqlite as the underlying database engine
 //This example demonstrates basic database operations
 import sqlite;
-string dbName="testDB.sqlite";
-string dbPath="./"+dbName;
+
+string dbPath = "./testDB.sqlite";
+
 //Open a database connection
-//Remains open until explicitly closed
 database db = sqlite.open(dbPath);
+
 if (db != null) {
-    //sample query to create a table
-    sqlite.exec(db, "
-    CREATE TABLE IF NOT EXISTS users (
-        id   INTEGER PRIMARY KEY,
-        name TEXT,
-        age  INTEGER
-    )");
+    //Create table (single-line SQL since PIE doesn't support multi-line strings)
+    sqlite.exec(db, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)");
+    
     //Insert sample data
     sqlite.exec(db, "INSERT INTO users (name, age) VALUES ('Alice', 30)");
     sqlite.exec(db, "INSERT INTO users (name, age) VALUES ('Bob', 25)");
     sqlite.exec(db, "INSERT INTO users (name, age) VALUES ('Charlie', 35)");
-    //Query data
-    //results is an array of dicts representing rows
+    
+    //Query data - results is an array of dicts representing rows
     dict results[] = sqlite.query(db, "SELECT * FROM users");
+    
     //Output results
-    for (int i = 0; i < arr_size(results); i = i + 1) {
+    output("Query results:", string);
+    for (int i = 0; i < arr_size(results); i++) {
         dict row = results[i];
         string name = dict_get_string(row, "name");
         int age = dict_get_int(row, "age");
-        output("User: " + name + ", Age: " + age, string);
+        output("User: " + name, string);
+        output("Age: ", string);
+        output(age, int);
     }
+    
+    sqlite.close(db);
 }
-sqlite.close(db);
-
 
 //Managing transactions
 db = sqlite.open(dbPath);
-if (db != null) {
+if (db != 0) {
     //Begin transaction
     sqlite.begin(db);
+    
     //Perform multiple operations
     sqlite.exec(db, "INSERT INTO users (name, age) VALUES ('David', 28)");
     sqlite.exec(db, "INSERT INTO users (name, age) VALUES ('Eve', 22)");
+    
     //Commit transaction
     sqlite.commit(db);
-
-    //sample rollback
+    
+    //Sample rollback
     sqlite.begin(db);
     sqlite.exec(db, "INSERT INTO users (name, age) VALUES ('Frank', 40)");
     //Decide to rollback
     sqlite.rollback(db);
+    
+    sqlite.close(db);
 }
-sqlite.close(db);
+
+output("Database operations completed!", string);

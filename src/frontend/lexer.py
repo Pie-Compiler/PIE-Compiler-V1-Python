@@ -261,6 +261,7 @@ def build_master_nfa():
         "true": "KEYWORD_TRUE",
         "false": "KEYWORD_FALSE",
         "array": "KEYWORD_ARRAY",
+        "database": "KEYWORD_DATABASE",
         "import": "KEYWORD_IMPORT",
         "from": "KEYWORD_FROM",
         "as": "KEYWORD_AS",

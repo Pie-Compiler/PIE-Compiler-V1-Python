@@ -10,6 +10,7 @@ CANONICAL_MAP = {
     'KEYWORD_FILE': 'file', 'file': 'file',
     'KEYWORD_SOCKET': 'socket', 'socket': 'socket',
     'KEYWORD_DICT': 'dict', 'dict': 'dict',
+    'KEYWORD_DATABASE': 'database', 'database': 'database',
     'KEYWORD_NULL': 'null', 'null': 'null',
     'KEYWORD_ARRAY': 'array', 'array': 'array'
 }

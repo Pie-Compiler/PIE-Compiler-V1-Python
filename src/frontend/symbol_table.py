@@ -122,7 +122,7 @@ class TypeChecker:
             return type_name
         base = canonicalize(type_name)
         mapping = {
-            'int':'KEYWORD_INT','float':'KEYWORD_FLOAT','char':'KEYWORD_CHAR','string':'KEYWORD_STRING','bool':'KEYWORD_BOOL','void':'KEYWORD_VOID','file':'KEYWORD_FILE','socket':'KEYWORD_SOCKET','dict':'KEYWORD_DICT','null':'KEYWORD_NULL'
+            'int':'KEYWORD_INT','float':'KEYWORD_FLOAT','char':'KEYWORD_CHAR','string':'KEYWORD_STRING','bool':'KEYWORD_BOOL','void':'KEYWORD_VOID','file':'KEYWORD_FILE','socket':'KEYWORD_SOCKET','dict':'KEYWORD_DICT','null':'KEYWORD_NULL','database':'KEYWORD_DATABASE'
         }
         return mapping.get(base, type_name)
 
@@ -177,6 +177,9 @@ class TypeChecker:
                 return 'KEYWORD_BOOL'
             # Add support for string equality comparisons
             if l == 'KEYWORD_STRING' and r == 'KEYWORD_STRING':
+                return 'KEYWORD_BOOL'
+            # Allow database handle comparison with int (for null checks like db != 0)
+            if 'KEYWORD_DATABASE' in [l,r] and 'KEYWORD_INT' in [l,r]:
                 return 'KEYWORD_BOOL'
             return None
         if op in ['AND','OR']:

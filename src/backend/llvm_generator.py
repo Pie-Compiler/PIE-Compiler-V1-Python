@@ -122,6 +122,8 @@ class LLVMCodeGenerator(Visitor):
             return self.dict_type
         elif type_str == 'regex':
             return ir.IntType(8).as_pointer()  # RegexPattern* is a pointer
+        elif type_str == 'database':
+            return ir.IntType(64)  # sqlite3* handle (intptr_t)
         elif type_str == 'void*':
             return ir.IntType(8).as_pointer()
         else:
@@ -563,6 +565,20 @@ class LLVMCodeGenerator(Visitor):
         """Convert a module type string to LLVM type."""
         type_str = type_str.strip()
         
+        # Handle array types like dict[]
+        if type_str.endswith('[]'):
+            base_type = type_str[:-2]
+            if base_type == 'dict':
+                return self.d_array_dict_type
+            elif base_type == 'int':
+                return self.d_array_int_type
+            elif base_type == 'string':
+                return self.d_array_string_type
+            elif base_type == 'float':
+                return self.d_array_float_type
+            # Default to pointer for unknown array types
+            return ir.IntType(8).as_pointer()
+        
         # Handle module-specific types
         if type_str.startswith('json.'):
             # json.object and json.array are opaque pointers
@@ -580,6 +596,7 @@ class LLVMCodeGenerator(Visitor):
             'char': ir.IntType(8),
             'bool': ir.IntType(1),
             'file': ir.IntType(64),  # FILE* as i64
+            'database': ir.IntType(64),  # sqlite3* as i64
             'dict': self.dict_type if hasattr(self, 'dict_type') else ir.IntType(8).as_pointer(),
             'function': ir.IntType(8).as_pointer(),  # Function pointer
         }
