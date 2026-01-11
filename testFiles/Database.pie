@@ -2,7 +2,7 @@
 //This example demonstrates basic database operations
 import sqlite;
 
-string dbPath = "./testDB.sqlite";
+string dbPath = "./testFiles/testDB.sqlite";
 
 //Open a database connection
 database db = sqlite.open(dbPath);

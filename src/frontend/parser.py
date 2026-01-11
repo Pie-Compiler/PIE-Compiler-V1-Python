@@ -15,7 +15,7 @@ class Parser:
             'KEYWORD_IF', 'KEYWORD_ELSE', 'KEYWORD_FOR', 'KEYWORD_WHILE', 'KEYWORD_DO',
             'KEYWORD_RETURN', 'KEYWORD_BREAK', 'KEYWORD_CONTINUE', 'KEYWORD_SWITCH', 'KEYWORD_CASE', 'KEYWORD_DEFAULT',
             'KEYWORD_INT', 'KEYWORD_FLOAT', 'KEYWORD_CHAR', 'KEYWORD_VOID', 'KEYWORD_FILE', 'KEYWORD_SOCKET', 'KEYWORD_DICT','KEYWORD_REGEX', 'KEYWORD_DATABASE',
-            'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 'KEYWORD_NULL', 'KEYWORD_EXIT', 'KEYWORD_ARRAY',
+            'KEYWORD_STRING', 'KEYWORD_BOOL', 'KEYWORD_TRUE', 'KEYWORD_FALSE', 'KEYWORD_NULL', 'KEYWORD_ARRAY',
             'KEYWORD_PTR',
             'KEYWORD_IMPORT', 'KEYWORD_FROM', 'KEYWORD_AS', 'KEYWORD_EXPORT',
             'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'LBRACKET', 'RBRACKET',
@@ -661,7 +661,7 @@ class Parser:
                         | SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
                         | SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-                        | KEYWORD_EXIT LPAREN RPAREN
+                        | SYSTEM_EXIT LPAREN RPAREN
                         | SYSTEM_SLEEP LPAREN expression RPAREN
                         | SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
                         | SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -676,7 +676,7 @@ class Parser:
         elif slice_type == 'SYSTEM_OUTPUT':
             precision = p[7] if len(p) > 7 and p.slice[-2].type != 'RPAREN' else None
             p[0] = SystemOutput(p[3], p[5], precision)
-        elif slice_type == 'KEYWORD_EXIT':
+        elif slice_type == 'SYSTEM_EXIT':
             p[0] = SystemExit()
         elif slice_type == 'SYSTEM_SLEEP':
             p[0] = SystemSleep(p[3])

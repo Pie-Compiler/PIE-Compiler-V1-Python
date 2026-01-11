@@ -134,9 +134,9 @@ char* char_to_string(char value) {
     }
     return result;
 }
-// Exit function
-void exit_program() {
-    exit(0);
+// Exit function - immediately terminates program execution
+void pie_exit() {
+    _Exit(0);
 }
 
 // Sleep function - sleeps for specified number of seconds

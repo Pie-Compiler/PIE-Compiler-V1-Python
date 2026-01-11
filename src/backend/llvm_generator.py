@@ -823,6 +823,9 @@ class LLVMCodeGenerator(Visitor):
         # Each block has its own symbol table scope, managed by the semantic analyzer.
         # Here, we just visit the statements within the block.
         for stmt in node.statements:
+            # Skip remaining statements if the block is already terminated (e.g., after exit() or return)
+            if self.builder.block.is_terminated:
+                break
             self.visit(stmt)
 
     def visit_functiondefinition(self, node):
@@ -2673,6 +2676,8 @@ class LLVMCodeGenerator(Visitor):
     def visit_systemexit(self, node):
         exit_func = self.module.get_global("pie_exit")
         self.builder.call(exit_func, [])
+        # Mark as unreachable since exit never returns
+        self.builder.unreachable()
 
     def visit_systemsleep(self, node):
         sleep_func = self.module.get_global("pie_sleep")

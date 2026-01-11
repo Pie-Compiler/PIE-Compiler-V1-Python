@@ -4,7 +4,6 @@ Unused terminals:
 
     COMMENT
     KEYWORD_CONTINUE
-    SYSTEM_EXIT
 
 Grammar
 
@@ -104,7 +103,7 @@ Rule 92    function_call -> IDENTIFIER DOT IDENTIFIER LPAREN RPAREN
 Rule 93    function_call -> SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
 Rule 94    function_call -> SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
 Rule 95    function_call -> SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-Rule 96    function_call -> KEYWORD_EXIT LPAREN RPAREN
+Rule 96    function_call -> SYSTEM_EXIT LPAREN RPAREN
 Rule 97    function_call -> SYSTEM_SLEEP LPAREN expression RPAREN
 Rule 98    function_call -> SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
 Rule 99    function_call -> SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -193,7 +192,6 @@ KEYWORD_DEFAULT      : 37
 KEYWORD_DICT         : 59
 KEYWORD_DO           : 32
 KEYWORD_ELSE         : 71
-KEYWORD_EXIT         : 96
 KEYWORD_EXPORT       : 30 31
 KEYWORD_FALSE        : 142
 KEYWORD_FILE         : 57
@@ -235,7 +233,7 @@ SYSTEM_ARR_INDEXOF   : 102
 SYSTEM_ARR_POP       : 99
 SYSTEM_ARR_PUSH      : 98
 SYSTEM_ARR_SIZE      : 100
-SYSTEM_EXIT          : 
+SYSTEM_EXIT          : 96
 SYSTEM_INPUT         : 93
 SYSTEM_OUTPUT        : 94 95
 SYSTEM_SLEEP         : 97
@@ -358,7 +356,7 @@ state 0
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -397,7 +395,7 @@ state 0
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -507,7 +505,7 @@ state 2
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -547,7 +545,7 @@ state 2
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -608,7 +606,7 @@ state 3
     IDENTIFIER      reduce using rule 8 (statement_list -> statement .)
     SYSTEM_INPUT    reduce using rule 8 (statement_list -> statement .)
     SYSTEM_OUTPUT   reduce using rule 8 (statement_list -> statement .)
-    KEYWORD_EXIT    reduce using rule 8 (statement_list -> statement .)
+    SYSTEM_EXIT     reduce using rule 8 (statement_list -> statement .)
     SYSTEM_SLEEP    reduce using rule 8 (statement_list -> statement .)
     SYSTEM_ARR_PUSH reduce using rule 8 (statement_list -> statement .)
     SYSTEM_ARR_POP  reduce using rule 8 (statement_list -> statement .)
@@ -652,7 +650,7 @@ state 4
     IDENTIFIER      reduce using rule 10 (statement -> declaration_statement .)
     SYSTEM_INPUT    reduce using rule 10 (statement -> declaration_statement .)
     SYSTEM_OUTPUT   reduce using rule 10 (statement -> declaration_statement .)
-    KEYWORD_EXIT    reduce using rule 10 (statement -> declaration_statement .)
+    SYSTEM_EXIT     reduce using rule 10 (statement -> declaration_statement .)
     SYSTEM_SLEEP    reduce using rule 10 (statement -> declaration_statement .)
     SYSTEM_ARR_PUSH reduce using rule 10 (statement -> declaration_statement .)
     SYSTEM_ARR_POP  reduce using rule 10 (statement -> declaration_statement .)
@@ -697,7 +695,7 @@ state 5
     IDENTIFIER      reduce using rule 11 (statement -> assignment_statement .)
     SYSTEM_INPUT    reduce using rule 11 (statement -> assignment_statement .)
     SYSTEM_OUTPUT   reduce using rule 11 (statement -> assignment_statement .)
-    KEYWORD_EXIT    reduce using rule 11 (statement -> assignment_statement .)
+    SYSTEM_EXIT     reduce using rule 11 (statement -> assignment_statement .)
     SYSTEM_SLEEP    reduce using rule 11 (statement -> assignment_statement .)
     SYSTEM_ARR_PUSH reduce using rule 11 (statement -> assignment_statement .)
     SYSTEM_ARR_POP  reduce using rule 11 (statement -> assignment_statement .)
@@ -742,7 +740,7 @@ state 6
     IDENTIFIER      reduce using rule 12 (statement -> if_statement .)
     SYSTEM_INPUT    reduce using rule 12 (statement -> if_statement .)
     SYSTEM_OUTPUT   reduce using rule 12 (statement -> if_statement .)
-    KEYWORD_EXIT    reduce using rule 12 (statement -> if_statement .)
+    SYSTEM_EXIT     reduce using rule 12 (statement -> if_statement .)
     SYSTEM_SLEEP    reduce using rule 12 (statement -> if_statement .)
     SYSTEM_ARR_PUSH reduce using rule 12 (statement -> if_statement .)
     SYSTEM_ARR_POP  reduce using rule 12 (statement -> if_statement .)
@@ -787,7 +785,7 @@ state 7
     IDENTIFIER      reduce using rule 13 (statement -> while_statement .)
     SYSTEM_INPUT    reduce using rule 13 (statement -> while_statement .)
     SYSTEM_OUTPUT   reduce using rule 13 (statement -> while_statement .)
-    KEYWORD_EXIT    reduce using rule 13 (statement -> while_statement .)
+    SYSTEM_EXIT     reduce using rule 13 (statement -> while_statement .)
     SYSTEM_SLEEP    reduce using rule 13 (statement -> while_statement .)
     SYSTEM_ARR_PUSH reduce using rule 13 (statement -> while_statement .)
     SYSTEM_ARR_POP  reduce using rule 13 (statement -> while_statement .)
@@ -832,7 +830,7 @@ state 8
     IDENTIFIER      reduce using rule 14 (statement -> do_while_statement .)
     SYSTEM_INPUT    reduce using rule 14 (statement -> do_while_statement .)
     SYSTEM_OUTPUT   reduce using rule 14 (statement -> do_while_statement .)
-    KEYWORD_EXIT    reduce using rule 14 (statement -> do_while_statement .)
+    SYSTEM_EXIT     reduce using rule 14 (statement -> do_while_statement .)
     SYSTEM_SLEEP    reduce using rule 14 (statement -> do_while_statement .)
     SYSTEM_ARR_PUSH reduce using rule 14 (statement -> do_while_statement .)
     SYSTEM_ARR_POP  reduce using rule 14 (statement -> do_while_statement .)
@@ -877,7 +875,7 @@ state 9
     IDENTIFIER      reduce using rule 15 (statement -> for_statement .)
     SYSTEM_INPUT    reduce using rule 15 (statement -> for_statement .)
     SYSTEM_OUTPUT   reduce using rule 15 (statement -> for_statement .)
-    KEYWORD_EXIT    reduce using rule 15 (statement -> for_statement .)
+    SYSTEM_EXIT     reduce using rule 15 (statement -> for_statement .)
     SYSTEM_SLEEP    reduce using rule 15 (statement -> for_statement .)
     SYSTEM_ARR_PUSH reduce using rule 15 (statement -> for_statement .)
     SYSTEM_ARR_POP  reduce using rule 15 (statement -> for_statement .)
@@ -922,7 +920,7 @@ state 10
     IDENTIFIER      reduce using rule 16 (statement -> switch_statement .)
     SYSTEM_INPUT    reduce using rule 16 (statement -> switch_statement .)
     SYSTEM_OUTPUT   reduce using rule 16 (statement -> switch_statement .)
-    KEYWORD_EXIT    reduce using rule 16 (statement -> switch_statement .)
+    SYSTEM_EXIT     reduce using rule 16 (statement -> switch_statement .)
     SYSTEM_SLEEP    reduce using rule 16 (statement -> switch_statement .)
     SYSTEM_ARR_PUSH reduce using rule 16 (statement -> switch_statement .)
     SYSTEM_ARR_POP  reduce using rule 16 (statement -> switch_statement .)
@@ -967,7 +965,7 @@ state 11
     IDENTIFIER      reduce using rule 17 (statement -> break_statement .)
     SYSTEM_INPUT    reduce using rule 17 (statement -> break_statement .)
     SYSTEM_OUTPUT   reduce using rule 17 (statement -> break_statement .)
-    KEYWORD_EXIT    reduce using rule 17 (statement -> break_statement .)
+    SYSTEM_EXIT     reduce using rule 17 (statement -> break_statement .)
     SYSTEM_SLEEP    reduce using rule 17 (statement -> break_statement .)
     SYSTEM_ARR_PUSH reduce using rule 17 (statement -> break_statement .)
     SYSTEM_ARR_POP  reduce using rule 17 (statement -> break_statement .)
@@ -1012,7 +1010,7 @@ state 12
     IDENTIFIER      reduce using rule 18 (statement -> return_statement .)
     SYSTEM_INPUT    reduce using rule 18 (statement -> return_statement .)
     SYSTEM_OUTPUT   reduce using rule 18 (statement -> return_statement .)
-    KEYWORD_EXIT    reduce using rule 18 (statement -> return_statement .)
+    SYSTEM_EXIT     reduce using rule 18 (statement -> return_statement .)
     SYSTEM_SLEEP    reduce using rule 18 (statement -> return_statement .)
     SYSTEM_ARR_PUSH reduce using rule 18 (statement -> return_statement .)
     SYSTEM_ARR_POP  reduce using rule 18 (statement -> return_statement .)
@@ -1057,7 +1055,7 @@ state 13
     IDENTIFIER      reduce using rule 19 (statement -> function_call_statement .)
     SYSTEM_INPUT    reduce using rule 19 (statement -> function_call_statement .)
     SYSTEM_OUTPUT   reduce using rule 19 (statement -> function_call_statement .)
-    KEYWORD_EXIT    reduce using rule 19 (statement -> function_call_statement .)
+    SYSTEM_EXIT     reduce using rule 19 (statement -> function_call_statement .)
     SYSTEM_SLEEP    reduce using rule 19 (statement -> function_call_statement .)
     SYSTEM_ARR_PUSH reduce using rule 19 (statement -> function_call_statement .)
     SYSTEM_ARR_POP  reduce using rule 19 (statement -> function_call_statement .)
@@ -1102,7 +1100,7 @@ state 14
     IDENTIFIER      reduce using rule 20 (statement -> block_statement .)
     SYSTEM_INPUT    reduce using rule 20 (statement -> block_statement .)
     SYSTEM_OUTPUT   reduce using rule 20 (statement -> block_statement .)
-    KEYWORD_EXIT    reduce using rule 20 (statement -> block_statement .)
+    SYSTEM_EXIT     reduce using rule 20 (statement -> block_statement .)
     SYSTEM_SLEEP    reduce using rule 20 (statement -> block_statement .)
     SYSTEM_ARR_PUSH reduce using rule 20 (statement -> block_statement .)
     SYSTEM_ARR_POP  reduce using rule 20 (statement -> block_statement .)
@@ -1147,7 +1145,7 @@ state 15
     IDENTIFIER      reduce using rule 21 (statement -> function_definition .)
     SYSTEM_INPUT    reduce using rule 21 (statement -> function_definition .)
     SYSTEM_OUTPUT   reduce using rule 21 (statement -> function_definition .)
-    KEYWORD_EXIT    reduce using rule 21 (statement -> function_definition .)
+    SYSTEM_EXIT     reduce using rule 21 (statement -> function_definition .)
     SYSTEM_SLEEP    reduce using rule 21 (statement -> function_definition .)
     SYSTEM_ARR_PUSH reduce using rule 21 (statement -> function_definition .)
     SYSTEM_ARR_POP  reduce using rule 21 (statement -> function_definition .)
@@ -1192,7 +1190,7 @@ state 16
     IDENTIFIER      reduce using rule 22 (statement -> import_statement .)
     SYSTEM_INPUT    reduce using rule 22 (statement -> import_statement .)
     SYSTEM_OUTPUT   reduce using rule 22 (statement -> import_statement .)
-    KEYWORD_EXIT    reduce using rule 22 (statement -> import_statement .)
+    SYSTEM_EXIT     reduce using rule 22 (statement -> import_statement .)
     SYSTEM_SLEEP    reduce using rule 22 (statement -> import_statement .)
     SYSTEM_ARR_PUSH reduce using rule 22 (statement -> import_statement .)
     SYSTEM_ARR_POP  reduce using rule 22 (statement -> import_statement .)
@@ -1237,7 +1235,7 @@ state 17
     IDENTIFIER      reduce using rule 23 (statement -> export_statement .)
     SYSTEM_INPUT    reduce using rule 23 (statement -> export_statement .)
     SYSTEM_OUTPUT   reduce using rule 23 (statement -> export_statement .)
-    KEYWORD_EXIT    reduce using rule 23 (statement -> export_statement .)
+    SYSTEM_EXIT     reduce using rule 23 (statement -> export_statement .)
     SYSTEM_SLEEP    reduce using rule 23 (statement -> export_statement .)
     SYSTEM_ARR_PUSH reduce using rule 23 (statement -> export_statement .)
     SYSTEM_ARR_POP  reduce using rule 23 (statement -> export_statement .)
@@ -1375,7 +1373,7 @@ state 23
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -1414,7 +1412,7 @@ state 23
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -1532,7 +1530,7 @@ state 26
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -1572,7 +1570,7 @@ state 26
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -1670,7 +1668,7 @@ state 28
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -1697,7 +1695,7 @@ state 28
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -1837,7 +1835,7 @@ state 36
 
 state 37
 
-    (96) function_call -> KEYWORD_EXIT . LPAREN RPAREN
+    (96) function_call -> SYSTEM_EXIT . LPAREN RPAREN
 
     LPAREN          shift and go to state 107
 
@@ -2039,7 +2037,7 @@ state 58
     IDENTIFIER      reduce using rule 9 (statement_list -> statement_list statement .)
     SYSTEM_INPUT    reduce using rule 9 (statement_list -> statement_list statement .)
     SYSTEM_OUTPUT   reduce using rule 9 (statement_list -> statement_list statement .)
-    KEYWORD_EXIT    reduce using rule 9 (statement_list -> statement_list statement .)
+    SYSTEM_EXIT     reduce using rule 9 (statement_list -> statement_list statement .)
     SYSTEM_SLEEP    reduce using rule 9 (statement_list -> statement_list statement .)
     SYSTEM_ARR_PUSH reduce using rule 9 (statement_list -> statement_list statement .)
     SYSTEM_ARR_POP  reduce using rule 9 (statement_list -> statement_list statement .)
@@ -2136,7 +2134,7 @@ state 60
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -2163,7 +2161,7 @@ state 60
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -2240,7 +2238,7 @@ state 62
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -2266,7 +2264,7 @@ state 62
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -2334,7 +2332,7 @@ state 63
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -2360,7 +2358,7 @@ state 63
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -2429,7 +2427,7 @@ state 64
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -2455,7 +2453,7 @@ state 64
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -2523,7 +2521,7 @@ state 65
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -2549,7 +2547,7 @@ state 65
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -2686,7 +2684,7 @@ state 68
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -2712,7 +2710,7 @@ state 68
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -2752,7 +2750,7 @@ state 69
     IDENTIFIER      reduce using rule 107 (block_statement -> LBRACE RBRACE .)
     SYSTEM_INPUT    reduce using rule 107 (block_statement -> LBRACE RBRACE .)
     SYSTEM_OUTPUT   reduce using rule 107 (block_statement -> LBRACE RBRACE .)
-    KEYWORD_EXIT    reduce using rule 107 (block_statement -> LBRACE RBRACE .)
+    SYSTEM_EXIT     reduce using rule 107 (block_statement -> LBRACE RBRACE .)
     SYSTEM_SLEEP    reduce using rule 107 (block_statement -> LBRACE RBRACE .)
     SYSTEM_ARR_PUSH reduce using rule 107 (block_statement -> LBRACE RBRACE .)
     SYSTEM_ARR_POP  reduce using rule 107 (block_statement -> LBRACE RBRACE .)
@@ -2838,7 +2836,7 @@ state 70
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -2878,7 +2876,7 @@ state 70
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -2939,7 +2937,7 @@ state 71
     IDENTIFIER      reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 38 (break_statement -> KEYWORD_BREAK SEMICOLON .)
@@ -2984,7 +2982,7 @@ state 72
     IDENTIFIER      reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 86 (return_statement -> KEYWORD_RETURN SEMICOLON .)
@@ -3115,7 +3113,7 @@ state 77
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -3142,7 +3140,7 @@ state 77
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -3268,7 +3266,7 @@ state 81
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -3293,7 +3291,7 @@ state 81
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -3612,7 +3610,7 @@ state 92
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -3638,7 +3636,7 @@ state 92
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -3789,7 +3787,7 @@ state 96
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -3816,7 +3814,7 @@ state 96
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -3860,7 +3858,7 @@ state 97
     IDENTIFIER      reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 88 (function_call_statement -> function_call SEMICOLON .)
@@ -3929,7 +3927,7 @@ state 100
     IDENTIFIER      reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
     SYSTEM_INPUT    reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
     SYSTEM_OUTPUT   reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
-    KEYWORD_EXIT    reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
+    SYSTEM_EXIT     reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
     SYSTEM_SLEEP    reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
     SYSTEM_ARR_PUSH reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
     SYSTEM_ARR_POP  reduce using rule 30 (export_statement -> KEYWORD_EXPORT function_definition .)
@@ -3974,7 +3972,7 @@ state 101
     IDENTIFIER      reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
     SYSTEM_INPUT    reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
     SYSTEM_OUTPUT   reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
-    KEYWORD_EXIT    reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
+    SYSTEM_EXIT     reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
     SYSTEM_SLEEP    reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
     SYSTEM_ARR_PUSH reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
     SYSTEM_ARR_POP  reduce using rule 31 (export_statement -> KEYWORD_EXPORT declaration_statement .)
@@ -4070,7 +4068,7 @@ state 104
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4096,7 +4094,7 @@ state 104
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4172,7 +4170,7 @@ state 106
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4198,7 +4196,7 @@ state 106
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4223,7 +4221,7 @@ state 106
 
 state 107
 
-    (96) function_call -> KEYWORD_EXIT LPAREN . RPAREN
+    (96) function_call -> SYSTEM_EXIT LPAREN . RPAREN
 
     RPAREN          shift and go to state 172
 
@@ -4273,7 +4271,7 @@ state 108
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4299,7 +4297,7 @@ state 108
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4367,7 +4365,7 @@ state 109
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4393,7 +4391,7 @@ state 109
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4461,7 +4459,7 @@ state 110
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4487,7 +4485,7 @@ state 110
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4555,7 +4553,7 @@ state 111
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4581,7 +4579,7 @@ state 111
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4649,7 +4647,7 @@ state 112
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4675,7 +4673,7 @@ state 112
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4743,7 +4741,7 @@ state 113
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4769,7 +4767,7 @@ state 113
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4838,7 +4836,7 @@ state 114
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -4864,7 +4862,7 @@ state 114
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -4904,7 +4902,7 @@ state 115
     IDENTIFIER      reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 39 (declaration_statement -> type_specifier IDENTIFIER SEMICOLON .)
@@ -4988,7 +4986,7 @@ state 116
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -5014,7 +5012,7 @@ state 116
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -5087,7 +5085,7 @@ state 117
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -5114,7 +5112,7 @@ state 117
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -5340,7 +5338,7 @@ state 129
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -5365,7 +5363,7 @@ state 129
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -5410,7 +5408,7 @@ state 130
     LPAREN          reduce using rule 76 (for_init -> SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 76 (for_init -> SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 76 (for_init -> SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 76 (for_init -> SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 76 (for_init -> SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 76 (for_init -> SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 76 (for_init -> SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 76 (for_init -> SEMICOLON .)
@@ -5446,7 +5444,7 @@ state 132
     LPAREN          reduce using rule 75 (for_init -> declaration_statement .)
     SYSTEM_INPUT    reduce using rule 75 (for_init -> declaration_statement .)
     SYSTEM_OUTPUT   reduce using rule 75 (for_init -> declaration_statement .)
-    KEYWORD_EXIT    reduce using rule 75 (for_init -> declaration_statement .)
+    SYSTEM_EXIT     reduce using rule 75 (for_init -> declaration_statement .)
     SYSTEM_SLEEP    reduce using rule 75 (for_init -> declaration_statement .)
     SYSTEM_ARR_PUSH reduce using rule 75 (for_init -> declaration_statement .)
     SYSTEM_ARR_POP  reduce using rule 75 (for_init -> declaration_statement .)
@@ -5513,7 +5511,7 @@ state 137
     IDENTIFIER      reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
     SYSTEM_INPUT    reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
     SYSTEM_OUTPUT   reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
-    KEYWORD_EXIT    reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
+    SYSTEM_EXIT     reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
     SYSTEM_SLEEP    reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
     SYSTEM_ARR_PUSH reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
     SYSTEM_ARR_POP  reduce using rule 108 (block_statement -> LBRACE statement_list RBRACE .)
@@ -5558,7 +5556,7 @@ state 138
     IDENTIFIER      reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 87 (return_statement -> KEYWORD_RETURN expression SEMICOLON .)
@@ -5625,7 +5623,7 @@ state 139
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -5650,7 +5648,7 @@ state 139
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -5709,7 +5707,7 @@ state 140
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -5734,7 +5732,7 @@ state 140
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -5790,7 +5788,7 @@ state 141
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -5815,7 +5813,7 @@ state 141
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -5870,7 +5868,7 @@ state 142
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -5895,7 +5893,7 @@ state 142
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -5976,7 +5974,7 @@ state 147
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6001,7 +5999,7 @@ state 147
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6050,7 +6048,7 @@ state 148
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6075,7 +6073,7 @@ state 148
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6124,7 +6122,7 @@ state 149
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6149,7 +6147,7 @@ state 149
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6198,7 +6196,7 @@ state 150
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6223,7 +6221,7 @@ state 150
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6269,7 +6267,7 @@ state 151
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6294,7 +6292,7 @@ state 151
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6339,7 +6337,7 @@ state 152
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6364,7 +6362,7 @@ state 152
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6405,7 +6403,7 @@ state 153
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6430,7 +6428,7 @@ state 153
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6470,7 +6468,7 @@ state 154
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6495,7 +6493,7 @@ state 154
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6535,7 +6533,7 @@ state 155
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -6560,7 +6558,7 @@ state 155
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -6663,7 +6661,7 @@ state 163
     IDENTIFIER      reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 24 (import_statement -> KEYWORD_IMPORT module_path SEMICOLON .)
@@ -6768,27 +6766,27 @@ state 171
 
 state 172
 
-    (96) function_call -> KEYWORD_EXIT LPAREN RPAREN .
+    (96) function_call -> SYSTEM_EXIT LPAREN RPAREN .
 
-    SEMICOLON       reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    MUL             reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    DIV             reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    MOD             reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    PLUS            reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    MINUS           reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    GT              reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    LT              reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    GEQ             reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    LEQ             reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    EQ              reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    NEQ             reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    AND             reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    OR              reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    RPAREN          reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    COMMA           reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    RBRACKET        reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    COLON           reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
-    RBRACE          reduce using rule 96 (function_call -> KEYWORD_EXIT LPAREN RPAREN .)
+    SEMICOLON       reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    MUL             reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    DIV             reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    MOD             reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    PLUS            reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    MINUS           reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    GT              reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    LT              reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    GEQ             reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    LEQ             reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    EQ              reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    NEQ             reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    AND             reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    OR              reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    RPAREN          reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    COMMA           reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    RBRACKET        reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    COLON           reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
+    RBRACE          reduce using rule 96 (function_call -> SYSTEM_EXIT LPAREN RPAREN .)
 
 
 state 173
@@ -6895,7 +6893,7 @@ state 184
     IDENTIFIER      reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 47 (declaration_statement -> type_specifier IDENTIFIER multi_brackets SEMICOLON .)
@@ -7049,7 +7047,7 @@ state 192
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -7075,7 +7073,7 @@ state 192
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -7146,7 +7144,7 @@ state 193
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -7173,7 +7171,7 @@ state 193
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -7241,7 +7239,7 @@ state 195
     IDENTIFIER      reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 66 (assignment_statement -> left_hand_side ASSIGN expression SEMICOLON .)
@@ -7327,7 +7325,7 @@ state 196
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -7366,7 +7364,7 @@ state 196
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -7467,7 +7465,7 @@ state 197
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -7506,7 +7504,7 @@ state 197
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -7595,7 +7593,7 @@ state 198
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -7621,7 +7619,7 @@ state 198
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -7763,7 +7761,7 @@ state 206
     LPAREN          reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 74 (for_init -> assignment_statement_no_semi SEMICOLON .)
@@ -7820,7 +7818,7 @@ state 207
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -7846,7 +7844,7 @@ state 207
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -8037,7 +8035,7 @@ state 215
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -8063,7 +8061,7 @@ state 215
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -8409,7 +8407,7 @@ state 227
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -8435,7 +8433,7 @@ state 227
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -8504,7 +8502,7 @@ state 228
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -8530,7 +8528,7 @@ state 228
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -8753,7 +8751,7 @@ state 236
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -8779,7 +8777,7 @@ state 236
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -8897,7 +8895,7 @@ state 239
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -8923,7 +8921,7 @@ state 239
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -8991,7 +8989,7 @@ state 240
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -9017,7 +9015,7 @@ state 240
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -9110,7 +9108,7 @@ state 242
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -9136,7 +9134,7 @@ state 242
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -9176,7 +9174,7 @@ state 243
     IDENTIFIER      reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 40 (declaration_statement -> type_specifier IDENTIFIER ASSIGN expression SEMICOLON .)
@@ -9277,7 +9275,7 @@ state 246
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -9303,7 +9301,7 @@ state 246
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -9343,7 +9341,7 @@ state 247
     IDENTIFIER      reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 45 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET SEMICOLON .)
@@ -9516,7 +9514,7 @@ state 256
     IDENTIFIER      reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
     SYSTEM_INPUT    reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
     SYSTEM_OUTPUT   reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
-    KEYWORD_EXIT    reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
+    SYSTEM_EXIT     reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
     SYSTEM_SLEEP    reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
     SYSTEM_ARR_PUSH reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
     SYSTEM_ARR_POP  reduce using rule 70 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement .)
@@ -9563,7 +9561,7 @@ state 257
     IDENTIFIER      reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
     SYSTEM_INPUT    reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
     SYSTEM_OUTPUT   reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
-    KEYWORD_EXIT    reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
+    SYSTEM_EXIT     reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
     SYSTEM_SLEEP    reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
     SYSTEM_ARR_PUSH reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
     SYSTEM_ARR_POP  reduce using rule 72 (while_statement -> KEYWORD_WHILE LPAREN expression RPAREN statement .)
@@ -9655,7 +9653,7 @@ state 259
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -9680,7 +9678,7 @@ state 259
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -9785,7 +9783,7 @@ state 267
     IDENTIFIER      reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 25 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_AS IDENTIFIER SEMICOLON .)
@@ -9830,7 +9828,7 @@ state 268
     IDENTIFIER      reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 26 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL SEMICOLON .)
@@ -9926,7 +9924,7 @@ state 276
     IDENTIFIER      reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 41 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET SEMICOLON .)
@@ -10018,7 +10016,7 @@ state 281
     IDENTIFIER      reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 46 (declaration_statement -> type_specifier IDENTIFIER multi_brackets ASSIGN initializer_list SEMICOLON .)
@@ -10074,7 +10072,7 @@ state 282
     IDENTIFIER      reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
     SYSTEM_INPUT    reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
     SYSTEM_OUTPUT   reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
-    KEYWORD_EXIT    reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
+    SYSTEM_EXIT     reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
     SYSTEM_SLEEP    reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
     SYSTEM_ARR_PUSH reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
     SYSTEM_ARR_POP  reduce using rule 2 (function_definition -> type_specifier IDENTIFIER LPAREN params RPAREN block_statement .)
@@ -10192,7 +10190,7 @@ state 285
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -10231,7 +10229,7 @@ state 285
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -10372,7 +10370,7 @@ state 292
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -10398,7 +10396,7 @@ state 292
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -10505,7 +10503,7 @@ state 296
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -10531,7 +10529,7 @@ state 296
     LPAREN          shift and go to state 92
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -10703,7 +10701,7 @@ state 303
     IDENTIFIER      reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 43 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN initializer_list SEMICOLON .)
@@ -10759,7 +10757,7 @@ state 304
     IDENTIFIER      reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 44 (declaration_statement -> type_specifier IDENTIFIER LBRACKET RBRACKET ASSIGN expression SEMICOLON .)
@@ -10815,7 +10813,7 @@ state 305
     IDENTIFIER      reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
     SYSTEM_INPUT    reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
     SYSTEM_OUTPUT   reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
-    KEYWORD_EXIT    reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
+    SYSTEM_EXIT     reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
     SYSTEM_SLEEP    reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
     SYSTEM_ARR_PUSH reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
     SYSTEM_ARR_POP  reduce using rule 71 (if_statement -> KEYWORD_IF LPAREN expression RPAREN statement KEYWORD_ELSE statement .)
@@ -10860,7 +10858,7 @@ state 306
     IDENTIFIER      reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 32 (do_while_statement -> KEYWORD_DO statement KEYWORD_WHILE LPAREN expression RPAREN SEMICOLON .)
@@ -10945,7 +10943,7 @@ state 307
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -10984,7 +10982,7 @@ state 307
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -11045,7 +11043,7 @@ state 308
     IDENTIFIER      reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
     SYSTEM_INPUT    reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
     SYSTEM_OUTPUT   reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
-    KEYWORD_EXIT    reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
+    SYSTEM_EXIT     reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
     SYSTEM_SLEEP    reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
     SYSTEM_ARR_PUSH reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
     SYSTEM_ARR_POP  reduce using rule 33 (switch_statement -> KEYWORD_SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE .)
@@ -11148,7 +11146,7 @@ state 311
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -11187,7 +11185,7 @@ state 311
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -11249,7 +11247,7 @@ state 312
     IDENTIFIER      reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 27 (import_statement -> KEYWORD_IMPORT module_path KEYWORD_FROM STRING_LITERAL KEYWORD_AS IDENTIFIER SEMICOLON .)
@@ -11301,7 +11299,7 @@ state 314
     IDENTIFIER      reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_INPUT    reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_OUTPUT   reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
-    KEYWORD_EXIT    reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
+    SYSTEM_EXIT     reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_SLEEP    reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_ARR_PUSH reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
     SYSTEM_ARR_POP  reduce using rule 42 (declaration_statement -> type_specifier IDENTIFIER LBRACKET expression RBRACKET ASSIGN initializer_list SEMICOLON .)
@@ -11357,7 +11355,7 @@ state 315
     IDENTIFIER      reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
     SYSTEM_INPUT    reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
     SYSTEM_OUTPUT   reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
-    KEYWORD_EXIT    reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
+    SYSTEM_EXIT     reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
     SYSTEM_SLEEP    reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
     SYSTEM_ARR_PUSH reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
     SYSTEM_ARR_POP  reduce using rule 73 (for_statement -> KEYWORD_FOR LPAREN for_init expression_opt SEMICOLON expression_opt RPAREN statement .)
@@ -11444,7 +11442,7 @@ state 316
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -11483,7 +11481,7 @@ state 316
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -11586,7 +11584,7 @@ state 317
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -11628,7 +11626,7 @@ state 317
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40
@@ -11755,7 +11753,7 @@ state 319
     (93) function_call -> . SYSTEM_INPUT LPAREN IDENTIFIER COMMA type_specifier RPAREN
     (94) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier RPAREN
     (95) function_call -> . SYSTEM_OUTPUT LPAREN expression COMMA type_specifier COMMA expression RPAREN
-    (96) function_call -> . KEYWORD_EXIT LPAREN RPAREN
+    (96) function_call -> . SYSTEM_EXIT LPAREN RPAREN
     (97) function_call -> . SYSTEM_SLEEP LPAREN expression RPAREN
     (98) function_call -> . SYSTEM_ARR_PUSH LPAREN expression COMMA expression RPAREN
     (99) function_call -> . SYSTEM_ARR_POP LPAREN expression RPAREN
@@ -11797,7 +11795,7 @@ state 319
     IDENTIFIER      shift and go to state 19
     SYSTEM_INPUT    shift and go to state 35
     SYSTEM_OUTPUT   shift and go to state 36
-    KEYWORD_EXIT    shift and go to state 37
+    SYSTEM_EXIT     shift and go to state 37
     SYSTEM_SLEEP    shift and go to state 38
     SYSTEM_ARR_PUSH shift and go to state 39
     SYSTEM_ARR_POP  shift and go to state 40

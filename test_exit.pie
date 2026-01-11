@@ -1,0 +1,8 @@
+// Test that exit() immediately stops execution
+
+int main() {
+    output("Before exit", string);
+    exit();
+    output("This should NOT print", string);
+    return 0;
+}

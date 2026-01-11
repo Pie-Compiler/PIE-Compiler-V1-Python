@@ -1,0 +1,27 @@
+//To test the PIE database module
+import sqlite;
+
+//ask the user for some details
+string name;
+int age;
+string email;
+
+string database_path="./users.sqlite";
+database users=sqlite.open(database_path);
+if(users!=null){
+	string createDatabase="CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)";
+	int exec=sqlite.exec(users,createDatabase);
+	output(exec,int);
+	if(exec!=0){
+		output("Error creating table",string);
+		
+		exit();
+	}
+}
+else{
+	output("Could not open the database",string);
+	exit();
+}
+string last_error=sqlite.last_error(users);
+		output("Last error: "+ last_error,string);
+sqlite.close(users);

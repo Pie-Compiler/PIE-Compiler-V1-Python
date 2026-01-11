@@ -245,7 +245,6 @@ def build_master_nfa():
         "switch": "KEYWORD_SWITCH",
         "case": "KEYWORD_CASE",
         "default": "KEYWORD_DEFAULT",
-        "exit": "KEYWORD_EXIT",
         "int": "KEYWORD_INT",
         "float": "KEYWORD_FLOAT",
         "file": "KEYWORD_FILE",
